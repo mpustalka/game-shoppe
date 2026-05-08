@@ -12,7 +12,9 @@ import {
   PlusCircle, 
   QrCode,
   Menu,
-  Settings
+  Settings,
+  BookOpen,
+  Upload
 } from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -21,7 +23,9 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutGrid },
   { name: "Browse Sets", href: "/sets", icon: Package },
   { name: "Inventory", href: "/inventory", icon: Package },
+  { name: "Binders", href: "/binders", icon: BookOpen },
   { name: "Add Card", href: "/add", icon: PlusCircle },
+  { name: "Import", href: "/import", icon: Upload },
   { name: "Scan", href: "/scan", icon: QrCode },
   { name: "Settings", href: "/settings", icon: Settings },
 ]

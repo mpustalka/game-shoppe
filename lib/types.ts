@@ -120,6 +120,21 @@ export const CONDITION_ABBREVIATIONS: Record<CardCondition, string> = {
   "Damaged": "DMG",
 }
 
+// Price Tiers for Binder Organization
+export type PriceTier = "budget" | "mid" | "premium"
+
+export const PRICE_TIERS: { id: PriceTier; label: string; min: number; max: number; color: string }[] = [
+  { id: "budget", label: "$0 - $4.99", min: 0, max: 4.99, color: "bg-green-500" },
+  { id: "mid", label: "$5 - $29.99", min: 5, max: 29.99, color: "bg-blue-500" },
+  { id: "premium", label: "$30+", min: 30, max: Infinity, color: "bg-amber-500" },
+]
+
+export function getPriceTier(price: number): PriceTier {
+  if (price < 5) return "budget"
+  if (price < 30) return "mid"
+  return "premium"
+}
+
 // Inventory Types
 export interface InventoryItem {
   id: string
@@ -130,7 +145,10 @@ export interface InventoryItem {
   condition: CardCondition
   price: number
   quantity: number
+  quantitySold: number
   notes?: string
+  customImage?: string // For manual entries with uploaded images
+  isManualEntry?: boolean // Flag for manually added cards
   squareItemId?: string
   squareVariationId?: string
   syncedToSquare: boolean
@@ -143,7 +161,42 @@ export interface InventoryFormData {
   condition: CardCondition
   price: number
   quantity: number
+  quantitySold?: number
   notes?: string
+  customImage?: string
+}
+
+// Manual Card Entry (for cards not in Pokemon TCG API)
+export interface ManualCardData {
+  name: string
+  setName: string
+  setId?: string
+  number?: string
+  rarity?: string
+  condition: CardCondition
+  price: number
+  quantity: number
+  quantitySold?: number
+  notes?: string
+  customImage?: string
+}
+
+// CSV Import Types
+export interface CSVImportRow {
+  name: string
+  set: string
+  number?: string
+  condition: string
+  price: string | number
+  quantity: string | number
+  quantitySold?: string | number
+  notes?: string
+}
+
+export interface ImportResult {
+  success: number
+  failed: number
+  errors: { row: number; error: string }[]
 }
 
 // Search/Filter Types

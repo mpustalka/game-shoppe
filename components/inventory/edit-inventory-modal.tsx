@@ -23,6 +23,7 @@ export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryMo
   const [condition, setCondition] = useState<CardCondition>("Near Mint")
   const [price, setPrice] = useState("")
   const [quantity, setQuantity] = useState("1")
+  const [quantitySold, setQuantitySold] = useState("0")
   const [notes, setNotes] = useState("")
   const [isSaving, setIsSaving] = useState(false)
 
@@ -32,6 +33,7 @@ export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryMo
       setCondition(item.condition)
       setPrice(item.price.toString())
       setQuantity(item.quantity.toString())
+      setQuantitySold((item.quantitySold || 0).toString())
       setNotes(item.notes || "")
     }
   }, [item])
@@ -41,13 +43,14 @@ export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryMo
   const handleSave = () => {
     const priceValue = parseFloat(price)
     const quantityValue = parseInt(quantity, 10)
+    const quantitySoldValue = parseInt(quantitySold, 10)
 
     if (isNaN(priceValue) || priceValue <= 0) {
       toast.error("Please enter a valid price")
       return
     }
 
-    if (isNaN(quantityValue) || quantityValue <= 0) {
+    if (isNaN(quantityValue) || quantityValue < 0) {
       toast.error("Please enter a valid quantity")
       return
     }
@@ -59,6 +62,7 @@ export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryMo
         condition,
         price: priceValue,
         quantity: quantityValue,
+        quantitySold: quantitySoldValue || 0,
         notes: notes || undefined,
       })
 
@@ -121,15 +125,27 @@ export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryMo
           </div>
 
           {/* Quantity */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-quantity">Quantity</Label>
-            <Input
-              id="edit-quantity"
-              type="number"
-              min="1"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-quantity">Qty Available</Label>
+              <Input
+                id="edit-quantity"
+                type="number"
+                min="0"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-sold">Qty Sold</Label>
+              <Input
+                id="edit-sold"
+                type="number"
+                min="0"
+                value={quantitySold}
+                onChange={(e) => setQuantitySold(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Notes */}

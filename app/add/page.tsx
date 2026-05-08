@@ -1,13 +1,21 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { searchCards } from "@/lib/pokemon-tcg"
 import type { PokemonCard } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CardDetailModal } from "@/components/cards/card-detail-modal"
-import { Search, Loader2, Package } from "lucide-react"
+import { 
+  Search, 
+  Loader2, 
+  Package, 
+  PenSquare, 
+  Upload as UploadIcon,
+  Database
+} from "lucide-react"
 
 export default function AddCardPage() {
   const [query, setQuery] = useState("")
@@ -45,38 +53,108 @@ export default function AddCardPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Add Card to Inventory</h1>
         <p className="mt-2 text-muted-foreground">
-          Search for a Pokemon card by name to add it to your inventory
+          Search the Pokemon TCG database or add cards manually
         </p>
       </div>
 
+      {/* Add Method Options */}
+      <div className="mb-8 grid gap-4 md:grid-cols-3">
+        <Card className="border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-primary" />
+              Search Database
+            </CardTitle>
+            <CardDescription>
+              Find cards from the official Pokemon TCG database with auto-filled info
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Search below to find cards with images, prices, and set info pre-filled.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="transition-all hover:border-primary/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PenSquare className="h-5 w-5 text-primary" />
+              Manual Entry
+            </CardTitle>
+            <CardDescription>
+              Add cards manually with custom images and details
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Perfect for promos, foreign cards, or items not in the database.
+            </p>
+            <Button variant="outline" asChild className="w-full">
+              <Link href="/add/manual">Add Manually</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="transition-all hover:border-primary/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UploadIcon className="h-5 w-5 text-primary" />
+              Bulk Import
+            </CardTitle>
+            <CardDescription>
+              Import multiple cards from CSV or Google Sheets
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Upload a spreadsheet to add many cards at once.
+            </p>
+            <Button variant="outline" asChild className="w-full">
+              <Link href="/import">Import Cards</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Search Form */}
-      <form onSubmit={handleSearch} className="mb-8">
-        <div className="flex gap-3">
-          <div className="relative flex-1 max-w-xl">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by card name (e.g., Charizard, Pikachu VMAX)..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Button type="submit" disabled={isSearching || !query.trim()}>
-            {isSearching ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Searching...
-              </>
-            ) : (
-              <>
-                <Search className="mr-2 h-4 w-4" />
-                Search
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Search Pokemon TCG Database</CardTitle>
+          <CardDescription>
+            Search for a card by name to add it to your inventory
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSearch}>
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search by card name (e.g., Charizard, Pikachu VMAX)..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Button type="submit" disabled={isSearching || !query.trim()}>
+                {isSearching ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Search
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Results */}
       {isSearching ? (
@@ -87,9 +165,12 @@ export default function AddCardPage() {
         <div className="flex flex-col items-center justify-center py-16">
           <Package className="mb-4 h-12 w-12 text-muted-foreground/50" />
           <h3 className="mb-2 text-lg font-medium">No cards found</h3>
-          <p className="text-sm text-muted-foreground">
-            Try a different search term or browse sets instead
+          <p className="text-sm text-muted-foreground mb-4">
+            Try a different search term or add the card manually
           </p>
+          <Button variant="outline" asChild>
+            <Link href="/add/manual">Add Card Manually</Link>
+          </Button>
         </div>
       ) : results.length > 0 ? (
         <>

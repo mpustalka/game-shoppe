@@ -17,6 +17,24 @@ export function generateSKU(
   return `PKM-${setAbbrev}-${cardNum}-${condAbbrev}-${uniqueId}`
 }
 
+// Generate a unique SKU for manually entered cards
+export function generateManualSKU(
+  cardName: string,
+  setName: string,
+  condition: CardCondition,
+  timestamp?: number
+): string {
+  // Create abbreviation from card name (first 3 chars)
+  const cardAbbrev = cardName.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 3) || "XXX"
+  // Create abbreviation from set name (first 4 chars)
+  const setAbbrev = setName.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 4) || "MANU"
+  const condAbbrev = CONDITION_ABBREVIATIONS[condition]
+  const ts = timestamp || Date.now()
+  const uniqueId = ts.toString(36).toUpperCase().slice(-4)
+  
+  return `MAN-${setAbbrev}-${cardAbbrev}-${condAbbrev}-${uniqueId}`
+}
+
 // Generate a unique barcode string
 export function generateBarcodeString(sku: string): string {
   // Create a numeric barcode from SKU for scanning compatibility
