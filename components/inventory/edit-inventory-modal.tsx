@@ -40,7 +40,7 @@ export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryMo
 
   if (!item) return null
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const priceValue = parseFloat(price)
     const quantityValue = parseInt(quantity, 10)
     const quantitySoldValue = parseInt(quantitySold, 10)
@@ -58,14 +58,13 @@ export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryMo
     setIsSaving(true)
 
     try {
-      updateItem(item.id, {
+      await updateItem(item.id, {
         condition,
         price: priceValue,
         quantity: quantityValue,
         quantitySold: quantitySoldValue || 0,
         notes: notes || undefined,
       })
-
       toast.success("Inventory item updated")
       onOpenChange(false)
     } catch (error) {

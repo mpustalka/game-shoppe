@@ -24,36 +24,33 @@ interface InventoryContextType {
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined)
 
-const STORAGE_KEY = "pokemon-inventory"
+
+import { supabase } from "./supabase"
+const SUPABASE_TABLE = "inventory"
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Load from localStorage on mount
+
+  // Load from Supabase on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored)
-          setItems(parsed)
-        } catch (e) {
-          console.error("Failed to parse stored inventory:", e)
-        }
+    async function fetchInventory() {
+      const { data, error } = await supabase
+        .from(SUPABASE_TABLE)
+        .select("*")
+        .order("createdAt", { ascending: false })
+      if (error) {
+        console.error("Failed to fetch inventory from Supabase:", error)
+      } else if (data) {
+        setItems(data)
       }
       setIsLoaded(true)
     }
+    fetchInventory()
   }, [])
 
-  // Save to localStorage on changes
-  useEffect(() => {
-    if (isLoaded && typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-    }
-  }, [items, isLoaded])
-
-  const addItem = useCallback((card: PokemonCard, data: Omit<InventoryFormData, "cardId">): InventoryItem => {
+  const addItem = useCallback(async (card: PokemonCard, data: Omit<InventoryFormData, "cardId">): Promise<InventoryItem | null> => {
     const timestamp = Date.now()
     const sku = generateSKU(card, data.condition, timestamp)
     const barcode = generateBarcodeString(sku)
@@ -77,11 +74,16 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString(),
     }
 
+    const { error } = await supabase.from(SUPABASE_TABLE).insert([newItem])
+    if (error) {
+      console.error("Failed to add item to Supabase:", error)
+      return null
+    }
     setItems((prev) => [newItem, ...prev])
     return newItem
   }, [])
 
-  const addManualItem = useCallback((data: ManualCardData): InventoryItem => {
+  const addManualItem = useCallback(async (data: ManualCardData): Promise<InventoryItem | null> => {
     const timestamp = Date.now()
     const sku = generateManualSKU(data.name, data.setName, data.condition, timestamp)
     const barcode = generateBarcodeString(sku)
@@ -130,11 +132,17 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString(),
     }
 
+
+    const { error } = await supabase.from(SUPABASE_TABLE).insert([newItem])
+    if (error) {
+      console.error("Failed to add manual item to Supabase:", error)
+      return null
+    }
     setItems((prev) => [newItem, ...prev])
     return newItem
   }, [])
 
-  const updateItem = useCallback((id: string, data: Partial<InventoryFormData>) => {
+  const updateItem = useCallback(async (id: string, data: Partial<InventoryFormData>) => {
     setItems((prev) =>
       prev.map((item) =>
         item.id === id
@@ -146,13 +154,24 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           : item
       )
     )
+    const { error } = await supabase
+      .from(SUPABASE_TABLE)
+      .update({ ...data, updatedAt: new Date().toISOString() })
+      .eq("id", id)
+    if (error) {
+      console.error("Failed to update item in Supabase:", error)
+    }
   }, [])
 
-  const deleteItem = useCallback((id: string) => {
+  const deleteItem = useCallback(async (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id))
+    const { error } = await supabase.from(SUPABASE_TABLE).delete().eq("id", id)
+    if (error) {
+      console.error("Failed to delete item from Supabase:", error)
+    }
   }, [])
 
-  const recordSale = useCallback((id: string, qty: number = 1) => {
+  const recordSale = useCallback(async (id: string, qty: number = 1) => {
     setItems((prev) =>
       prev.map((item) =>
         item.id === id
@@ -165,7 +184,21 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           : item
       )
     )
-  }, [])
+    const item = items.find((item) => item.id === id)
+    if (item) {
+      const { error } = await supabase
+        .from(SUPABASE_TABLE)
+        .update({
+          quantity: Math.max(0, item.quantity - qty),
+          quantitySold: (item.quantitySold || 0) + qty,
+          updatedAt: new Date().toISOString(),
+        })
+        .eq("id", id)
+      if (error) {
+        console.error("Failed to record sale in Supabase:", error)
+      }
+    }
+  }, [items])
 
   const getItemById = useCallback(
     (id: string) => items.find((item) => item.id === id),
@@ -225,19 +258,19 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     []
   )
 
-  const bulkImport = useCallback((importItems: ManualCardData[]): { success: number; failed: number } => {
+  const bulkImport = useCallback(async (importItems: ManualCardData[]): Promise<{ success: number; failed: number }> => {
     let success = 0
     let failed = 0
 
-    importItems.forEach((data) => {
+    for (const data of importItems) {
       try {
-        addManualItem(data)
-        success++
+        const result = await addManualItem(data)
+        if (result) success++
+        else failed++
       } catch {
         failed++
       }
-    })
-
+    }
     return { success, failed }
   }, [addManualItem])
 

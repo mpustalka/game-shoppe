@@ -85,10 +85,18 @@ export default function InventoryPage() {
   const totalValue = filteredItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const totalQuantity = filteredItems.reduce((sum, item) => sum + item.quantity, 0)
 
-  const handleDelete = () => {
+  const [isDeleting, setIsDeleting] = useState(false)
+  const handleDelete = async () => {
     if (deleteItemId) {
-      deleteItem(deleteItemId)
-      setDeleteItemId(null)
+      setIsDeleting(true)
+      try {
+        await deleteItem(deleteItemId)
+        setDeleteItemId(null)
+      } catch (e) {
+        // Optionally show error toast
+      } finally {
+        setIsDeleting(false)
+      }
     }
   }
 

@@ -140,14 +140,11 @@ export default function ManualAddCardPage() {
     setIsSubmitting(true)
 
     try {
-      addManualItem({
+      await addManualItem({
         ...formData,
         setName,
       })
-      
       setSuccess(true)
-      
-      // Reset form after brief delay
       setTimeout(() => {
         setFormData({
           name: "",
@@ -165,7 +162,6 @@ export default function ManualAddCardPage() {
         setImagePreview(null)
         setSuccess(false)
       }, 2000)
-      
     } catch (error) {
       console.error("Failed to add card:", error)
       alert("Failed to add card. Please try again.")
