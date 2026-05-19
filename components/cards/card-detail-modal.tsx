@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import type { PokemonCard, CardCondition, PriceTier } from "@/lib/types"
-import { CARD_CONDITIONS, PRICE_TIERS } from "@/lib/types"
-import { getMarketPrice } from "@/lib/pokemon-tcg"
+import type { PokemonCard, CardCondition, PriceTier, CardPrintFinish } from "@/lib/types"
+import { CARD_CONDITIONS, PRICE_TIERS, CARD_PRINT_FINISHES } from "@/lib/types"
+import { getMarketPriceForFinish } from "@/lib/pokemon-tcg"
 import { useInventory } from "@/lib/inventory-context"
 import * as binderApi from "@/lib/binders"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -26,6 +26,7 @@ interface CardDetailModalProps {
 export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalProps) {
   const { addItem, getItemsByCardId } = useInventory()
   const [condition, setCondition] = useState<CardCondition>("Near Mint")
+  const [printFinish, setPrintFinish] = useState<CardPrintFinish>("Normal")
   const [price, setPrice] = useState("")
   const [quantity, setQuantity] = useState("1")
   const [notes, setNotes] = useState("")
@@ -34,7 +35,7 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
 
   if (!card) return null
 
-  const marketPrice = getMarketPrice(card)
+  const marketPrice = getMarketPriceForFinish(card, printFinish)
   const existingItems = getItemsByCardId(card.id)
 
   const handleAddToInventory = async () => {
@@ -58,6 +59,7 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
         condition,
         price: priceValue,
         quantity: quantityValue,
+        printFinish,
         notes: notes || undefined,
       })
 
@@ -76,6 +78,7 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
 
       // Reset form
       setCondition("Near Mint")
+      setPrintFinish("Normal")
       setPrice("")
       setQuantity("1")
       setNotes("")
@@ -146,6 +149,22 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
                 )}
 
                 {/* Condition */}
+                <div className="space-y-2">
+                  <Label htmlFor="printFinish">Print Finish</Label>
+                  <Select value={printFinish} onValueChange={(v) => setPrintFinish(v as CardPrintFinish)}>
+                    <SelectTrigger id="printFinish">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CARD_PRINT_FINISHES.map((finish) => (
+                        <SelectItem key={finish} value={finish}>
+                          {finish}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="condition">Condition</Label>
                   <Select value={condition} onValueChange={(v) => setCondition(v as CardCondition)}>

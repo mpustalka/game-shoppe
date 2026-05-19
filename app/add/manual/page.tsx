@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useInventory } from "@/lib/inventory-context"
-import { CARD_CONDITIONS, type CardCondition, type ManualCardData } from "@/lib/types"
+import { CARD_CONDITIONS, CARD_PRINT_FINISHES, type CardCondition, type CardPrintFinish, type ManualCardData } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -78,6 +78,7 @@ export default function ManualAddCardPage() {
     number: "",
     rarity: "",
     condition: "Near Mint",
+    printFinish: "Normal",
     price: 0,
     quantity: 1,
     quantitySold: 0,
@@ -140,10 +141,14 @@ export default function ManualAddCardPage() {
     setIsSubmitting(true)
 
     try {
-      await addManualItem({
+      const item = await addManualItem({
         ...formData,
         setName,
       })
+      if (!item) {
+        alert("Failed to add card. Please try again.")
+        return
+      }
       setSuccess(true)
       setTimeout(() => {
         setFormData({
@@ -152,6 +157,7 @@ export default function ManualAddCardPage() {
           number: "",
           rarity: "",
           condition: "Near Mint",
+          printFinish: "Normal",
           price: 0,
           quantity: 1,
           quantitySold: 0,
@@ -342,6 +348,23 @@ export default function ManualAddCardPage() {
                 <CardDescription>Set pricing and stock information</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="printFinish">Print Finish *</Label>
+                  <Select
+                    value={formData.printFinish}
+                    onValueChange={(v) => setFormData(prev => ({ ...prev, printFinish: v as CardPrintFinish }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CARD_PRINT_FINISHES.map((finish) => (
+                        <SelectItem key={finish} value={finish}>{finish}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="condition">Condition *</Label>
                   <Select

@@ -1,0 +1,356 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "e4c538f1-a121-4335-8fc1-a4a5baf87dbd",
+  "prevIds": [
+    "d5ca39d8-67c1-46e3-b124-ed5a2ded9350"
+  ],
+  "ddl": [
+    {
+      "isRlsEnabled": false,
+      "name": "binder_items",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "inventory",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tier",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "binder_items"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "item_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "binder_items"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "binder_items"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "card_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "card",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sku",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "barcode",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "condition",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "numeric(10,2)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "price",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "quantity",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "quantity_sold",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "print_finish",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "notes",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "custom_image",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "is_manual_entry",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "square_item_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "square_variation_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "synced_to_square",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "inventory"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "item_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "inventory",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "binder_items_item_id_inventory_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "binder_items"
+    },
+    {
+      "columns": [
+        "tier",
+        "item_id"
+      ],
+      "nameExplicit": false,
+      "name": "binder_items_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "binder_items"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "inventory_pkey",
+      "schema": "public",
+      "table": "inventory",
+      "entityType": "pks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "sku"
+      ],
+      "nullsNotDistinct": false,
+      "name": "inventory_sku_key",
+      "schema": "public",
+      "table": "inventory",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "barcode"
+      ],
+      "nullsNotDistinct": false,
+      "name": "inventory_barcode_key",
+      "schema": "public",
+      "table": "inventory",
+      "entityType": "uniques"
+    }
+  ],
+  "renames": []
+}

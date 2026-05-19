@@ -1,4 +1,4 @@
-import type { PokemonSet, PokemonCard } from "./types"
+import type { PokemonSet, PokemonCard, CardPrintFinish } from "./types"
 
 const BASE_URL = "https://api.pokemontcg.io/v2"
 
@@ -130,4 +130,19 @@ export function getMarketPrice(card: PokemonCard): number | null {
   }
 
   return null
+}
+
+export function getMarketPriceForFinish(card: PokemonCard, finish?: CardPrintFinish): number | null {
+  const prices = card.tcgplayer?.prices
+  if (!prices || !finish) return getMarketPrice(card)
+
+  const price =
+    finish === "Normal" ? prices.normal?.market :
+    finish === "Holofoil" ? prices.holofoil?.market :
+    finish === "Reverse Holofoil" ? prices.reverseHolofoil?.market :
+    finish === "1st Edition Normal" ? prices["1stEditionNormal"]?.market :
+    finish === "1st Edition Holofoil" ? prices["1stEditionHolofoil"]?.market :
+    null
+
+  return price ?? getMarketPrice(card)
 }
