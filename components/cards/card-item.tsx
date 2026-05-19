@@ -31,6 +31,14 @@ const rarityColors: Record<string, string> = {
   "Hyper Rare": "bg-amber-200 text-amber-900 dark:bg-amber-800/50 dark:text-amber-200",
 }
 
+export function CardItem({
+  card,
+  onClick,
+  showPrice,
+  selectable,
+  checked,
+  onSelect,
+}: CardItemProps) {
   const marketPrice = showPrice ? getMarketPrice(card) : null
 
   return (

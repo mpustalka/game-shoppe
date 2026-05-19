@@ -2,12 +2,17 @@
 
 
 import { useState, useMemo } from "react"
-import type { PokemonCard } from "@/lib/types"
+import type { PokemonCard, CardCondition, PriceTier } from "@/lib/types"
+import { CARD_CONDITIONS, PRICE_TIERS } from "@/lib/types"
+import { useInventory } from "@/lib/inventory-context"
+import { getMarketPrice } from "@/lib/pokemon-tcg"
+import * as binderApi from "@/lib/binders"
 import { CardItem } from "./card-item"
 import { CardDetailModal } from "./card-detail-modal"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 
 
 interface CardGridProps {
@@ -16,12 +21,16 @@ interface CardGridProps {
   onSelectCards?: (selected: PokemonCard[]) => void
 }
 
-
+export function CardGrid({ cards, onSelectCards }: CardGridProps) {
+  const { addItem } = useInventory()
   const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [rarity, setRarity] = useState<string>("all")
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkBinderTier, setBulkBinderTier] = useState<PriceTier>("budget")
+  const [bulkCondition, setBulkCondition] = useState<CardCondition>("Near Mint")
+  const [isBulkAdding, setIsBulkAdding] = useState(false)
 
   // Get all rarities in this set
   const allRarities = useMemo(() => {
@@ -50,8 +59,38 @@ interface CardGridProps {
     })
   }
 
-  // Notify parent if needed
-  // useEffect(() => { if (onSelectCards) onSelectCards(cards.filter(c => selected.has(c.id))) }, [selected])
+  const selectedCards = useMemo(
+    () => cards.filter((card) => selected.has(card.id)),
+    [cards, selected]
+  )
+
+  const handleBulkAddToBinder = async () => {
+    if (selectedCards.length === 0) return
+
+    setIsBulkAdding(true)
+    try {
+      const addedItems = []
+      for (const card of selectedCards) {
+        const item = await addItem(card, {
+          condition: bulkCondition,
+          price: getMarketPrice(card) ?? 0.01,
+          quantity: 1,
+        })
+        if (item) {
+          await binderApi.addToBinder(bulkBinderTier, item)
+          addedItems.push(item)
+        }
+      }
+
+      if (onSelectCards) onSelectCards(selectedCards)
+      setSelected(new Set())
+      toast.success(`Added ${addedItems.length} card${addedItems.length === 1 ? "" : "s"} to binder`)
+    } catch (error) {
+      toast.error("Failed to add selected cards to binder")
+    } finally {
+      setIsBulkAdding(false)
+    }
+  }
 
   return (
     <>
@@ -83,7 +122,10 @@ interface CardGridProps {
           <CardItem
             key={card.id}
             card={card}
-            onClick={() => setSelectedCard(card)}
+            onClick={() => {
+              setSelectedCard(card)
+              setModalOpen(true)
+            }}
             selectable
             checked={selected.has(card.id)}
             onSelect={() => toggleSelect(card.id)}
@@ -93,13 +135,36 @@ interface CardGridProps {
 
       {/* Bulk actions bar */}
       {selected.size > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-card border rounded-lg shadow-lg px-6 py-3 flex gap-4 items-center z-50">
+        <div className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100vw-2rem)] max-w-3xl -translate-x-1/2 flex-col gap-3 rounded-lg border bg-card px-4 py-3 shadow-lg sm:w-auto sm:flex-row sm:items-center sm:px-6">
           <span className="font-medium">{selected.size} selected</span>
-          {/* TODO: Add to binder button here */}
-          <Button size="sm" variant="primary" disabled>
-            Add to Binder (coming soon)
+          <Select value={bulkBinderTier} onValueChange={(v) => setBulkBinderTier(v as PriceTier)} disabled={isBulkAdding}>
+            <SelectTrigger className="w-full sm:w-[190px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRICE_TIERS.map((tier) => (
+                <SelectItem key={tier.id} value={tier.id}>
+                  {tier.label} binder
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={bulkCondition} onValueChange={(v) => setBulkCondition(v as CardCondition)} disabled={isBulkAdding}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CARD_CONDITIONS.map((condition) => (
+                <SelectItem key={condition} value={condition}>
+                  {condition}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" onClick={handleBulkAddToBinder} disabled={isBulkAdding}>
+            {isBulkAdding ? "Adding..." : "Add to Binder"}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())} disabled={isBulkAdding}>
             Clear
           </Button>
         </div>

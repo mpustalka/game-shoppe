@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import type { PokemonCard, CardCondition } from "@/lib/types"
-import { CARD_CONDITIONS } from "@/lib/types"
+import type { PokemonCard, CardCondition, PriceTier } from "@/lib/types"
+import { CARD_CONDITIONS, PRICE_TIERS } from "@/lib/types"
 import { getMarketPrice } from "@/lib/pokemon-tcg"
 import { useInventory } from "@/lib/inventory-context"
+import * as binderApi from "@/lib/binders"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -28,6 +29,7 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
   const [price, setPrice] = useState("")
   const [quantity, setQuantity] = useState("1")
   const [notes, setNotes] = useState("")
+  const [binderTier, setBinderTier] = useState<PriceTier | "none">("none")
   const [isAdding, setIsAdding] = useState(false)
 
   if (!card) return null
@@ -35,7 +37,7 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
   const marketPrice = getMarketPrice(card)
   const existingItems = getItemsByCardId(card.id)
 
-  const handleAddToInventory = () => {
+  const handleAddToInventory = async () => {
     const priceValue = parseFloat(price)
     const quantityValue = parseInt(quantity, 10)
 
@@ -52,14 +54,23 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
     setIsAdding(true)
     
     try {
-      const item = addItem(card, {
+      const item = await addItem(card, {
         condition,
         price: priceValue,
         quantity: quantityValue,
         notes: notes || undefined,
       })
 
-      toast.success("Card added to inventory", {
+      if (!item) {
+        toast.error("Failed to add card to inventory")
+        return
+      }
+
+      if (binderTier !== "none") {
+        await binderApi.addToBinder(binderTier, item)
+      }
+
+      toast.success(binderTier === "none" ? "Card added to inventory" : "Card added to inventory and binder", {
         description: `SKU: ${item.sku}`,
       })
 
@@ -68,6 +79,7 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
       setPrice("")
       setQuantity("1")
       setNotes("")
+      setBinderTier("none")
       onOpenChange(false)
     } catch (error) {
       toast.error("Failed to add card to inventory")
@@ -199,6 +211,23 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
                     onChange={(e) => setNotes(e.target.value)}
                     rows={2}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="binder">Binder</Label>
+                  <Select value={binderTier} onValueChange={(v) => setBinderTier(v as PriceTier | "none")}>
+                    <SelectTrigger id="binder">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Inventory only</SelectItem>
+                      {PRICE_TIERS.map((tier) => (
+                        <SelectItem key={tier.id} value={tier.id}>
+                          Add to {tier.label} binder
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Add Button */}

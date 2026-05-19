@@ -7,8 +7,8 @@ import { generateSKU, generateBarcodeString, generateManualSKU } from "./barcode
 
 interface InventoryContextType {
   items: InventoryItem[]
-  addItem: (card: PokemonCard, data: Omit<InventoryFormData, "cardId">) => InventoryItem
-  addManualItem: (data: ManualCardData) => InventoryItem
+  addItem: (card: PokemonCard, data: Omit<InventoryFormData, "cardId">) => Promise<InventoryItem | null>
+  addManualItem: (data: ManualCardData) => Promise<InventoryItem | null>
   updateItem: (id: string, data: Partial<InventoryFormData>) => void
   deleteItem: (id: string) => void
   recordSale: (id: string, quantitySold?: number) => void
@@ -19,7 +19,7 @@ interface InventoryContextType {
   getItemsByPriceTier: (tier: PriceTier) => InventoryItem[]
   searchItems: (query: string) => InventoryItem[]
   updateSquareSync: (id: string, squareItemId: string, squareVariationId: string) => void
-  bulkImport: (items: ManualCardData[]) => { success: number; failed: number }
+  bulkImport: (items: ManualCardData[]) => Promise<{ success: number; failed: number }>
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined)
