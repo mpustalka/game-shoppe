@@ -13,7 +13,7 @@ export async function loadBinder(tier: PriceTier): Promise<InventoryItem[]> {
   const bucket = BINDER_BUCKETS[tier]
   const { data, error } = await supabase.storage.from(bucket).download(BINDER_FILE)
   if (error) {
-    if (error.statusCode === 404) return [] // No binder yet
+    if (error.statusCode === "404") return [] // No binder yet
     throw error
   }
   const text = await data.text()

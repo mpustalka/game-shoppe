@@ -169,13 +169,13 @@ export default function ImportPage() {
     reader.readAsText(file)
   }
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (importData.length === 0) return
 
     setIsProcessing(true)
     
     try {
-      const result = bulkImport(importData)
+      const result = await bulkImport(importData)
       setImportResult({
         success: result.success,
         failed: result.failed,

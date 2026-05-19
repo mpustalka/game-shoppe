@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useInventory } from "@/lib/inventory-context"
-import { PRICE_TIERS, getPriceTier, type PriceTier, CARD_CONDITIONS, type CardCondition } from "@/lib/types"
+import { PRICE_TIERS, getPriceTier, type PriceTier, CARD_CONDITIONS, type CardCondition, type InventoryItem } from "@/lib/types"
 import * as binderApi from "@/lib/binders"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -37,7 +37,7 @@ export default function BindersPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
   const [sortBy, setSortBy] = useState<SortOption>("price-low")
   const [filterCondition, setFilterCondition] = useState<CardCondition | "all">("all")
-  const [binderItems, setBinderItems] = useState([])
+  const [binderItems, setBinderItems] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [addCardId, setAddCardId] = useState<string>("")
@@ -59,7 +59,7 @@ export default function BindersPage() {
       stats[tier].totalQty += item.quantity ?? 1
     }
     // Ensure values are numbers
-    for (const tier of ["budget", "mid", "premium"]) {
+    for (const tier of ["budget", "mid", "premium"] as PriceTier[]) {
       stats[tier].totalValue = Number(stats[tier].totalValue)
       stats[tier].totalQty = Number(stats[tier].totalQty)
     }
