@@ -5,12 +5,14 @@ Setup database so saves not locally anymore
 Setup bucket's 
 
 
-1. Need Search for each set once vlicked on 
-be able to checkmark numerous cards at once to be added
+1. Need Search for each set once clicked on 
+be able to checkmark numerous cards at once to be added to choosen binder
 be able to quick search add card's to binders - need to be able to PICK which binder 
+
 
 Need a way to sort by card rarity as well once in a binder or a set ex. common, rev holo, uncommon, Ex, V, Vstar 
 
+TCG Search - On TCG search need to be able to search by pokemon name and Number for example not all cards show when searching a pokemonfor example If I search electabuzz 35/100 this card to show before all otheres. and also I need a dropdown to show card "quality" market price changes deopnding on card quaity
 
 2 Need to save card's after being sold inventory listing
 

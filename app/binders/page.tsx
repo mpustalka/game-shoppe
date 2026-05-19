@@ -30,6 +30,7 @@ type ViewMode = "grid" | "list"
 type SortOption = "price-low" | "price-high" | "name" | "set"
 
 export default function BindersPage() {
+
   const { items: inventoryItems } = useInventory()
   const [activeTier, setActiveTier] = useState<PriceTier>("budget")
   const [searchQuery, setSearchQuery] = useState("")
@@ -42,6 +43,28 @@ export default function BindersPage() {
   const [addCardId, setAddCardId] = useState<string>("")
   const [adding, setAdding] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
+
+  // Compute tierStats from binderItems
+  const tierStats = useMemo(() => {
+    // Initialize stats for each tier
+    const stats = {
+      budget: { count: 0, totalValue: 0, totalQty: 0 },
+      mid: { count: 0, totalValue: 0, totalQty: 0 },
+      premium: { count: 0, totalValue: 0, totalQty: 0 },
+    }
+    for (const item of binderItems) {
+      const tier = getPriceTier(item.price)
+      stats[tier].count += 1
+      stats[tier].totalValue += item.price * (item.quantity ?? 1)
+      stats[tier].totalQty += item.quantity ?? 1
+    }
+    // Ensure values are numbers
+    for (const tier of ["budget", "mid", "premium"]) {
+      stats[tier].totalValue = Number(stats[tier].totalValue)
+      stats[tier].totalQty = Number(stats[tier].totalQty)
+    }
+    return stats
+  }, [binderItems])
 
   // Load binder when tier changes
   useEffect(() => {
