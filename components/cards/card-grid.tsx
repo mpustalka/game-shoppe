@@ -2,10 +2,10 @@
 
 
 import { useState, useMemo } from "react"
-import type { PokemonCard, CardCondition, PriceTier } from "@/lib/types"
-import { CARD_CONDITIONS, PRICE_TIERS } from "@/lib/types"
+import type { PokemonCard, CardCondition, PriceTier, CardPrintFinish } from "@/lib/types"
+import { CARD_CONDITIONS, PRICE_TIERS, CARD_PRINT_FINISHES, compareCardRarity } from "@/lib/types"
 import { useInventory } from "@/lib/inventory-context"
-import { getMarketPrice } from "@/lib/pokemon-tcg"
+import { getMarketPriceForFinish } from "@/lib/pokemon-tcg"
 import * as binderApi from "@/lib/binders"
 import { CardItem } from "./card-item"
 import { CardDetailModal } from "./card-detail-modal"
@@ -30,6 +30,7 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkBinderTier, setBulkBinderTier] = useState<PriceTier>("budget")
   const [bulkCondition, setBulkCondition] = useState<CardCondition>("Near Mint")
+  const [bulkPrintFinish, setBulkPrintFinish] = useState<CardPrintFinish>("Normal")
   const [isBulkAdding, setIsBulkAdding] = useState(false)
 
   // Get all rarities in this set
@@ -46,7 +47,7 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
         card.number?.toLowerCase().includes(search.toLowerCase())
       const matchesRarity = rarity === "all" || card.rarity === rarity
       return matchesSearch && matchesRarity
-    })
+    }).sort((a, b) => compareCardRarity({ card: a }, { card: b }))
   }, [cards, search, rarity])
 
   // Handle select
@@ -73,8 +74,9 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
       for (const card of selectedCards) {
         const item = await addItem(card, {
           condition: bulkCondition,
-          price: getMarketPrice(card) ?? 0.01,
+          price: getMarketPriceForFinish(card, bulkPrintFinish) ?? 0.01,
           quantity: 1,
+          printFinish: bulkPrintFinish,
         })
         if (item) {
           await binderApi.addToBinder(bulkBinderTier, item)
@@ -157,6 +159,18 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
               {CARD_CONDITIONS.map((condition) => (
                 <SelectItem key={condition} value={condition}>
                   {condition}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={bulkPrintFinish} onValueChange={(v) => setBulkPrintFinish(v as CardPrintFinish)} disabled={isBulkAdding}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CARD_PRINT_FINISHES.map((finish) => (
+                <SelectItem key={finish} value={finish}>
+                  {finish}
                 </SelectItem>
               ))}
             </SelectContent>
