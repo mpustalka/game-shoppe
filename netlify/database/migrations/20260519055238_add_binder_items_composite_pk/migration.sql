@@ -1,1 +1,0 @@
-ALTER TABLE "binder_items" ADD PRIMARY KEY ("tier","item_id");

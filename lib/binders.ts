@@ -1,20 +1,40 @@
+import { supabase } from "./supabase"
 import type { InventoryItem, PriceTier } from "./types"
-import { binderApi } from "./inventory-api"
+
+const BINDER_BUCKETS: Record<PriceTier, string> = {
+  budget: "lowendbinder",
+  mid: "midtierbinder",
+  premium: "highendbinder",
+}
+
+const BINDER_FILE = "binder.json"
 
 export async function loadBinder(tier: PriceTier): Promise<InventoryItem[]> {
-  return binderApi.list(tier)
+  const bucket = BINDER_BUCKETS[tier]
+  const { data, error } = await supabase.storage.from(bucket).download(BINDER_FILE)
+  if (error) {
+    if (error.statusCode === "404") return [] // No binder yet
+    throw error
+  }
+  const text = await data.text()
+  return JSON.parse(text)
 }
 
 export async function saveBinder(tier: PriceTier, items: InventoryItem[]): Promise<void> {
-  const existing = await loadBinder(tier)
-  await Promise.all(existing.map((item) => removeFromBinder(tier, item.id)))
-  await Promise.all(items.map((item) => addToBinder(tier, item)))
+  const bucket = BINDER_BUCKETS[tier]
+  const file = new File([JSON.stringify(items)], BINDER_FILE, { type: "application/json" })
+  const { error } = await supabase.storage.from(bucket).upload(BINDER_FILE, file, { upsert: true, contentType: "application/json" })
+  if (error) throw error
 }
 
 export async function addToBinder(tier: PriceTier, item: InventoryItem): Promise<void> {
-  await binderApi.add(tier, item.id)
+  const items = await loadBinder(tier)
+  items.push(item)
+  await saveBinder(tier, items)
 }
 
 export async function removeFromBinder(tier: PriceTier, itemId: string): Promise<void> {
-  await binderApi.remove(tier, itemId)
+  const items = await loadBinder(tier)
+  const filtered = items.filter(i => i.id !== itemId)
+  await saveBinder(tier, filtered)
 }

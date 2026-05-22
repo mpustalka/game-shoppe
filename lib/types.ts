@@ -96,55 +96,6 @@ export interface PriceData {
   directLow?: number | null
 }
 
-export type CardPrintFinish = "Normal" | "Holofoil" | "Reverse Holofoil" | "1st Edition Normal" | "1st Edition Holofoil"
-
-export const CARD_PRINT_FINISHES: CardPrintFinish[] = [
-  "Normal",
-  "Holofoil",
-  "Reverse Holofoil",
-  "1st Edition Normal",
-  "1st Edition Holofoil",
-]
-
-export const RARITY_SORT_ORDER = [
-  "Common",
-  "Uncommon",
-  "Rare",
-  "Rare Holo",
-  "Rare Holo EX",
-  "Rare Holo GX",
-  "Rare Holo V",
-  "Rare Holo VMAX",
-  "Rare Holo VSTAR",
-  "Double Rare",
-  "Ultra Rare",
-  "Rare Ultra",
-  "Illustration Rare",
-  "Special Illustration Rare",
-  "Special Art Rare",
-  "Secret Rare",
-  "Rare Secret",
-  "Hyper Rare",
-  "Promo",
-]
-
-export function getDisplayRarity(rarity?: string, printFinish?: CardPrintFinish): string {
-  if (!rarity) return printFinish || "Unknown"
-  if (printFinish === "Reverse Holofoil") return `Reverse Holo ${rarity}`
-  return rarity
-}
-
-export function compareCardRarity(a: { card: { rarity?: string; name: string }; printFinish?: CardPrintFinish }, b: { card: { rarity?: string; name: string }; printFinish?: CardPrintFinish }) {
-  const aIndex = RARITY_SORT_ORDER.indexOf(a.card.rarity || "")
-  const bIndex = RARITY_SORT_ORDER.indexOf(b.card.rarity || "")
-  const normalizedA = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex
-  const normalizedB = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex
-  if (normalizedA !== normalizedB) return normalizedA - normalizedB
-  const finishCompare = (a.printFinish || "").localeCompare(b.printFinish || "")
-  if (finishCompare !== 0) return finishCompare
-  return a.card.name.localeCompare(b.card.name)
-}
-
 // Card Conditions
 export type CardCondition = 
   | "Near Mint"
@@ -195,7 +146,6 @@ export interface InventoryItem {
   price: number
   quantity: number
   quantitySold: number
-  printFinish?: CardPrintFinish
   notes?: string
   customImage?: string // For manual entries with uploaded images
   isManualEntry?: boolean // Flag for manually added cards
@@ -212,7 +162,6 @@ export interface InventoryFormData {
   price: number
   quantity: number
   quantitySold?: number
-  printFinish?: CardPrintFinish
   notes?: string
   customImage?: string
 }
@@ -228,7 +177,6 @@ export interface ManualCardData {
   price: number
   quantity: number
   quantitySold?: number
-  printFinish?: CardPrintFinish
   notes?: string
   customImage?: string
 }
@@ -270,7 +218,6 @@ export interface QRCodeData {
   setName: string
   condition: string
   price: number
-  printFinish?: string
 }
 
 // Square Integration Types

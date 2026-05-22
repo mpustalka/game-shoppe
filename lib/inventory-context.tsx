@@ -4,7 +4,6 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import type { InventoryItem, InventoryFormData, PokemonCard, CardCondition, ManualCardData, PriceTier } from "./types"
 import { getPriceTier } from "./types"
 import { generateSKU, generateBarcodeString, generateManualSKU } from "./barcode"
-import { inventoryApi } from "./inventory-api"
 
 interface InventoryContextType {
   items: InventoryItem[]
@@ -25,22 +24,28 @@ interface InventoryContextType {
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined)
 
+
+import { supabase } from "./supabase"
+const SUPABASE_TABLE = "inventory"
+
 export function InventoryProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
 
 
-  // Load from the server-side database on mount.
+  // Load from Supabase on mount
   useEffect(() => {
     async function fetchInventory() {
-      try {
-        const data = await inventoryApi.list()
+      const { data, error } = await supabase
+        .from(SUPABASE_TABLE)
+        .select("*")
+        .order("createdAt", { ascending: false })
+      if (error) {
+        console.error("Failed to fetch inventory from Supabase:", error)
+      } else if (data) {
         setItems(data)
-      } catch (error) {
-        console.error("Failed to fetch inventory:", error)
-      } finally {
-        setIsLoaded(true)
       }
+      setIsLoaded(true)
     }
     fetchInventory()
   }, [])
@@ -61,7 +66,6 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       price: data.price,
       quantity: data.quantity,
       quantitySold: data.quantitySold || 0,
-      printFinish: data.printFinish,
       notes: data.notes,
       customImage: data.customImage,
       isManualEntry: false,
@@ -70,14 +74,13 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString(),
     }
 
-    try {
-      const created = await inventoryApi.create(newItem)
-      setItems((prev) => [created, ...prev])
-      return created
-    } catch (error) {
-      console.error("Failed to add item:", error)
+    const { error } = await supabase.from(SUPABASE_TABLE).insert([newItem])
+    if (error) {
+      console.error("Failed to add item to Supabase:", error)
       return null
     }
+    setItems((prev) => [newItem, ...prev])
+    return newItem
   }, [])
 
   const addManualItem = useCallback(async (data: ManualCardData): Promise<InventoryItem | null> => {
@@ -121,7 +124,6 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       price: data.price,
       quantity: data.quantity,
       quantitySold: data.quantitySold || 0,
-      printFinish: data.printFinish,
       notes: data.notes,
       customImage: data.customImage,
       isManualEntry: true,
@@ -131,14 +133,13 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     }
 
 
-    try {
-      const created = await inventoryApi.create(newItem)
-      setItems((prev) => [created, ...prev])
-      return created
-    } catch (error) {
-      console.error("Failed to add manual item:", error)
+    const { error } = await supabase.from(SUPABASE_TABLE).insert([newItem])
+    if (error) {
+      console.error("Failed to add manual item to Supabase:", error)
       return null
     }
+    setItems((prev) => [newItem, ...prev])
+    return newItem
   }, [])
 
   const updateItem = useCallback(async (id: string, data: Partial<InventoryFormData>) => {
@@ -153,19 +154,20 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           : item
       )
     )
-    try {
-      await inventoryApi.update(id, data as Partial<InventoryItem>)
-    } catch (error) {
-      console.error("Failed to update item:", error)
+    const { error } = await supabase
+      .from(SUPABASE_TABLE)
+      .update({ ...data, updatedAt: new Date().toISOString() })
+      .eq("id", id)
+    if (error) {
+      console.error("Failed to update item in Supabase:", error)
     }
   }, [])
 
   const deleteItem = useCallback(async (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id))
-    try {
-      await inventoryApi.delete(id)
-    } catch (error) {
-      console.error("Failed to delete item:", error)
+    const { error } = await supabase.from(SUPABASE_TABLE).delete().eq("id", id)
+    if (error) {
+      console.error("Failed to delete item from Supabase:", error)
     }
   }, [])
 
@@ -184,14 +186,16 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     )
     const item = items.find((item) => item.id === id)
     if (item) {
-      try {
-        await inventoryApi.update(id, {
+      const { error } = await supabase
+        .from(SUPABASE_TABLE)
+        .update({
           quantity: Math.max(0, item.quantity - qty),
           quantitySold: (item.quantitySold || 0) + qty,
           updatedAt: new Date().toISOString(),
         })
-      } catch (error) {
-        console.error("Failed to record sale:", error)
+        .eq("id", id)
+      if (error) {
+        console.error("Failed to record sale in Supabase:", error)
       }
     }
   }, [items])
