@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import Link from "next/link"
 import { useInventory } from "@/lib/inventory-context"
 import type { CardCondition } from "@/lib/types"
-import { CARD_CONDITIONS } from "@/lib/types"
+import { CARD_CONDITIONS, compareCardRarity, getDisplayRarity } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -28,7 +28,7 @@ import { EditInventoryModal } from "@/components/inventory/edit-inventory-modal"
 import { DeleteConfirmDialog } from "@/components/inventory/delete-confirm-dialog"
 
 type ViewMode = "grid" | "list"
-type SortOption = "newest" | "oldest" | "price-high" | "price-low" | "name"
+type SortOption = "newest" | "oldest" | "price-high" | "price-low" | "name" | "rarity"
 
 export default function InventoryPage() {
   const { items, deleteItem } = useInventory()
@@ -77,6 +77,9 @@ export default function InventoryPage() {
       case "name":
         result.sort((a, b) => a.card.name.localeCompare(b.card.name))
         break
+      case "rarity":
+        result.sort(compareCardRarity)
+        break
     }
 
     return result
@@ -85,10 +88,18 @@ export default function InventoryPage() {
   const totalValue = filteredItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const totalQuantity = filteredItems.reduce((sum, item) => sum + item.quantity, 0)
 
-  const handleDelete = () => {
+  const [isDeleting, setIsDeleting] = useState(false)
+  const handleDelete = async () => {
     if (deleteItemId) {
-      deleteItem(deleteItemId)
-      setDeleteItemId(null)
+      setIsDeleting(true)
+      try {
+        await deleteItem(deleteItemId)
+        setDeleteItemId(null)
+      } catch (e) {
+        // Optionally show error toast
+      } finally {
+        setIsDeleting(false)
+      }
     }
   }
 
@@ -158,6 +169,7 @@ export default function InventoryPage() {
             <SelectItem value="price-high">Price: High to Low</SelectItem>
             <SelectItem value="price-low">Price: Low to High</SelectItem>
             <SelectItem value="name">Name A-Z</SelectItem>
+            <SelectItem value="rarity">Rarity</SelectItem>
           </SelectContent>
         </Select>
 
@@ -246,6 +258,9 @@ export default function InventoryPage() {
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <Badge variant="secondary" className="text-xs">
+                    {getDisplayRarity(item.card.rarity, item.printFinish)}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
                     {item.condition}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
@@ -288,6 +303,7 @@ export default function InventoryPage() {
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <Badge variant="secondary" className="text-xs">{item.condition}</Badge>
+                  <Badge variant="outline" className="text-xs">{getDisplayRarity(item.card.rarity, item.printFinish)}</Badge>
                   <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
                   <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
                   {!item.syncedToSquare && (

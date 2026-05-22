@@ -45,7 +45,8 @@ export default function InventoryDetailPage({ params }: InventoryDetailPageProps
         item.sku,
         item.card,
         item.condition,
-        item.price
+        item.price,
+        item.printFinish
       )
       generateQRCodeDataURL(qrData, { width: 200 }).then(setQrCodeUrl)
     }

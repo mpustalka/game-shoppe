@@ -50,7 +50,8 @@ export function createQRCodeData(
   sku: string,
   card: PokemonCard,
   condition: CardCondition,
-  price: number
+  price: number,
+  printFinish?: string
 ): QRCodeData {
   return {
     id,
@@ -59,6 +60,7 @@ export function createQRCodeData(
     setName: card.set.name,
     condition,
     price,
+    printFinish,
   }
 }
 

@@ -10,6 +10,9 @@ interface CardItemProps {
   card: PokemonCard
   onClick?: () => void
   showPrice?: boolean
+  selectable?: boolean
+  checked?: boolean
+  onSelect?: () => void
 }
 
 const rarityColors: Record<string, string> = {
@@ -28,18 +31,39 @@ const rarityColors: Record<string, string> = {
   "Hyper Rare": "bg-amber-200 text-amber-900 dark:bg-amber-800/50 dark:text-amber-200",
 }
 
-export function CardItem({ card, onClick, showPrice = true }: CardItemProps) {
+export function CardItem({
+  card,
+  onClick,
+  showPrice,
+  selectable,
+  checked,
+  onSelect,
+}: CardItemProps) {
   const marketPrice = showPrice ? getMarketPrice(card) : null
 
   return (
-    <Card 
+    <Card
       className={cn(
-        "group overflow-hidden transition-all",
+        "group overflow-hidden transition-all relative",
         onClick && "cursor-pointer hover:border-primary/50 hover:shadow-lg hover:-translate-y-1"
       )}
       onClick={onClick}
     >
       <CardContent className="p-2">
+        {/* Checkbox for multi-select */}
+        {typeof selectable !== "undefined" && (
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={e => {
+              e.stopPropagation();
+              if (onSelect) onSelect();
+            }}
+            className="absolute top-2 left-2 z-10 h-4 w-4 accent-primary"
+            onClick={e => e.stopPropagation()}
+          />
+        )}
+
         {/* Card Image */}
         <div className="relative aspect-[2.5/3.5] w-full overflow-hidden rounded-lg bg-muted">
           <img
@@ -48,11 +72,10 @@ export function CardItem({ card, onClick, showPrice = true }: CardItemProps) {
             className="h-full w-full object-cover transition-transform group-hover:scale-105"
             loading="lazy"
           />
-          
           {/* Rarity Badge */}
           {card.rarity && (
             <div className="absolute bottom-1 left-1 right-1">
-              <Badge 
+              <Badge
                 className={cn(
                   "w-full justify-center truncate text-[10px]",
                   rarityColors[card.rarity] || "bg-secondary text-secondary-foreground"
@@ -72,7 +95,6 @@ export function CardItem({ card, onClick, showPrice = true }: CardItemProps) {
           <p className="text-xs text-muted-foreground">
             #{card.number}
           </p>
-          
           {/* Price */}
           {showPrice && marketPrice !== null && (
             <p className="text-sm font-semibold text-primary">

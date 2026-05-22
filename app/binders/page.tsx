@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useInventory } from "@/lib/inventory-context"
-import { PRICE_TIERS, getPriceTier, type PriceTier, CARD_CONDITIONS, type CardCondition } from "@/lib/types"
+import { PRICE_TIERS, getPriceTier, compareCardRarity, getDisplayRarity, type PriceTier, CARD_CONDITIONS, type CardCondition, type InventoryItem } from "@/lib/types"
+import * as binderApi from "@/lib/binders"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,43 +27,92 @@ import {
 } from "lucide-react"
 
 type ViewMode = "grid" | "list"
-type SortOption = "price-low" | "price-high" | "name" | "set"
+type SortOption = "price-low" | "price-high" | "name" | "set" | "rarity"
 
 export default function BindersPage() {
-  const { items } = useInventory()
+
+  const { items: inventoryItems } = useInventory()
   const [activeTier, setActiveTier] = useState<PriceTier>("budget")
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
   const [sortBy, setSortBy] = useState<SortOption>("price-low")
   const [filterCondition, setFilterCondition] = useState<CardCondition | "all">("all")
+  const [binderItems, setBinderItems] = useState<InventoryItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [addCardId, setAddCardId] = useState<string>("")
+  const [adding, setAdding] = useState(false)
+  const [removingId, setRemovingId] = useState<string | null>(null)
 
-  // Group items by price tier
+  // Compute tierStats from binderItems
   const tierStats = useMemo(() => {
+    // Initialize stats for each tier
     const stats = {
       budget: { count: 0, totalValue: 0, totalQty: 0 },
       mid: { count: 0, totalValue: 0, totalQty: 0 },
       premium: { count: 0, totalValue: 0, totalQty: 0 },
     }
-
-    items.forEach(item => {
-      if (item.quantity === 0) return
+    for (const item of binderItems) {
       const tier = getPriceTier(item.price)
-      stats[tier].count++
-      stats[tier].totalValue += item.price * item.quantity
-      stats[tier].totalQty += item.quantity
-    })
-
+      stats[tier].count += 1
+      stats[tier].totalValue += item.price * (item.quantity ?? 1)
+      stats[tier].totalQty += item.quantity ?? 1
+    }
+    // Ensure values are numbers
+    for (const tier of ["budget", "mid", "premium"] as PriceTier[]) {
+      stats[tier].totalValue = Number(stats[tier].totalValue)
+      stats[tier].totalQty = Number(stats[tier].totalQty)
+    }
     return stats
-  }, [items])
+  }, [binderItems])
 
-  // Filter items for active tier
+  // Load binder when tier changes
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    binderApi.loadBinder(activeTier)
+      .then(setBinderItems)
+      .catch(e => setError("Failed to load binder"))
+      .finally(() => setLoading(false))
+  }, [activeTier])
+
+  // Add card to binder
+  async function handleAddCard() {
+    if (!addCardId) return
+    setAdding(true)
+    const card = inventoryItems.find(i => i.id === addCardId)
+    if (!card) {
+      setError("Card not found in inventory")
+      setAdding(false)
+      return
+    }
+    try {
+      await binderApi.addToBinder(activeTier, card)
+      setBinderItems(await binderApi.loadBinder(activeTier))
+      setAddCardId("")
+    } catch (e) {
+      setError("Failed to add card")
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  // Remove card from binder
+  async function handleRemoveCard(id: string) {
+    setRemovingId(id)
+    try {
+      await binderApi.removeFromBinder(activeTier, id)
+      setBinderItems(await binderApi.loadBinder(activeTier))
+    } catch (e) {
+      setError("Failed to remove card")
+    } finally {
+      setRemovingId(null)
+    }
+  }
+
+  // Filtering and sorting
   const filteredItems = useMemo(() => {
-    let result = items.filter(item => {
-      if (item.quantity === 0) return false
-      return getPriceTier(item.price) === activeTier
-    })
-
-    // Search filter
+    let result = [...binderItems]
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       result = result.filter(item =>
@@ -71,13 +121,9 @@ export default function BindersPage() {
         item.sku.toLowerCase().includes(query)
       )
     }
-
-    // Condition filter
     if (filterCondition !== "all") {
       result = result.filter(item => item.condition === filterCondition)
     }
-
-    // Sort
     switch (sortBy) {
       case "price-low":
         result.sort((a, b) => a.price - b.price)
@@ -91,10 +137,12 @@ export default function BindersPage() {
       case "set":
         result.sort((a, b) => a.card.set.name.localeCompare(b.card.set.name))
         break
+      case "rarity":
+        result.sort(compareCardRarity)
+        break
     }
-
     return result
-  }, [items, activeTier, searchQuery, sortBy, filterCondition])
+  }, [binderItems, searchQuery, sortBy, filterCondition])
 
   const activeTierInfo = PRICE_TIERS.find(t => t.id === activeTier)!
 
@@ -217,6 +265,7 @@ export default function BindersPage() {
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
                 <SelectItem value="name">Name A-Z</SelectItem>
                 <SelectItem value="set">Set A-Z</SelectItem>
+                <SelectItem value="rarity">Rarity</SelectItem>
               </SelectContent>
             </Select>
 
@@ -234,24 +283,29 @@ export default function BindersPage() {
           </div>
 
           {/* Content */}
-          {filteredItems.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              Loading binder...
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-16 text-red-500">
+              {error}
+            </div>
+          ) : filteredItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
               <Package className="mb-4 h-12 w-12 text-muted-foreground/50" />
               <h3 className="mb-2 text-lg font-medium text-foreground">No cards in this binder</h3>
               <p className="mb-4 text-center text-sm text-muted-foreground">
                 {searchQuery || filterCondition !== "all"
                   ? "No cards match your filters"
-                  : `Add cards priced ${activeTierInfo.label} to see them here`
+                  : `Add cards to this binder below.`
                 }
               </p>
-              <Button asChild>
-                <Link href="/add">Add Cards</Link>
-              </Button>
             </div>
           ) : viewMode === "grid" ? (
             <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {filteredItems.map((item) => (
-                <Card key={item.id} className="group overflow-hidden">
+                <Card key={item.id} className="group overflow-hidden relative">
                   <Link href={`/inventory/${item.id}`}>
                     <div className="relative aspect-[2.5/3.5] w-full overflow-hidden bg-muted">
                       <img
@@ -260,7 +314,6 @@ export default function BindersPage() {
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
                         loading="lazy"
                       />
-                      {/* Price Badge */}
                       <Badge 
                         className={`absolute bottom-2 right-2 ${activeTierInfo.color} text-white border-0`}
                       >
@@ -279,6 +332,9 @@ export default function BindersPage() {
                     </p>
                     <div className="mt-2 flex items-center justify-between">
                       <Badge variant="secondary" className="text-xs">
+                        {getDisplayRarity(item.card.rarity, item.printFinish)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
                         {item.condition}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
@@ -286,6 +342,15 @@ export default function BindersPage() {
                       </span>
                     </div>
                   </CardContent>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    disabled={removingId === item.id}
+                    onClick={() => handleRemoveCard(item.id)}
+                  >
+                    {removingId === item.id ? "Removing..." : "Remove"}
+                  </Button>
                 </Card>
               ))}
             </div>
@@ -294,7 +359,7 @@ export default function BindersPage() {
               {filteredItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-4 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/50"
+                  className="flex items-center gap-4 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/50 relative"
                 >
                   <Link href={`/inventory/${item.id}`} className="shrink-0">
                     <img
@@ -315,6 +380,7 @@ export default function BindersPage() {
                     </p>
                     <div className="mt-1 flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs">{item.condition}</Badge>
+                      <Badge variant="outline" className="text-xs">{getDisplayRarity(item.card.rarity, item.printFinish)}</Badge>
                       <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
                       <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
                     </div>
@@ -328,27 +394,44 @@ export default function BindersPage() {
                       ${item.price.toFixed(2)}
                     </p>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="shrink-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/inventory/${item.id}`}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    disabled={removingId === item.id}
+                    onClick={() => handleRemoveCard(item.id)}
+                  >
+                    {removingId === item.id ? "Removing..." : "Remove"}
+                  </Button>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Add Card to Binder */}
+      <div className="mt-8 mb-8">
+        <h2 className="text-lg font-semibold mb-2">Add Card to Binder</h2>
+        <div className="flex gap-2 items-center">
+          <select
+            value={addCardId}
+            onChange={e => setAddCardId(e.target.value)}
+            className="border rounded px-2 py-1 min-w-[200px]"
+            disabled={adding}
+          >
+            <option value="">Select card from inventory...</option>
+            {inventoryItems.map(card => (
+              <option key={card.id} value={card.id}>
+                {card.card.name} ({card.card.set.name}) - ${card.price}
+              </option>
+            ))}
+          </select>
+          <Button onClick={handleAddCard} disabled={adding || !addCardId}>
+            {adding ? "Adding..." : "Add to Binder"}
+          </Button>
+        </div>
+      </div>
 
       {/* Quick Stats */}
       <div className="mt-8 grid gap-4 md:grid-cols-4">
