@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useInventory } from "@/lib/inventory-context"
-import { PRICE_TIERS, getPriceTier, compareCardRarity, getDisplayRarity, type PriceTier, CARD_CONDITIONS, type CardCondition, type InventoryItem } from "@/lib/types"
+import { PRICE_TIERS, getPriceTier, type PriceTier, CARD_CONDITIONS, type CardCondition, type InventoryItem } from "@/lib/types"
 import * as binderApi from "@/lib/binders"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,7 +27,7 @@ import {
 } from "lucide-react"
 
 type ViewMode = "grid" | "list"
-type SortOption = "price-low" | "price-high" | "name" | "set" | "rarity"
+type SortOption = "price-low" | "price-high" | "name" | "set"
 
 export default function BindersPage() {
 
@@ -136,9 +136,6 @@ export default function BindersPage() {
         break
       case "set":
         result.sort((a, b) => a.card.set.name.localeCompare(b.card.set.name))
-        break
-      case "rarity":
-        result.sort(compareCardRarity)
         break
     }
     return result
@@ -265,7 +262,6 @@ export default function BindersPage() {
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
                 <SelectItem value="name">Name A-Z</SelectItem>
                 <SelectItem value="set">Set A-Z</SelectItem>
-                <SelectItem value="rarity">Rarity</SelectItem>
               </SelectContent>
             </Select>
 
@@ -332,9 +328,6 @@ export default function BindersPage() {
                     </p>
                     <div className="mt-2 flex items-center justify-between">
                       <Badge variant="secondary" className="text-xs">
-                        {getDisplayRarity(item.card.rarity, item.printFinish)}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
                         {item.condition}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
@@ -380,7 +373,6 @@ export default function BindersPage() {
                     </p>
                     <div className="mt-1 flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs">{item.condition}</Badge>
-                      <Badge variant="outline" className="text-xs">{getDisplayRarity(item.card.rarity, item.printFinish)}</Badge>
                       <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
                       <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
                     </div>
