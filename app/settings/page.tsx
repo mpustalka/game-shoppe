@@ -209,15 +209,14 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             <Alert>
-              <AlertTitle>Using Local Storage</AlertTitle>
+              <AlertTitle>Using Netlify Database</AlertTitle>
               <AlertDescription>
                 <p className="mb-2">
-                  Your inventory data is currently stored in your browser&apos;s local storage. 
-                  This means data persists across sessions but is not synced between devices.
+                  Your inventory and binder data is stored in the site&apos;s Netlify Database. 
+                  This keeps saved cards available across sessions and devices.
                 </p>
                 <p className="text-sm">
-                  To enable cloud storage and multi-device sync, connect a Supabase database 
-                  through the project settings.
+                  Search analytics, inventory records, and binder assignments share the same managed database.
                 </p>
               </AlertDescription>
             </Alert>

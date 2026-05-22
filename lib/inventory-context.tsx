@@ -25,27 +25,26 @@ interface InventoryContextType {
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined)
 
 
-import { supabase } from "./supabase"
-const SUPABASE_TABLE = "inventory"
-
 export function InventoryProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
 
 
-  // Load from Supabase on mount
+  // Load from Netlify Database on mount.
   useEffect(() => {
     async function fetchInventory() {
-      const { data, error } = await supabase
-        .from(SUPABASE_TABLE)
-        .select("*")
-        .order("createdAt", { ascending: false })
-      if (error) {
-        console.error("Failed to fetch inventory from Supabase:", error)
-      } else if (data) {
+      try {
+        const response = await fetch("/api/inventory")
+        if (!response.ok) {
+          throw new Error("Failed to fetch inventory")
+        }
+        const data = await response.json()
         setItems(data)
+      } catch (error) {
+        console.error("Failed to fetch inventory:", error)
+      } finally {
+        setIsLoaded(true)
       }
-      setIsLoaded(true)
     }
     fetchInventory()
   }, [])
@@ -74,9 +73,13 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       updatedAt: new Date().toISOString(),
     }
 
-    const { error } = await supabase.from(SUPABASE_TABLE).insert([newItem])
-    if (error) {
-      console.error("Failed to add item to Supabase:", error)
+    const response = await fetch("/api/inventory", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newItem),
+    })
+    if (!response.ok) {
+      console.error("Failed to add item to inventory")
       return null
     }
     setItems((prev) => [newItem, ...prev])
@@ -133,9 +136,13 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     }
 
 
-    const { error } = await supabase.from(SUPABASE_TABLE).insert([newItem])
-    if (error) {
-      console.error("Failed to add manual item to Supabase:", error)
+    const response = await fetch("/api/inventory", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newItem),
+    })
+    if (!response.ok) {
+      console.error("Failed to add manual item to inventory")
       return null
     }
     setItems((prev) => [newItem, ...prev])
@@ -154,20 +161,23 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           : item
       )
     )
-    const { error } = await supabase
-      .from(SUPABASE_TABLE)
-      .update({ ...data, updatedAt: new Date().toISOString() })
-      .eq("id", id)
-    if (error) {
-      console.error("Failed to update item in Supabase:", error)
+    const response = await fetch(`/api/inventory/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) {
+      console.error("Failed to update item in inventory")
     }
   }, [])
 
   const deleteItem = useCallback(async (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id))
-    const { error } = await supabase.from(SUPABASE_TABLE).delete().eq("id", id)
-    if (error) {
-      console.error("Failed to delete item from Supabase:", error)
+    const response = await fetch(`/api/inventory/${id}`, {
+      method: "DELETE",
+    })
+    if (!response.ok) {
+      console.error("Failed to delete item from inventory")
     }
   }, [])
 
@@ -186,16 +196,16 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     )
     const item = items.find((item) => item.id === id)
     if (item) {
-      const { error } = await supabase
-        .from(SUPABASE_TABLE)
-        .update({
+      const response = await fetch(`/api/inventory/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           quantity: Math.max(0, item.quantity - qty),
           quantitySold: (item.quantitySold || 0) + qty,
-          updatedAt: new Date().toISOString(),
-        })
-        .eq("id", id)
-      if (error) {
-        console.error("Failed to record sale in Supabase:", error)
+        }),
+      })
+      if (!response.ok) {
+        console.error("Failed to record sale in inventory")
       }
     }
   }, [items])

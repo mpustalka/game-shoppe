@@ -6,6 +6,7 @@ import type { PokemonCard, CardCondition, PriceTier } from "@/lib/types"
 import { CARD_CONDITIONS, PRICE_TIERS } from "@/lib/types"
 import { useInventory } from "@/lib/inventory-context"
 import { getMarketPrice } from "@/lib/pokemon-tcg"
+import { compareRarity, getAvailableRarities, getCardRarityLabel } from "@/lib/card-metadata"
 import * as binderApi from "@/lib/binders"
 import { CardItem } from "./card-item"
 import { CardDetailModal } from "./card-detail-modal"
@@ -27,6 +28,7 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [rarity, setRarity] = useState<string>("all")
+  const [sortBy, setSortBy] = useState<"number" | "name" | "rarity-asc" | "rarity-desc" | "price-high">("number")
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkBinderTier, setBulkBinderTier] = useState<PriceTier>("budget")
   const [bulkCondition, setBulkCondition] = useState<CardCondition>("Near Mint")
@@ -34,20 +36,34 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
 
   // Get all rarities in this set
   const allRarities = useMemo(() => {
-    const rarities = new Set(cards.map(c => c.rarity).filter(Boolean) as string[])
-    return Array.from(rarities).sort()
+    return getAvailableRarities(cards)
   }, [cards])
 
   // Filtered cards
   const filtered = useMemo(() => {
-    return cards.filter(card => {
+    const result = cards.filter(card => {
       const matchesSearch =
         card.name.toLowerCase().includes(search.toLowerCase()) ||
         card.number?.toLowerCase().includes(search.toLowerCase())
-      const matchesRarity = rarity === "all" || card.rarity === rarity
+      const matchesRarity = rarity === "all" || getCardRarityLabel(card) === rarity
       return matchesSearch && matchesRarity
     })
-  }, [cards, search, rarity])
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name)
+        case "rarity-asc":
+          return compareRarity(getCardRarityLabel(a), getCardRarityLabel(b)) || a.name.localeCompare(b.name)
+        case "rarity-desc":
+          return compareRarity(getCardRarityLabel(b), getCardRarityLabel(a)) || a.name.localeCompare(b.name)
+        case "price-high":
+          return (getMarketPrice(b) ?? 0) - (getMarketPrice(a) ?? 0)
+        default:
+          return a.number.localeCompare(b.number, undefined, { numeric: true })
+      }
+    })
+    return result
+  }, [cards, search, rarity, sortBy])
 
   // Handle select
   const toggleSelect = (id: string) => {
@@ -111,6 +127,18 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
             {allRarities.map(r => (
               <SelectItem key={r} value={r}>{r}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
+          <SelectTrigger className="w-[190px]">
+            <SelectValue placeholder="Sort" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="number">Set Number</SelectItem>
+            <SelectItem value="rarity-asc">Rarity: Common to Secret</SelectItem>
+            <SelectItem value="rarity-desc">Rarity: Secret to Common</SelectItem>
+            <SelectItem value="price-high">TCG Market: High to Low</SelectItem>
+            <SelectItem value="name">Name A-Z</SelectItem>
           </SelectContent>
         </Select>
         <span className="ml-auto text-sm text-muted-foreground">{filtered.length} cards</span>

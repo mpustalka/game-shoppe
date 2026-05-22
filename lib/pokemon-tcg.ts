@@ -1,4 +1,5 @@
 import type { PokemonSet, PokemonCard } from "./types"
+import { getPrimaryMarketPrice } from "./card-metadata"
 
 const BASE_URL = "https://api.pokemontcg.io/v2"
 
@@ -63,6 +64,27 @@ export async function getCardsBySet(
   }
 }
 
+export async function getAllCardsBySet(setId: string): Promise<PokemonCard[]> {
+  const pageSize = 250
+  const firstPage = await getCardsBySet(setId, 1, pageSize)
+  const totalPages = Math.ceil(firstPage.totalCount / pageSize)
+
+  if (totalPages <= 1) {
+    return firstPage.cards
+  }
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getCardsBySet(setId, index + 2, pageSize)
+    )
+  )
+
+  return [
+    ...firstPage.cards,
+    ...remainingPages.flatMap((pageData) => pageData.cards),
+  ]
+}
+
 export async function getCardById(cardId: string): Promise<PokemonCard | null> {
   const response = await fetch(`${BASE_URL}/cards/${cardId}`, {
     headers,
@@ -107,27 +129,5 @@ export async function searchCards(
 
 // Get market price for a card
 export function getMarketPrice(card: PokemonCard): number | null {
-  // Try TCGPlayer prices first
-  if (card.tcgplayer?.prices) {
-    const prices = card.tcgplayer.prices
-    // Check different price variants in order of preference
-    const priceVariants = [
-      prices.holofoil?.market,
-      prices.reverseHolofoil?.market,
-      prices.normal?.market,
-      prices["1stEditionHolofoil"]?.market,
-      prices["1stEditionNormal"]?.market,
-    ]
-    
-    for (const price of priceVariants) {
-      if (price != null) return price
-    }
-  }
-
-  // Try Cardmarket prices as fallback
-  if (card.cardmarket?.prices?.trendPrice) {
-    return card.cardmarket.prices.trendPrice
-  }
-
-  return null
+  return getPrimaryMarketPrice(card)
 }

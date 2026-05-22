@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useInventory } from "@/lib/inventory-context"
 import { PRICE_TIERS, getPriceTier, type PriceTier, CARD_CONDITIONS, type CardCondition, type InventoryItem } from "@/lib/types"
+import { compareRarity, getAvailableRarities, getCardRarityLabel, rarityColors } from "@/lib/card-metadata"
 import * as binderApi from "@/lib/binders"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,7 +28,7 @@ import {
 } from "lucide-react"
 
 type ViewMode = "grid" | "list"
-type SortOption = "price-low" | "price-high" | "name" | "set"
+type SortOption = "price-low" | "price-high" | "name" | "set" | "rarity-asc" | "rarity-desc"
 
 export default function BindersPage() {
 
@@ -37,6 +38,7 @@ export default function BindersPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
   const [sortBy, setSortBy] = useState<SortOption>("price-low")
   const [filterCondition, setFilterCondition] = useState<CardCondition | "all">("all")
+  const [filterRarity, setFilterRarity] = useState("all")
   const [binderItems, setBinderItems] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -124,6 +126,9 @@ export default function BindersPage() {
     if (filterCondition !== "all") {
       result = result.filter(item => item.condition === filterCondition)
     }
+    if (filterRarity !== "all") {
+      result = result.filter(item => getCardRarityLabel(item.card) === filterRarity)
+    }
     switch (sortBy) {
       case "price-low":
         result.sort((a, b) => a.price - b.price)
@@ -137,11 +142,18 @@ export default function BindersPage() {
       case "set":
         result.sort((a, b) => a.card.set.name.localeCompare(b.card.set.name))
         break
+      case "rarity-asc":
+        result.sort((a, b) => compareRarity(getCardRarityLabel(a.card), getCardRarityLabel(b.card)) || a.card.name.localeCompare(b.card.name))
+        break
+      case "rarity-desc":
+        result.sort((a, b) => compareRarity(getCardRarityLabel(b.card), getCardRarityLabel(a.card)) || a.card.name.localeCompare(b.card.name))
+        break
     }
     return result
-  }, [binderItems, searchQuery, sortBy, filterCondition])
+  }, [binderItems, searchQuery, sortBy, filterCondition, filterRarity])
 
   const activeTierInfo = PRICE_TIERS.find(t => t.id === activeTier)!
+  const allRarities = useMemo(() => getAvailableRarities(binderItems.map((item) => item.card)), [binderItems])
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -252,6 +264,18 @@ export default function BindersPage() {
               </SelectContent>
             </Select>
 
+            <Select value={filterRarity} onValueChange={setFilterRarity}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Rarity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Rarities</SelectItem>
+                {allRarities.map((rarity) => (
+                  <SelectItem key={rarity} value={rarity}>{rarity}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {/* Sort */}
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
               <SelectTrigger className="w-[160px]">
@@ -260,6 +284,8 @@ export default function BindersPage() {
               <SelectContent>
                 <SelectItem value="price-low">Price: Low to High</SelectItem>
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
+                <SelectItem value="rarity-asc">Rarity: Common to Secret</SelectItem>
+                <SelectItem value="rarity-desc">Rarity: Secret to Common</SelectItem>
                 <SelectItem value="name">Name A-Z</SelectItem>
                 <SelectItem value="set">Set A-Z</SelectItem>
               </SelectContent>
@@ -330,6 +356,11 @@ export default function BindersPage() {
                       <Badge variant="secondary" className="text-xs">
                         {item.condition}
                       </Badge>
+                      {item.card.rarity && (
+                        <Badge className={`text-xs ${rarityColors[getCardRarityLabel(item.card)] || ""}`}>
+                          {getCardRarityLabel(item.card)}
+                        </Badge>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         Qty: {item.quantity}
                       </span>
@@ -373,6 +404,11 @@ export default function BindersPage() {
                     </p>
                     <div className="mt-1 flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs">{item.condition}</Badge>
+                      {item.card.rarity && (
+                        <Badge className={`text-xs ${rarityColors[getCardRarityLabel(item.card)] || ""}`}>
+                          {getCardRarityLabel(item.card)}
+                        </Badge>
+                      )}
                       <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
                       <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
                     </div>

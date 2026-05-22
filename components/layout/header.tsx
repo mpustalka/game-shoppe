@@ -14,6 +14,7 @@ import {
   Menu,
   Settings,
   BookOpen,
+  BarChart3,
   Upload
 } from "lucide-react"
 import { useState } from "react"
@@ -24,6 +25,7 @@ const navigation = [
   { name: "Browse Sets", href: "/sets", icon: Package },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Binders", href: "/binders", icon: BookOpen },
+  { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Add Card", href: "/add", icon: PlusCircle },
   { name: "Import", href: "/import", icon: Upload },
   { name: "Scan", href: "/scan", icon: QrCode },
