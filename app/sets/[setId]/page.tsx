@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { getSetById, getCardsBySet } from "@/lib/pokemon-tcg"
+import { getSetById, getAllCardsBySet } from "@/lib/pokemon-tcg"
 import { CardGrid } from "@/components/cards/card-grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,7 +8,6 @@ import { ArrowLeft, Calendar, Layers } from "lucide-react"
 
 interface SetDetailPageProps {
   params: Promise<{ setId: string }>
-  searchParams: Promise<{ page?: string }>
 }
 
 export async function generateMetadata({ params }: SetDetailPageProps) {
@@ -25,24 +24,17 @@ export async function generateMetadata({ params }: SetDetailPageProps) {
   }
 }
 
-export default async function SetDetailPage({ params, searchParams }: SetDetailPageProps) {
+export default async function SetDetailPage({ params }: SetDetailPageProps) {
   const { setId } = await params
-  const { page: pageParam } = await searchParams
   
-  const page = parseInt(pageParam || "1", 10)
-  const pageSize = 50
-  
-  const [set, cardsData] = await Promise.all([
+  const [set, cards] = await Promise.all([
     getSetById(setId),
-    getCardsBySet(setId, page, pageSize),
+    getAllCardsBySet(setId),
   ])
 
   if (!set) {
     notFound()
   }
-
-  const { cards, totalCount } = cardsData
-  const totalPages = Math.ceil(totalCount / pageSize)
 
   const releaseDate = new Date(set.releaseDate)
   const formattedDate = releaseDate.toLocaleDateString("en-US", {
@@ -103,29 +95,6 @@ export default async function SetDetailPage({ params, searchParams }: SetDetailP
 
       {/* Cards Grid */}
       <CardGrid cards={cards} setId={setId} />
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-2">
-          {page > 1 && (
-            <Button asChild variant="outline">
-              <Link href={`/sets/${setId}?page=${page - 1}`}>Previous</Link>
-            </Button>
-          )}
-          
-          <div className="flex items-center gap-1 px-4">
-            <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </span>
-          </div>
-
-          {page < totalPages && (
-            <Button asChild variant="outline">
-              <Link href={`/sets/${setId}?page=${page + 1}`}>Next</Link>
-            </Button>
-          )}
-        </div>
-      )}
     </div>
   )
 }

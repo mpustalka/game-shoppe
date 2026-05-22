@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useInventory } from "@/lib/inventory-context"
+import { getCardRarityLabel, rarityColors } from "@/lib/card-metadata"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +28,21 @@ function SearchContent() {
     if (!query.trim()) return []
     return searchItems(query.trim())
   }, [query, searchItems])
+
+  useEffect(() => {
+    const trimmed = query.trim()
+    if (trimmed.length < 2) return
+
+    const timeout = window.setTimeout(() => {
+      fetch("/api/analytics/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: trimmed, resultCount: searchResults.length }),
+      }).catch(() => undefined)
+    }, 800)
+
+    return () => window.clearTimeout(timeout)
+  }, [query, searchResults.length])
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -96,6 +112,11 @@ function SearchContent() {
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <Badge variant="secondary" className="text-xs">{item.condition}</Badge>
+                    {item.card.rarity && (
+                      <Badge className={`text-xs ${rarityColors[getCardRarityLabel(item.card)] || ""}`}>
+                        {getCardRarityLabel(item.card)}
+                      </Badge>
+                    )}
                     <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
                     <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
                   </div>

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import type { PokemonCard, CardCondition, PriceTier } from "@/lib/types"
 import { CARD_CONDITIONS, PRICE_TIERS } from "@/lib/types"
+import { getCardRarityLabel, getConditionPriceRows, getTcgPriceRows, rarityColors } from "@/lib/card-metadata"
 import { getMarketPrice } from "@/lib/pokemon-tcg"
 import { useInventory } from "@/lib/inventory-context"
 import * as binderApi from "@/lib/binders"
@@ -35,6 +36,9 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
   if (!card) return null
 
   const marketPrice = getMarketPrice(card)
+  const tcgRows = getTcgPriceRows(card)
+  const conditionRows = getConditionPriceRows(card, condition)
+  const graphMax = Math.max(1, ...tcgRows.flatMap((row) => [row.low ?? 0, row.mid ?? 0, row.high ?? 0, row.market ?? 0]))
   const existingItems = getItemsByCardId(card.id)
 
   const handleAddToInventory = async () => {
@@ -246,7 +250,14 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
                   <DetailRow label="Set" value={card.set.name} />
                   <DetailRow label="Series" value={card.set.series} />
                   <DetailRow label="Number" value={`${card.number}/${card.set.printedTotal}`} />
-                  <DetailRow label="Rarity" value={card.rarity || "Unknown"} />
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Rarity</span>
+                    {card.rarity ? (
+                      <Badge className={rarityColors[getCardRarityLabel(card)] || ""}>{getCardRarityLabel(card)}</Badge>
+                    ) : (
+                      <span className="font-medium text-foreground">Unknown</span>
+                    )}
+                  </div>
                   <DetailRow label="Type" value={card.supertype} />
                   {card.subtypes && <DetailRow label="Subtypes" value={card.subtypes.join(", ")} />}
                   {card.types && <DetailRow label="Energy Type" value={card.types.join(", ")} />}
@@ -254,19 +265,29 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
                   {card.artist && <DetailRow label="Artist" value={card.artist} />}
                   
                   {/* Market Prices */}
-                  {card.tcgplayer?.prices && (
+                  {tcgRows.length > 0 && (
                     <div className="pt-3 border-t border-border">
                       <p className="mb-2 text-sm font-medium">TCGPlayer Prices</p>
-                      <div className="space-y-1">
-                        {card.tcgplayer.prices.normal?.market && (
-                          <DetailRow label="Normal" value={`$${card.tcgplayer.prices.normal.market.toFixed(2)}`} />
-                        )}
-                        {card.tcgplayer.prices.holofoil?.market && (
-                          <DetailRow label="Holofoil" value={`$${card.tcgplayer.prices.holofoil.market.toFixed(2)}`} />
-                        )}
-                        {card.tcgplayer.prices.reverseHolofoil?.market && (
-                          <DetailRow label="Reverse Holo" value={`$${card.tcgplayer.prices.reverseHolofoil.market.toFixed(2)}`} />
-                        )}
+                      <div className="space-y-3">
+                        {tcgRows.map((row) => (
+                          <div key={row.finish} className="rounded-md border border-border p-2">
+                            <div className="mb-2 flex items-center justify-between text-sm">
+                              <span className="font-medium">{row.label}</span>
+                              <span className="text-muted-foreground">Market {formatPrice(row.market)}</span>
+                            </div>
+                            <PriceBar label="Low" value={row.low} max={graphMax} />
+                            <PriceBar label="Mid" value={row.mid} max={graphMax} />
+                            <PriceBar label="High" value={row.high} max={graphMax} />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        TCGPlayer provides finish-level price points. Condition prices below are estimates adjusted from market data.
+                      </p>
+                      <div className="mt-3 space-y-1">
+                        {conditionRows.map((row) => (
+                          <DetailRow key={`${row.finish}-${row.condition}`} label={`${row.label} ${condition}`} value={formatPrice(row.estimatedMarket)} />
+                        ))}
                       </div>
                     </div>
                   )}
@@ -287,4 +308,22 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       <span className="font-medium text-foreground">{value}</span>
     </div>
   )
+}
+
+function PriceBar({ label, value, max }: { label: string; value: number | null; max: number }) {
+  const width = value == null ? 0 : Math.max(4, (value / max) * 100)
+
+  return (
+    <div className="grid grid-cols-[42px_1fr_64px] items-center gap-2 text-xs">
+      <span className="text-muted-foreground">{label}</span>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-primary" style={{ width: `${width}%` }} />
+      </div>
+      <span className="text-right font-medium">{formatPrice(value)}</span>
+    </div>
+  )
+}
+
+function formatPrice(value: number | null | undefined) {
+  return value == null ? "N/A" : `$${value.toFixed(2)}`
 }
