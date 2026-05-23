@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useInventory } from "@/lib/inventory-context"
-import { CARD_CONDITIONS, type CardCondition, type ManualCardData } from "@/lib/types"
+import { CARD_CONDITIONS, CARD_FINISHES, type CardCondition, type CardFinish, type ManualCardData } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,7 +55,12 @@ const RARITIES = [
   "Common",
   "Uncommon",
   "Rare",
+  "Common Reverse Holo",
+  "Uncommon Reverse Holo",
+  "Rare Reverse Holo",
   "Rare Holo",
+  "Rare Holo EX",
+  "EX",
   "Rare Holo V",
   "Rare Holo VMAX",
   "Rare Holo VSTAR",
@@ -78,6 +83,7 @@ export default function ManualAddCardPage() {
     number: "",
     rarity: "",
     condition: "Near Mint",
+    finish: "Normal",
     price: 0,
     quantity: 1,
     quantitySold: 0,
@@ -152,6 +158,7 @@ export default function ManualAddCardPage() {
           number: "",
           rarity: "",
           condition: "Near Mint",
+          finish: "Normal",
           price: 0,
           quantity: 1,
           quantitySold: 0,
@@ -354,6 +361,23 @@ export default function ManualAddCardPage() {
                     <SelectContent>
                       {CARD_CONDITIONS.map((c) => (
                         <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="finish">Finish / Type *</Label>
+                  <Select
+                    value={formData.finish}
+                    onValueChange={(v) => setFormData(prev => ({ ...prev, finish: v as CardFinish }))}
+                  >
+                    <SelectTrigger id="finish">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CARD_FINISHES.map((finish) => (
+                        <SelectItem key={finish} value={finish}>{finish}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

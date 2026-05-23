@@ -27,12 +27,17 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   const existing = rows[0].item as Record<string, unknown>
   const updatedAt = new Date().toISOString()
-  const item = { ...existing, ...patch, updatedAt }
+  const item = { ...existing, finish: "Normal", ...patch, updatedAt }
 
   await db.sql`
     UPDATE inventory_items
     SET card_id = ${String(item.cardId || existing.cardId)},
         item = ${JSON.stringify(item)}::jsonb,
+        condition = ${String(item.condition || "")},
+        finish = ${String(item.finish || "Normal")},
+        price = ${Number(item.price || 0)},
+        quantity = ${Number(item.quantity || 0)},
+        quantity_sold = ${Number(item.quantitySold || 0)},
         updated_at = ${updatedAt}
     WHERE id = ${id}
   `

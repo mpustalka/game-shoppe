@@ -24,7 +24,8 @@ import {
   DollarSign,
   Package,
   X,
-  Filter
+  Filter,
+  Sparkles
 } from "lucide-react"
 
 type ViewMode = "grid" | "list"
@@ -156,14 +157,17 @@ export default function BindersPage() {
   const allRarities = useMemo(() => getAvailableRarities(binderItems.map((item) => item.card)), [binderItems])
 
   return (
+    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_6%,rgba(255,213,79,.34),transparent_28%),radial-gradient(circle_at_92%_2%,rgba(59,130,246,.18),transparent_24%),linear-gradient(180deg,#fffdf4_0%,#f4fbff_48%,#fff9ea_100%)]">
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-8 rounded-2xl border border-yellow-200/70 bg-white/72 p-5 shadow-sm backdrop-blur">
         <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-          <BookOpen className="h-8 w-8 text-primary" />
+          <span className="flex h-12 w-12 items-center justify-center rounded-full border-4 border-red-500 bg-white shadow-sm">
+            <BookOpen className="h-6 w-6 text-blue-700" />
+          </span>
           Sell Binders
         </h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="mt-2 text-slate-600">
           Cards organized by price tier for in-store binders
         </p>
       </div>
@@ -177,8 +181,8 @@ export default function BindersPage() {
           return (
             <Card 
               key={tier.id}
-              className={`cursor-pointer transition-all hover:border-primary/50 ${
-                isActive ? "border-primary ring-2 ring-primary/20" : ""
+              className={`cursor-pointer border-yellow-200/80 bg-white/82 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md ${
+                isActive ? "border-blue-500 ring-2 ring-yellow-300/50" : ""
               }`}
               onClick={() => setActiveTier(tier.id)}
             >
@@ -210,8 +214,8 @@ export default function BindersPage() {
       </div>
 
       {/* Active Tier Section */}
-      <Card>
-        <CardHeader>
+      <Card className="border-blue-100/80 bg-white/88 shadow-xl shadow-blue-100/40 backdrop-blur">
+        <CardHeader className="border-b border-yellow-100 bg-[linear-gradient(90deg,rgba(255,236,153,.55),rgba(219,234,254,.48),rgba(220,252,231,.38))]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -325,58 +329,68 @@ export default function BindersPage() {
               </p>
             </div>
           ) : viewMode === "grid" ? (
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {filteredItems.map((item) => (
-                <Card key={item.id} className="group overflow-hidden relative">
-                  <Link href={`/inventory/${item.id}`}>
-                    <div className="relative aspect-[2.5/3.5] w-full overflow-hidden bg-muted">
-                      <img
-                        src={item.customImage || item.card.images.small}
-                        alt={item.card.name}
-                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      <Badge 
-                        className={`absolute bottom-2 right-2 ${activeTierInfo.color} text-white border-0`}
-                      >
-                        ${item.price.toFixed(2)}
-                      </Badge>
-                    </div>
-                  </Link>
-                  <CardContent className="p-3">
-                    <Link href={`/inventory/${item.id}`}>
-                      <h3 className="truncate font-medium text-foreground hover:text-primary">
-                        {item.card.name}
-                      </h3>
-                    </Link>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {item.card.set.name}
-                    </p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">
-                        {item.condition}
-                      </Badge>
-                      {item.card.rarity && (
-                        <Badge className={`text-xs ${rarityColors[getCardRarityLabel(item.card)] || ""}`}>
-                          {getCardRarityLabel(item.card)}
-                        </Badge>
+            <div className="rounded-[26px] border border-blue-200/80 bg-[linear-gradient(135deg,#fef3c7,#dbeafe_42%,#dcfce7)] p-3 shadow-xl shadow-blue-100/60 sm:p-5">
+              <div className="relative overflow-hidden rounded-[20px] border border-white/80 bg-[radial-gradient(circle_at_18%_14%,rgba(239,68,68,.14),transparent_22%),radial-gradient(circle_at_88%_8%,rgba(37,99,235,.12),transparent_24%),linear-gradient(90deg,#f8fafc_0,#e0f2fe_10%,#fffefa_11%,#ffffff_100%)] p-4 pl-9 shadow-inner sm:p-6 sm:pl-14">
+                <div className="absolute left-3 top-0 flex h-full flex-col justify-around py-8 sm:left-5">
+                  {Array.from({ length: 9 }).map((_, index) => (
+                    <span key={index} className="h-4 w-4 rounded-full border border-blue-300 bg-white shadow-[inset_0_1px_3px_rgba(37,99,235,.22),0_1px_0_rgba(255,255,255,.9)] sm:h-5 sm:w-5" />
+                  ))}
+                </div>
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">light league binder</p>
+                    <h3 className="text-2xl font-bold text-slate-950">{activeTierInfo.label} Sell Binder</h3>
+                  </div>
+                  <div className="rounded-full border border-yellow-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+                    {filteredItems.length} listings
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                  {filteredItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="group relative aspect-[2.5/3.5] rounded-xl border border-blue-100 bg-white/72 p-1 shadow-[inset_0_0_18px_rgba(37,99,235,.08),0_10px_22px_rgba(15,23,42,.08)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-yellow-300 hover:shadow-lg"
+                    >
+                      <div className="absolute inset-1 rounded-md bg-[linear-gradient(115deg,rgba(255,255,255,.7),rgba(255,255,255,.08)_42%,rgba(255,255,255,.35)_58%,rgba(255,255,255,.05))] opacity-70 pointer-events-none" />
+                      <Link href={`/inventory/${item.id}`} className="block h-full overflow-hidden rounded-lg bg-sky-50">
+                        <img
+                          src={item.customImage || item.card.images.small}
+                          alt={item.card.name}
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                          loading="lazy"
+                        />
+                      </Link>
+                      {(item.finish || "Normal") !== "Normal" && (
+                        <div className="absolute inset-1 rounded-lg bg-[linear-gradient(125deg,transparent_15%,rgba(255,255,255,.68)_35%,transparent_52%,rgba(56,189,248,.22)_75%,transparent)] opacity-0 mix-blend-screen transition-opacity group-hover:opacity-100" />
                       )}
-                      <span className="text-xs text-muted-foreground">
-                        Qty: {item.quantity}
-                      </span>
+                      <div className="absolute left-2 right-2 top-2 flex items-center justify-between gap-1">
+                        <Badge className={`${activeTierInfo.color} border-0 text-[10px] text-white shadow`}>
+                          ${item.price.toFixed(2)}
+                        </Badge>
+                        {(item.finish || "Normal") !== "Normal" && (
+                          <Badge variant="secondary" className="gap-1 bg-white/90 text-[10px] text-blue-950 shadow-sm">
+                            <Sparkles className="h-3 w-3 text-yellow-500" />
+                            {item.finish}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="absolute bottom-2 left-2 right-2 rounded-lg bg-white/92 p-2 text-slate-950 opacity-0 shadow-lg ring-1 ring-blue-100 transition-opacity group-hover:opacity-100">
+                        <p className="truncate text-xs font-semibold">{item.card.name}</p>
+                        <p className="truncate text-[11px] text-slate-600">{item.condition} - Qty {item.quantity}</p>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="mt-2 h-7 w-full"
+                          disabled={removingId === item.id}
+                          onClick={() => handleRemoveCard(item.id)}
+                        >
+                          {removingId === item.id ? "Removing..." : "Remove"}
+                        </Button>
+                      </div>
                     </div>
-                  </CardContent>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    disabled={removingId === item.id}
-                    onClick={() => handleRemoveCard(item.id)}
-                  >
-                    {removingId === item.id ? "Removing..." : "Remove"}
-                  </Button>
-                </Card>
-              ))}
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
@@ -404,6 +418,7 @@ export default function BindersPage() {
                     </p>
                     <div className="mt-1 flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs">{item.condition}</Badge>
+                      <Badge variant="outline" className="text-xs">{item.finish || "Normal"}</Badge>
                       {item.card.rarity && (
                         <Badge className={`text-xs ${rarityColors[getCardRarityLabel(item.card)] || ""}`}>
                           {getCardRarityLabel(item.card)}
@@ -510,6 +525,7 @@ export default function BindersPage() {
           </CardContent>
         </Card>
       </div>
+    </div>
     </div>
   )
 }

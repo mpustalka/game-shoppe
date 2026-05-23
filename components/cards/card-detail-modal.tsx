@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import type { PokemonCard, CardCondition, PriceTier } from "@/lib/types"
-import { CARD_CONDITIONS, PRICE_TIERS } from "@/lib/types"
+import { useEffect, useState } from "react"
+import type { PokemonCard, CardCondition, CardFinish, PriceTier } from "@/lib/types"
+import { CARD_CONDITIONS, CARD_FINISHES, PRICE_TIERS, getDefaultCardFinish } from "@/lib/types"
 import { getCardRarityLabel, getConditionPriceRows, getTcgPriceRows, rarityColors } from "@/lib/card-metadata"
 import { getMarketPrice } from "@/lib/pokemon-tcg"
 import { useInventory } from "@/lib/inventory-context"
@@ -27,11 +27,18 @@ interface CardDetailModalProps {
 export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalProps) {
   const { addItem, getItemsByCardId } = useInventory()
   const [condition, setCondition] = useState<CardCondition>("Near Mint")
+  const [finish, setFinish] = useState<CardFinish>(card ? getDefaultCardFinish(card) : "Normal")
   const [price, setPrice] = useState("")
   const [quantity, setQuantity] = useState("1")
   const [notes, setNotes] = useState("")
   const [binderTier, setBinderTier] = useState<PriceTier | "none">("none")
   const [isAdding, setIsAdding] = useState(false)
+
+  useEffect(() => {
+    if (card && open) {
+      setFinish(getDefaultCardFinish(card))
+    }
+  }, [card, open])
 
   if (!card) return null
 
@@ -60,6 +67,7 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
     try {
       const item = await addItem(card, {
         condition,
+        finish,
         price: priceValue,
         quantity: quantityValue,
         notes: notes || undefined,
@@ -80,6 +88,7 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
 
       // Reset form
       setCondition("Near Mint")
+      setFinish(getDefaultCardFinish(card))
       setPrice("")
       setQuantity("1")
       setNotes("")
@@ -164,6 +173,27 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="finish">Finish / Type</Label>
+                  <Select value={finish} onValueChange={(v) => setFinish(v as CardFinish)}>
+                    <SelectTrigger id="finish">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CARD_FINISHES.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {["Common", "Uncommon", "Rare"].includes(getCardRarityLabel(card)) && (
+                    <p className="text-xs text-muted-foreground">
+                      Reverse Holo is available for {getCardRarityLabel(card)} listings.
+                    </p>
+                  )}
                 </div>
 
                 {/* Price */}

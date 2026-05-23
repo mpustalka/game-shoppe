@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react"
 import type { PokemonCard, CardCondition, PriceTier } from "@/lib/types"
-import { CARD_CONDITIONS, PRICE_TIERS } from "@/lib/types"
+import { CARD_CONDITIONS, PRICE_TIERS, getDefaultCardFinish } from "@/lib/types"
 import { useInventory } from "@/lib/inventory-context"
 import { getMarketPrice } from "@/lib/pokemon-tcg"
 import { compareRarity, getAvailableRarities, getCardRarityLabel } from "@/lib/card-metadata"
@@ -89,6 +89,7 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
       for (const card of selectedCards) {
         const item = await addItem(card, {
           condition: bulkCondition,
+          finish: getDefaultCardFinish(card),
           price: getMarketPrice(card) ?? 0.01,
           quantity: 1,
         })

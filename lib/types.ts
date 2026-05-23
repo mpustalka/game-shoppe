@@ -120,6 +120,36 @@ export const CONDITION_ABBREVIATIONS: Record<CardCondition, string> = {
   "Damaged": "DMG",
 }
 
+// Card finishes/types tracked per inventory listing.
+export type CardFinish =
+  | "Normal"
+  | "Holo"
+  | "Reverse Holo"
+  | "EX"
+
+export const CARD_FINISHES: CardFinish[] = [
+  "Normal",
+  "Holo",
+  "Reverse Holo",
+  "EX",
+]
+
+export const FINISH_ABBREVIATIONS: Record<CardFinish, string> = {
+  Normal: "NOR",
+  Holo: "HOL",
+  "Reverse Holo": "REV",
+  EX: "EX",
+}
+
+export function getDefaultCardFinish(card?: Pick<PokemonCard, "rarity" | "subtypes">): CardFinish {
+  const rarity = card?.rarity?.toLowerCase() ?? ""
+  const subtypes = card?.subtypes?.map((subtype) => subtype.toLowerCase()) ?? []
+
+  if (rarity.includes(" ex") || rarity.endsWith("ex") || subtypes.includes("ex")) return "EX"
+  if (rarity.includes("holo")) return "Holo"
+  return "Normal"
+}
+
 // Price Tiers for Binder Organization
 export type PriceTier = "budget" | "mid" | "premium"
 
@@ -143,6 +173,7 @@ export interface InventoryItem {
   sku: string
   barcode: string
   condition: CardCondition
+  finish: CardFinish
   price: number
   quantity: number
   quantitySold: number
@@ -159,6 +190,7 @@ export interface InventoryItem {
 export interface InventoryFormData {
   cardId: string
   condition: CardCondition
+  finish: CardFinish
   price: number
   quantity: number
   quantitySold?: number
@@ -174,6 +206,7 @@ export interface ManualCardData {
   number?: string
   rarity?: string
   condition: CardCondition
+  finish: CardFinish
   price: number
   quantity: number
   quantitySold?: number

@@ -1,20 +1,22 @@
 import QRCode from "qrcode"
-import type { QRCodeData, CardCondition, PokemonCard } from "./types"
-import { CONDITION_ABBREVIATIONS } from "./types"
+import type { QRCodeData, CardCondition, CardFinish, PokemonCard } from "./types"
+import { CONDITION_ABBREVIATIONS, FINISH_ABBREVIATIONS } from "./types"
 
 // Generate a unique SKU for an inventory item
 export function generateSKU(
   card: PokemonCard,
   condition: CardCondition,
+  finish: CardFinish = "Normal",
   timestamp?: number
 ): string {
   const setAbbrev = card.set.id.toUpperCase().slice(0, 6)
   const cardNum = card.number.padStart(3, "0")
   const condAbbrev = CONDITION_ABBREVIATIONS[condition]
+  const finishAbbrev = FINISH_ABBREVIATIONS[finish]
   const ts = timestamp || Date.now()
   const uniqueId = ts.toString(36).toUpperCase().slice(-4)
   
-  return `PKM-${setAbbrev}-${cardNum}-${condAbbrev}-${uniqueId}`
+  return `PKM-${setAbbrev}-${cardNum}-${condAbbrev}-${finishAbbrev}-${uniqueId}`
 }
 
 // Generate a unique SKU for manually entered cards
@@ -22,6 +24,7 @@ export function generateManualSKU(
   cardName: string,
   setName: string,
   condition: CardCondition,
+  finish: CardFinish = "Normal",
   timestamp?: number
 ): string {
   // Create abbreviation from card name (first 3 chars)
@@ -29,10 +32,11 @@ export function generateManualSKU(
   // Create abbreviation from set name (first 4 chars)
   const setAbbrev = setName.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 4) || "MANU"
   const condAbbrev = CONDITION_ABBREVIATIONS[condition]
+  const finishAbbrev = FINISH_ABBREVIATIONS[finish]
   const ts = timestamp || Date.now()
   const uniqueId = ts.toString(36).toUpperCase().slice(-4)
   
-  return `MAN-${setAbbrev}-${cardAbbrev}-${condAbbrev}-${uniqueId}`
+  return `MAN-${setAbbrev}-${cardAbbrev}-${condAbbrev}-${finishAbbrev}-${uniqueId}`
 }
 
 // Generate a unique barcode string
