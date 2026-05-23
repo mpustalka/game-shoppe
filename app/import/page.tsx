@@ -124,6 +124,7 @@ export default function ImportPage() {
         const quantitySoldIdx = headers.indexOf("quantitysold") !== -1 
           ? headers.indexOf("quantitysold") 
           : headers.indexOf("sold")
+        const finishIdx = headers.indexOf("finish")
         const notesIdx = headers.indexOf("notes")
 
         // Parse rows into ManualCardData
@@ -148,6 +149,7 @@ export default function ImportPage() {
               setName,
               number: numberIdx >= 0 ? row[numberIdx]?.trim() : undefined,
               condition,
+              finish: finishIdx >= 0 ? parseFinish(row[finishIdx]) : "Normal",
               price,
               quantity,
               quantitySold: quantitySoldIdx >= 0 ? parseInt(row[quantitySoldIdx]) || 0 : 0,
@@ -448,4 +450,12 @@ export default function ImportPage() {
       </Tabs>
     </div>
   )
+}
+
+function parseFinish(value: string): ManualCardData["finish"] {
+  const normalized = value.trim().toLowerCase().replace(/[-_]/g, " ")
+  if (normalized === "reverse" || normalized === "reverse holo" || normalized === "reverse holofoil") return "Reverse Holo"
+  if (normalized === "holo" || normalized === "holofoil") return "Holo"
+  if (normalized === "ex") return "EX"
+  return "Normal"
 }

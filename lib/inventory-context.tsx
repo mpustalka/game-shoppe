@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
 import type { InventoryItem, InventoryFormData, PokemonCard, CardCondition, ManualCardData, PriceTier } from "./types"
-import { getPriceTier } from "./types"
+import { getDefaultCardFinish, getPriceTier } from "./types"
 import { generateSKU, generateBarcodeString, generateManualSKU } from "./barcode"
 
 interface InventoryContextType {
@@ -51,7 +51,8 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(async (card: PokemonCard, data: Omit<InventoryFormData, "cardId">): Promise<InventoryItem | null> => {
     const timestamp = Date.now()
-    const sku = generateSKU(card, data.condition, timestamp)
+    const finish = data.finish ?? getDefaultCardFinish(card)
+    const sku = generateSKU(card, data.condition, finish, timestamp)
     const barcode = generateBarcodeString(sku)
     const id = crypto.randomUUID()
 
@@ -62,6 +63,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       sku,
       barcode,
       condition: data.condition,
+      finish,
       price: data.price,
       quantity: data.quantity,
       quantitySold: data.quantitySold || 0,
@@ -88,7 +90,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   const addManualItem = useCallback(async (data: ManualCardData): Promise<InventoryItem | null> => {
     const timestamp = Date.now()
-    const sku = generateManualSKU(data.name, data.setName, data.condition, timestamp)
+    const sku = generateManualSKU(data.name, data.setName, data.condition, data.finish, timestamp)
     const barcode = generateBarcodeString(sku)
     const id = crypto.randomUUID()
 
@@ -124,6 +126,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       sku,
       barcode,
       condition: data.condition,
+      finish: data.finish,
       price: data.price,
       quantity: data.quantity,
       quantitySold: data.quantitySold || 0,

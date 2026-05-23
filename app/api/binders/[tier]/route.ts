@@ -11,6 +11,16 @@ function validateTier(tier: string) {
   return VALID_TIERS.has(tier)
 }
 
+type BinderJson = Record<string, unknown>
+
+function normalizeBinderItem(item: BinderJson): BinderJson & { finish: string; quantitySold: number } {
+  return {
+    ...item,
+    finish: typeof item.finish === "string" && item.finish ? item.finish : "Normal",
+    quantitySold: typeof item.quantitySold === "number" ? item.quantitySold : 0,
+  }
+}
+
 export async function GET(_request: Request, { params }: RouteContext) {
   const { tier } = await params
 
@@ -26,7 +36,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     ORDER BY added_at DESC
   `
 
-  return NextResponse.json(rows.map((row) => row.item))
+  return NextResponse.json(rows.map((row) => normalizeBinderItem(row.item)))
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
@@ -42,17 +52,18 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 
   const now = new Date().toISOString()
+  const normalizedItem = normalizeBinderItem(item)
   const db = getDatabase()
 
   await db.sql`
     INSERT INTO binder_entries (tier, item_id, item, added_at, updated_at)
-    VALUES (${tier}, ${item.id}, ${JSON.stringify(item)}::jsonb, ${now}, ${now})
+    VALUES (${tier}, ${String(normalizedItem.id)}, ${JSON.stringify(normalizedItem)}::jsonb, ${now}, ${now})
     ON CONFLICT (tier, item_id) DO UPDATE
     SET item = EXCLUDED.item,
         updated_at = EXCLUDED.updated_at
   `
 
-  return NextResponse.json(item, { status: 201 })
+  return NextResponse.json(normalizedItem, { status: 201 })
 }
 
 export async function DELETE(request: Request, { params }: RouteContext) {

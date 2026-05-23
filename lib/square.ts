@@ -1,4 +1,4 @@
-import { Client, Environment } from "square"
+import { Client, Environment } from "square/legacy"
 import type { InventoryItem, SquareSyncResult } from "./types"
 
 // Initialize Square client

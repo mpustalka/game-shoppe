@@ -256,6 +256,9 @@ export default function InventoryPage() {
                   <Badge variant="secondary" className="text-xs">
                     {item.condition}
                   </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {item.finish || "Normal"}
+                  </Badge>
                   <span className="text-xs text-muted-foreground">
                     Qty: {item.quantity}
                   </span>
@@ -296,6 +299,7 @@ export default function InventoryPage() {
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <Badge variant="secondary" className="text-xs">{item.condition}</Badge>
+                  <Badge variant="outline" className="text-xs">{item.finish || "Normal"}</Badge>
                   <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
                   <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
                   {!item.syncedToSquare && (

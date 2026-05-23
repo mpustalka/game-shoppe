@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { InventoryItem, CardCondition } from "@/lib/types"
-import { CARD_CONDITIONS } from "@/lib/types"
+import type { InventoryItem, CardCondition, CardFinish } from "@/lib/types"
+import { CARD_CONDITIONS, CARD_FINISHES } from "@/lib/types"
 import { useInventory } from "@/lib/inventory-context"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,7 @@ interface EditInventoryModalProps {
 export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryModalProps) {
   const { updateItem } = useInventory()
   const [condition, setCondition] = useState<CardCondition>("Near Mint")
+  const [finish, setFinish] = useState<CardFinish>("Normal")
   const [price, setPrice] = useState("")
   const [quantity, setQuantity] = useState("1")
   const [quantitySold, setQuantitySold] = useState("0")
@@ -31,6 +32,7 @@ export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryMo
   useEffect(() => {
     if (item) {
       setCondition(item.condition)
+      setFinish(item.finish || "Normal")
       setPrice(item.price.toString())
       setQuantity(item.quantity.toString())
       setQuantitySold((item.quantitySold || 0).toString())
@@ -60,6 +62,7 @@ export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryMo
     try {
       await updateItem(item.id, {
         condition,
+        finish,
         price: priceValue,
         quantity: quantityValue,
         quantitySold: quantitySoldValue || 0,
@@ -105,6 +108,20 @@ export function EditInventoryModal({ item, open, onOpenChange }: EditInventoryMo
               <SelectContent>
                 {CARD_CONDITIONS.map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-finish">Finish / Type</Label>
+            <Select value={finish} onValueChange={(v) => setFinish(v as CardFinish)}>
+              <SelectTrigger id="edit-finish">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CARD_FINISHES.map((option) => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
