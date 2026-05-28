@@ -2,7 +2,11 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
 import type { InventoryItem, InventoryFormData, PokemonCard, CardCondition, ManualCardData, PriceTier } from "./types"
-import { getDefaultCardFinish, getPriceTier } from "./types"
+import {
+  getDefaultCardFinish,
+  getDefaultCardVariant,
+  getPriceTier,
+} from "./types"
 import { generateSKU, generateBarcodeString, generateManualSKU } from "./barcode"
 
 interface InventoryContextType {
@@ -52,6 +56,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback(async (card: PokemonCard, data: Omit<InventoryFormData, "cardId">): Promise<InventoryItem | null> => {
     const timestamp = Date.now()
     const finish = data.finish ?? getDefaultCardFinish(card)
+    const variant = data.variant ?? getDefaultCardVariant(card)
     const sku = generateSKU(card, data.condition, finish, timestamp)
     const barcode = generateBarcodeString(sku)
     const id = crypto.randomUUID()
@@ -64,6 +69,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       barcode,
       condition: data.condition,
       finish,
+      variant,
       price: data.price,
       quantity: data.quantity,
       quantitySold: data.quantitySold || 0,
@@ -119,24 +125,25 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       },
     }
 
-    const newItem: InventoryItem = {
-      id,
-      cardId: manualCard.id,
-      card: manualCard,
-      sku,
-      barcode,
-      condition: data.condition,
-      finish: data.finish,
-      price: data.price,
-      quantity: data.quantity,
-      quantitySold: data.quantitySold || 0,
-      notes: data.notes,
-      customImage: data.customImage,
-      isManualEntry: true,
-      syncedToSquare: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
+const newItem: InventoryItem = {
+  id,
+  cardId: manualCard.id,
+  card: manualCard,
+  sku,
+  barcode,
+  condition: data.condition,
+  finish: data.finish,
+  variant: data.variant ?? null,
+  price: data.price,
+  quantity: data.quantity,
+  quantitySold: data.quantitySold || 0,
+  notes: data.notes,
+  customImage: data.customImage,
+  isManualEntry: true,
+  syncedToSquare: false,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+}
 
 
     const response = await fetch("/api/inventory", {

@@ -121,33 +121,130 @@ export const CONDITION_ABBREVIATIONS: Record<CardCondition, string> = {
 }
 
 // Card finishes/types tracked per inventory listing.
+// Card finishes tracked per inventory listing.
 export type CardFinish =
   | "Normal"
-  | "Holo"
   | "Reverse Holo"
+  | "Pokeball Reverse Holo"
+  | "Energy Symbol Reverse Holo"
+  | "Masterball Reverse Holo"
+  | "Other Reverse Holo"
+  | "Holo"
+  | "Non Holo"
+  | "Rainbow Holo"
+  | "Baby Shiny Holo"
+  | "Cosmo Holo"
+  | "Stamped"
+  | "Other Holo"
+  | "Full Art"
+
+// Card variants/types.
+export type CardVariant =
   | "EX"
+  | "GX"
+  | "V"
+  | "VMAX"
+  | "VSTAR"
+  | "BREAK"
+  | "LEGEND"
+  | "Lv.X"
+  | "Prime"
+  | "Delta Species"
+  | "TAG TEAM"
 
 export const CARD_FINISHES: CardFinish[] = [
   "Normal",
-  "Holo",
   "Reverse Holo",
+  "Pokeball Reverse Holo",
+  "Energy Symbol Reverse Holo",
+  "Masterball Reverse Holo",
+  "Other Reverse Holo",
+  "Holo",
+  "Non Holo",
+  "Rainbow Holo",
+  "Baby Shiny Holo",
+  "Cosmo Holo",
+  "Stamped",
+  "Other Holo",
+  "Full Art",
+]
+
+export const CARD_VARIANTS: CardVariant[] = [
   "EX",
+  "GX",
+  "V",
+  "VMAX",
+  "VSTAR",
+  "BREAK",
+  "LEGEND",
+  "Lv.X",
+  "Prime",
+  "Delta Species",
+  "TAG TEAM",
 ]
 
 export const FINISH_ABBREVIATIONS: Record<CardFinish, string> = {
-  Normal: "NOR",
-  Holo: "HOL",
-  "Reverse Holo": "REV",
-  EX: "EX",
+  "Normal": "NRM",
+  "Reverse Holo": "RVH",
+  "Pokeball Reverse Holo": "PBH",
+  "Energy Symbol Reverse Holo": "ESH",
+  "Masterball Reverse Holo": "MBH",
+  "Other Reverse Holo": "ORH",
+  "Holo": "HOL",
+  "Non Holo": "NON",
+  "Rainbow Holo": "RNB",
+  "Baby Shiny Holo": "BSH",
+  "Cosmo Holo": "COS",
+  "Stamped": "STP",
+  "Other Holo": "OTH",
+  "Full Art": "FAR",
 }
 
-export function getDefaultCardFinish(card?: Pick<PokemonCard, "rarity" | "subtypes">): CardFinish {
-  const rarity = card?.rarity?.toLowerCase() ?? ""
-  const subtypes = card?.subtypes?.map((subtype) => subtype.toLowerCase()) ?? []
+export const VARIANT_ABBREVIATIONS: Record<CardVariant, string> = {
+  "EX": "EX",
+  "GX": "GX",
+  "V": "V",
+  "VMAX": "VMX",
+  "VSTAR": "VST",
+  "BREAK": "BRK",
+  "LEGEND": "LEG",
+  "Lv.X": "LVX",
+  "Prime": "PRM",
+  "Delta Species": "DLT",
+  "TAG TEAM": "TAG",
+}
 
-  if (rarity.includes(" ex") || rarity.endsWith("ex") || subtypes.includes("ex")) return "EX"
+export function getDefaultCardFinish(
+  card?: Pick<PokemonCard, "rarity" | "subtypes">
+): CardFinish {
+  const rarity = card?.rarity?.toLowerCase() ?? ""
+
+  if (rarity.includes("rainbow")) return "Rainbow Holo"
+  if (rarity.includes("shiny")) return "Baby Shiny Holo"
   if (rarity.includes("holo")) return "Holo"
+
   return "Normal"
+}
+
+export function getDefaultCardVariant(
+  card?: Pick<PokemonCard, "subtypes">
+): CardVariant | null {
+  const subtypes =
+    card?.subtypes?.map((subtype) => subtype.toLowerCase()) ?? []
+
+  if (subtypes.includes("vmax")) return "VMAX"
+  if (subtypes.includes("vstar")) return "VSTAR"
+  if (subtypes.includes("gx")) return "GX"
+  if (subtypes.includes("ex")) return "EX"
+  if (subtypes.includes("v")) return "V"
+  if (subtypes.includes("break")) return "BREAK"
+  if (subtypes.includes("legend")) return "LEGEND"
+  if (subtypes.includes("lv.x")) return "Lv.X"
+  if (subtypes.includes("prime")) return "Prime"
+  if (subtypes.includes("delta species")) return "Delta Species"
+  if (subtypes.includes("tag team")) return "TAG TEAM"
+
+  return null
 }
 
 // Price Tiers for Binder Organization
@@ -174,6 +271,7 @@ export interface InventoryItem {
   barcode: string
   condition: CardCondition
   finish: CardFinish
+  variant?: CardVariant | null
   price: number
   quantity: number
   quantitySold: number
@@ -191,6 +289,7 @@ export interface InventoryFormData {
   cardId: string
   condition: CardCondition
   finish: CardFinish
+  variant?: CardVariant | null
   price: number
   quantity: number
   quantitySold?: number
@@ -207,6 +306,7 @@ export interface ManualCardData {
   rarity?: string
   condition: CardCondition
   finish: CardFinish
+  variant?: CardVariant | null
   price: number
   quantity: number
   quantitySold?: number
