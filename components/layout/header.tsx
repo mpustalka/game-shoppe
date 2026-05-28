@@ -15,9 +15,11 @@ import {
   Settings,
   BookOpen,
   BarChart3,
-  Upload
+  Upload,
+  LogOut
 } from "lucide-react"
 import { useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 const navigation = [
@@ -35,6 +37,17 @@ const navigation = [
 export function Header() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const supabase = createClient()
+
+const handleLogout = async () => {
+  await supabase.auth.signOut()
+  window.location.href = "/login"
+}
+  const hiddenRoutes = ["/login", "/register"]
+
+if (hiddenRoutes.includes(pathname)) {
+  return null
+}
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -71,7 +84,14 @@ export function Header() {
             )
           })}
         </nav>
-
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+         className="hidden md:flex"
+             >
+         <LogOut className="h-4 w-4" />
+        </Button>
         {/* Search */}
         <div className="hidden flex-1 justify-end md:flex">
           <form action="/search" className="relative w-full max-w-sm">
