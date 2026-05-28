@@ -23,7 +23,7 @@ interface CardGridProps {
 }
 
 export function CardGrid({ cards, onSelectCards }: CardGridProps) {
-  const { addItem } = useInventory()
+  const { addItem, items } = useInventory()
   const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [search, setSearch] = useState("")
@@ -74,7 +74,17 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
       return next
     })
   }
+const inventoryMap = useMemo(() => {
+  const map = new Map<string, any[]>()
 
+  items.forEach((item) => {
+    const existing = map.get(item.cardId) || []
+    existing.push(item)
+    map.set(item.cardId, existing)
+  })
+
+  return map
+}, [items])
   const selectedCards = useMemo(
     () => cards.filter((card) => selected.has(card.id)),
     [cards, selected]
@@ -151,6 +161,7 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
           <CardItem
             key={card.id}
             card={card}
+            inventoryItems={inventoryMap.get(card.id) || []}
             onClick={() => {
               setSelectedCard(card)
               setModalOpen(true)
