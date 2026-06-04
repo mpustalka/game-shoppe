@@ -73,3 +73,9 @@ recent searches
 
 - Add Japanese card's as well
 
+netlify database migrations apply
+
+netifly dev
+
+Run "Netlify: Set API Token" command to set your Netlify API token.
+netlify set api token

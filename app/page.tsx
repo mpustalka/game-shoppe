@@ -16,6 +16,7 @@ import {
   RefreshCw
 } from "lucide-react"
 
+
 export default function DashboardPage() {
   const { items } = useInventory()
 
