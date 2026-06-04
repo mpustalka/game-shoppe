@@ -120,7 +120,8 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(newItem),
       })
       if (!response.ok) {
-        console.error("Failed to add item to inventory")
+        const text = await response.text().catch(() => "")
+        console.error("Failed to add item to inventory", response.status, text)
         return null
       }
       setItems((prev) => [newItem, ...prev])
@@ -195,7 +196,12 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(newItem),
       })
       if (!response.ok) {
-        console.error("Failed to add manual item to inventory")
+        const text = await response.text().catch(() => "")
+        console.error(
+          "Failed to add manual item to inventory",
+          response.status,
+          text,
+        )
         return null
       }
       setItems((prev) => [newItem, ...prev])

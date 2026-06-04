@@ -1,5 +1,6 @@
-import { getDatabase } from "@netlify/database"
 import { NextResponse } from "next/server"
+
+import { supabaseTable } from "@/lib/supabase"
 
 const VALID_TIERS = new Set(["budget", "mid", "premium"])
 
@@ -13,10 +14,13 @@ function validateTier(tier: string) {
 
 type BinderJson = Record<string, unknown>
 
-function normalizeBinderItem(item: BinderJson): BinderJson & { finish: string; quantitySold: number } {
+function normalizeBinderItem(
+  item: BinderJson,
+): BinderJson & { finish: string; quantitySold: number } {
   return {
     ...item,
-    finish: typeof item.finish === "string" && item.finish ? item.finish : "Normal",
+    finish:
+      typeof item.finish === "string" && item.finish ? item.finish : "Normal",
     quantitySold: typeof item.quantitySold === "number" ? item.quantitySold : 0,
   }
 }
@@ -28,15 +32,17 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Invalid binder tier" }, { status: 400 })
   }
 
-  const db = getDatabase()
-  const rows = await db.sql`
-    SELECT item
-    FROM binder_entries
-    WHERE tier = ${tier}
-    ORDER BY added_at DESC
-  `
+  const rows = await supabaseTable("binder_entries", {
+    select: "item",
+    filters: [`tier=eq.${tier}`],
+    order: "added_at.desc",
+  })
 
-  return NextResponse.json(rows.map((row) => normalizeBinderItem(row.item)))
+  return NextResponse.json(
+    rows.map((row: { item: unknown }) =>
+      normalizeBinderItem(row.item as Record<string, unknown>),
+    ),
+  )
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
@@ -53,15 +59,18 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   const now = new Date().toISOString()
   const normalizedItem = normalizeBinderItem(item)
-  const db = getDatabase()
 
-  await db.sql`
-    INSERT INTO binder_entries (tier, item_id, item, added_at, updated_at)
-    VALUES (${tier}, ${String(normalizedItem.id)}, ${JSON.stringify(normalizedItem)}::jsonb, ${now}, ${now})
-    ON CONFLICT (tier, item_id) DO UPDATE
-    SET item = EXCLUDED.item,
-        updated_at = EXCLUDED.updated_at
-  `
+  await supabaseTable("binder_entries", {
+    method: "POST",
+    body: {
+      tier,
+      item_id: String(normalizedItem.id),
+      item: normalizedItem,
+      added_at: now,
+      updated_at: now,
+    },
+    onConflict: "tier,item_id",
+  })
 
   return NextResponse.json(normalizedItem, { status: 201 })
 }
@@ -79,11 +88,10 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Missing itemId" }, { status: 400 })
   }
 
-  const db = getDatabase()
-  await db.sql`
-    DELETE FROM binder_entries
-    WHERE tier = ${tier} AND item_id = ${itemId}
-  `
+  await supabaseTable("binder_entries", {
+    method: "DELETE",
+    filters: [`tier=eq.${tier}`, `item_id=eq.${itemId}`],
+  })
 
   return NextResponse.json({ ok: true })
 }

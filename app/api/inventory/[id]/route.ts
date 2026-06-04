@@ -1,5 +1,6 @@
-import { getDatabase } from "@netlify/database"
 import { NextResponse } from "next/server"
+
+import { supabaseTable } from "@/lib/supabase"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -16,13 +17,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     )
   }
 
-  const db = getDatabase()
-  const rows = await db.sql`
-    SELECT item
-    FROM inventory_items
-    WHERE id = ${id}
-    LIMIT 1
-  `
+  const rows = await supabaseTable("inventory_items", {
+    select: "item",
+    filters: [`id=eq.${id}`],
+    limit: 1,
+  })
 
   if (rows.length === 0) {
     return NextResponse.json(
@@ -31,47 +30,44 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     )
   }
 
-  const existing = rows[0].item as Record<string, unknown>
+  const existing = rows[0]?.item as Record<string, unknown>
   const updatedAt = new Date().toISOString()
   const item = { ...existing, finish: "Normal", ...patch, updatedAt }
 
-  await db.sql`
-  UPDATE inventory_items
-  SET
-    card_id = ${String(item.cardId || existing.cardId)},
-
-    item = ${JSON.stringify(item)}::jsonb,
-
-    condition = ${String(item.condition || "")},
-
-    finish = ${String(item.finish || "Normal")},
-
-    variant = ${item.variant || null},
-
-    price = ${Number(item.price || 0)},
-
-    purchase_price = ${Number(item.purchasePrice || 0)},
-
-    market_value = ${Number(item.marketValue || item.price || 0)},
-
-    quantity = ${Number(item.quantity || 0)},
-
-    quantity_sold = ${Number(item.quantitySold || 0)},
-
-    updated_at = ${updatedAt}
-
-  WHERE id = ${id}
-`
+  try {
+    await supabaseTable("inventory_items", {
+      method: "PATCH",
+      filters: [`id=eq.${id}`],
+      body: {
+        card_id: String(item.cardId || existing.cardId || ""),
+        item,
+        updated_at: updatedAt,
+      },
+    })
+  } catch (error) {
+    console.error("Inventory PATCH failed", error)
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Unknown inventory error",
+      },
+      { status: 500 },
+    )
+  }
 
   return NextResponse.json(item)
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const { id } = await params
-  const db = getDatabase()
-
-  await db.sql`DELETE FROM binder_entries WHERE item_id = ${id}`
-  await db.sql`DELETE FROM inventory_items WHERE id = ${id}`
+  await supabaseTable("binder_entries", {
+    method: "DELETE",
+    filters: [`item_id=eq.${id}`],
+  })
+  await supabaseTable("inventory_items", {
+    method: "DELETE",
+    filters: [`id=eq.${id}`],
+  })
 
   return NextResponse.json({ ok: true })
 }
