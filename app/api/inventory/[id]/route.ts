@@ -10,7 +10,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const patch = await request.json().catch(() => null)
 
   if (!patch || typeof patch !== "object") {
-    return NextResponse.json({ error: "Invalid inventory update" }, { status: 400 })
+    return NextResponse.json(
+      { error: "Invalid inventory update" },
+      { status: 400 },
+    )
   }
 
   const db = getDatabase()
@@ -22,7 +25,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   `
 
   if (rows.length === 0) {
-    return NextResponse.json({ error: "Inventory item not found" }, { status: 404 })
+    return NextResponse.json(
+      { error: "Inventory item not found" },
+      { status: 404 },
+    )
   }
 
   const existing = rows[0].item as Record<string, unknown>
@@ -30,17 +36,32 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const item = { ...existing, finish: "Normal", ...patch, updatedAt }
 
   await db.sql`
-    UPDATE inventory_items
-    SET card_id = ${String(item.cardId || existing.cardId)},
-        item = ${JSON.stringify(item)}::jsonb,
-        condition = ${String(item.condition || "")},
-        finish = ${String(item.finish || "Normal")},
-        price = ${Number(item.price || 0)},
-        quantity = ${Number(item.quantity || 0)},
-        quantity_sold = ${Number(item.quantitySold || 0)},
-        updated_at = ${updatedAt}
-    WHERE id = ${id}
-  `
+  UPDATE inventory_items
+  SET
+    card_id = ${String(item.cardId || existing.cardId)},
+
+    item = ${JSON.stringify(item)}::jsonb,
+
+    condition = ${String(item.condition || "")},
+
+    finish = ${String(item.finish || "Normal")},
+
+    variant = ${item.variant || null},
+
+    price = ${Number(item.price || 0)},
+
+    purchase_price = ${Number(item.purchasePrice || 0)},
+
+    market_value = ${Number(item.marketValue || item.price || 0)},
+
+    quantity = ${Number(item.quantity || 0)},
+
+    quantity_sold = ${Number(item.quantitySold || 0)},
+
+    updated_at = ${updatedAt}
+
+  WHERE id = ${id}
+`
 
   return NextResponse.json(item)
 }

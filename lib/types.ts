@@ -97,7 +97,7 @@ export interface PriceData {
 }
 
 // Card Conditions
-export type CardCondition = 
+export type CardCondition =
   | "Near Mint"
   | "Lightly Played"
   | "Moderately Played"
@@ -117,7 +117,7 @@ export const CONDITION_ABBREVIATIONS: Record<CardCondition, string> = {
   "Lightly Played": "LP",
   "Moderately Played": "MP",
   "Heavily Played": "HP",
-  "Damaged": "DMG",
+  Damaged: "DMG",
 }
 
 // Card finishes/types tracked per inventory listing.
@@ -184,38 +184,38 @@ export const CARD_VARIANTS: CardVariant[] = [
 ]
 
 export const FINISH_ABBREVIATIONS: Record<CardFinish, string> = {
-  "Normal": "NRM",
+  Normal: "NRM",
   "Reverse Holo": "RVH",
   "Pokeball Reverse Holo": "PBH",
   "Energy Symbol Reverse Holo": "ESH",
   "Masterball Reverse Holo": "MBH",
   "Other Reverse Holo": "ORH",
-  "Holo": "HOL",
+  Holo: "HOL",
   "Non Holo": "NON",
   "Rainbow Holo": "RNB",
   "Baby Shiny Holo": "BSH",
   "Cosmo Holo": "COS",
-  "Stamped": "STP",
+  Stamped: "STP",
   "Other Holo": "OTH",
   "Full Art": "FAR",
 }
 
 export const VARIANT_ABBREVIATIONS: Record<CardVariant, string> = {
-  "EX": "EX",
-  "GX": "GX",
-  "V": "V",
-  "VMAX": "VMX",
-  "VSTAR": "VST",
-  "BREAK": "BRK",
-  "LEGEND": "LEG",
+  EX: "EX",
+  GX: "GX",
+  V: "V",
+  VMAX: "VMX",
+  VSTAR: "VST",
+  BREAK: "BRK",
+  LEGEND: "LEG",
   "Lv.X": "LVX",
-  "Prime": "PRM",
+  Prime: "PRM",
   "Delta Species": "DLT",
   "TAG TEAM": "TAG",
 }
 
 export function getDefaultCardFinish(
-  card?: Pick<PokemonCard, "rarity" | "subtypes">
+  card?: Pick<PokemonCard, "rarity" | "subtypes">,
 ): CardFinish {
   const rarity = card?.rarity?.toLowerCase() ?? ""
 
@@ -227,10 +227,9 @@ export function getDefaultCardFinish(
 }
 
 export function getDefaultCardVariant(
-  card?: Pick<PokemonCard, "subtypes">
+  card?: Pick<PokemonCard, "subtypes">,
 ): CardVariant | null {
-  const subtypes =
-    card?.subtypes?.map((subtype) => subtype.toLowerCase()) ?? []
+  const subtypes = card?.subtypes?.map((subtype) => subtype.toLowerCase()) ?? []
 
   if (subtypes.includes("vmax")) return "VMAX"
   if (subtypes.includes("vstar")) return "VSTAR"
@@ -250,10 +249,28 @@ export function getDefaultCardVariant(
 // Price Tiers for Binder Organization
 export type PriceTier = "budget" | "mid" | "premium"
 
-export const PRICE_TIERS: { id: PriceTier; label: string; min: number; max: number; color: string }[] = [
-  { id: "budget", label: "$0 - $4.99", min: 0, max: 4.99, color: "bg-green-500" },
+export const PRICE_TIERS: {
+  id: PriceTier
+  label: string
+  min: number
+  max: number
+  color: string
+}[] = [
+  {
+    id: "budget",
+    label: "$0 - $4.99",
+    min: 0,
+    max: 4.99,
+    color: "bg-green-500",
+  },
   { id: "mid", label: "$5 - $29.99", min: 5, max: 29.99, color: "bg-blue-500" },
-  { id: "premium", label: "$30+", min: 30, max: Infinity, color: "bg-amber-500" },
+  {
+    id: "premium",
+    label: "$30+",
+    min: 30,
+    max: Infinity,
+    color: "bg-amber-500",
+  },
 ]
 
 export function getPriceTier(price: number): PriceTier {
@@ -273,6 +290,8 @@ export interface InventoryItem {
   finish: CardFinish
   variant?: CardVariant | null
   price: number
+  purchasePrice?: number
+  marketValue?: number
   quantity: number
   quantitySold: number
   notes?: string
@@ -291,6 +310,8 @@ export interface InventoryFormData {
   finish: CardFinish
   variant?: CardVariant | null
   price: number
+  purchasePrice?: number
+  marketValue?: number
   quantity: number
   quantitySold?: number
   notes?: string
@@ -308,6 +329,8 @@ export interface ManualCardData {
   finish: CardFinish
   variant?: CardVariant | null
   price: number
+  purchasePrice?: number
+  marketValue?: number
   quantity: number
   quantitySold?: number
   notes?: string
