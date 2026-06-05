@@ -1,19 +1,45 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import type { PokemonCard, CardCondition, CardFinish, PriceTier } from "@/lib/types"
-import { CARD_CONDITIONS, CARD_FINISHES, PRICE_TIERS, getDefaultCardFinish } from "@/lib/types"
-import { getCardRarityLabel, getConditionPriceRows, getTcgPriceRows, rarityColors } from "@/lib/card-metadata"
+import type {
+  PokemonCard,
+  CardCondition,
+  CardFinish,
+  PriceTier,
+} from "@/lib/types"
+import {
+  CARD_CONDITIONS,
+  CARD_FINISHES,
+  PRICE_TIERS,
+  getDefaultCardFinish,
+} from "@/lib/types"
+import {
+  getCardRarityLabel,
+  getConditionPriceRows,
+  getTcgPriceRows,
+  rarityColors,
+} from "@/lib/card-metadata"
 import { getMarketPrice } from "@/lib/pokemon-tcg"
 import { useInventory } from "@/lib/inventory-context"
 import * as binderApi from "@/lib/binders"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { Plus, ExternalLink, Package } from "lucide-react"
@@ -24,10 +50,16 @@ interface CardDetailModalProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalProps) {
+export function CardDetailModal({
+  card,
+  open,
+  onOpenChange,
+}: CardDetailModalProps) {
   const { addItem, getItemsByCardId } = useInventory()
   const [condition, setCondition] = useState<CardCondition>("Near Mint")
-  const [finish, setFinish] = useState<CardFinish>(card ? getDefaultCardFinish(card) : "Normal")
+  const [finish, setFinish] = useState<CardFinish>(
+    card ? getDefaultCardFinish(card) : "Normal",
+  )
   const [price, setPrice] = useState("")
   const [quantity, setQuantity] = useState("1")
   const [notes, setNotes] = useState("")
@@ -43,9 +75,23 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
   if (!card) return null
 
   const marketPrice = getMarketPrice(card)
+  console.log("CARD DEBUG", {
+    id: card.id,
+    name: card.name,
+    tcgplayer: card.tcgplayer,
+    marketPrice,
+  })
   const tcgRows = getTcgPriceRows(card)
   const conditionRows = getConditionPriceRows(card, condition)
-  const graphMax = Math.max(1, ...tcgRows.flatMap((row) => [row.low ?? 0, row.mid ?? 0, row.high ?? 0, row.market ?? 0]))
+  const graphMax = Math.max(
+    1,
+    ...tcgRows.flatMap((row) => [
+      row.low ?? 0,
+      row.mid ?? 0,
+      row.high ?? 0,
+      row.market ?? 0,
+    ]),
+  )
   const existingItems = getItemsByCardId(card.id)
 
   const handleAddToInventory = async () => {
@@ -63,7 +109,7 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
     }
 
     setIsAdding(true)
-    
+
     try {
       const item = await addItem(card, {
         condition,
@@ -82,9 +128,14 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
         await binderApi.addToBinder(binderTier, item)
       }
 
-      toast.success(binderTier === "none" ? "Card added to inventory" : "Card added to inventory and binder", {
-        description: `SKU: ${item.sku}`,
-      })
+      toast.success(
+        binderTier === "none"
+          ? "Card added to inventory"
+          : "Card added to inventory and binder",
+        {
+          description: `SKU: ${item.sku}`,
+        },
+      )
 
       // Reset form
       setCondition("Near Mint")
@@ -131,7 +182,11 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
             {/* External Links */}
             {card.tcgplayer?.url && (
               <Button asChild variant="outline" size="sm">
-                <a href={card.tcgplayer.url} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={card.tcgplayer.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <ExternalLink className="mr-2 h-4 w-4" />
                   View on TCGPlayer
                 </a>
@@ -161,7 +216,10 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
                 {/* Condition */}
                 <div className="space-y-2">
                   <Label htmlFor="condition">Condition</Label>
-                  <Select value={condition} onValueChange={(v) => setCondition(v as CardCondition)}>
+                  <Select
+                    value={condition}
+                    onValueChange={(v) => setCondition(v as CardCondition)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -177,7 +235,10 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
 
                 <div className="space-y-2">
                   <Label htmlFor="finish">Finish / Type</Label>
-                  <Select value={finish} onValueChange={(v) => setFinish(v as CardFinish)}>
+                  <Select
+                    value={finish}
+                    onValueChange={(v) => setFinish(v as CardFinish)}
+                  >
                     <SelectTrigger id="finish">
                       <SelectValue />
                     </SelectTrigger>
@@ -189,9 +250,12 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
                       ))}
                     </SelectContent>
                   </Select>
-                  {["Common", "Uncommon", "Rare"].includes(getCardRarityLabel(card)) && (
+                  {["Common", "Uncommon", "Rare"].includes(
+                    getCardRarityLabel(card),
+                  ) && (
                     <p className="text-xs text-muted-foreground">
-                      Reverse Holo is available for {getCardRarityLabel(card)} listings.
+                      Reverse Holo is available for {getCardRarityLabel(card)}{" "}
+                      listings.
                     </p>
                   )}
                 </div>
@@ -249,7 +313,12 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
 
                 <div className="space-y-2">
                   <Label htmlFor="binder">Binder</Label>
-                  <Select value={binderTier} onValueChange={(v) => setBinderTier(v as PriceTier | "none")}>
+                  <Select
+                    value={binderTier}
+                    onValueChange={(v) =>
+                      setBinderTier(v as PriceTier | "none")
+                    }
+                  >
                     <SelectTrigger id="binder">
                       <SelectValue />
                     </SelectTrigger>
@@ -279,44 +348,89 @@ export function CardDetailModal({ card, open, onOpenChange }: CardDetailModalPro
                 <div className="space-y-3">
                   <DetailRow label="Set" value={card.set.name} />
                   <DetailRow label="Series" value={card.set.series} />
-                  <DetailRow label="Number" value={`${card.number}/${card.set.printedTotal}`} />
+                  <DetailRow
+                    label="Number"
+                    value={`${card.number}/${card.set.printedTotal}`}
+                  />
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Rarity</span>
                     {card.rarity ? (
-                      <Badge className={rarityColors[getCardRarityLabel(card)] || ""}>{getCardRarityLabel(card)}</Badge>
+                      <Badge
+                        className={rarityColors[getCardRarityLabel(card)] || ""}
+                      >
+                        {getCardRarityLabel(card)}
+                      </Badge>
                     ) : (
-                      <span className="font-medium text-foreground">Unknown</span>
+                      <span className="font-medium text-foreground">
+                        Unknown
+                      </span>
                     )}
                   </div>
                   <DetailRow label="Type" value={card.supertype} />
-                  {card.subtypes && <DetailRow label="Subtypes" value={card.subtypes.join(", ")} />}
-                  {card.types && <DetailRow label="Energy Type" value={card.types.join(", ")} />}
+                  {card.subtypes && (
+                    <DetailRow
+                      label="Subtypes"
+                      value={card.subtypes.join(", ")}
+                    />
+                  )}
+                  {card.types && (
+                    <DetailRow
+                      label="Energy Type"
+                      value={card.types.join(", ")}
+                    />
+                  )}
                   {card.hp && <DetailRow label="HP" value={card.hp} />}
-                  {card.artist && <DetailRow label="Artist" value={card.artist} />}
-                  
+                  {card.artist && (
+                    <DetailRow label="Artist" value={card.artist} />
+                  )}
+
                   {/* Market Prices */}
                   {tcgRows.length > 0 && (
                     <div className="pt-3 border-t border-border">
-                      <p className="mb-2 text-sm font-medium">TCGPlayer Prices</p>
+                      <p className="mb-2 text-sm font-medium">
+                        TCGPlayer Prices
+                      </p>
                       <div className="space-y-3">
                         {tcgRows.map((row) => (
-                          <div key={row.finish} className="rounded-md border border-border p-2">
+                          <div
+                            key={row.finish}
+                            className="rounded-md border border-border p-2"
+                          >
                             <div className="mb-2 flex items-center justify-between text-sm">
                               <span className="font-medium">{row.label}</span>
-                              <span className="text-muted-foreground">Market {formatPrice(row.market)}</span>
+                              <span className="text-muted-foreground">
+                                Market {formatPrice(row.market)}
+                              </span>
                             </div>
-                            <PriceBar label="Low" value={row.low} max={graphMax} />
-                            <PriceBar label="Mid" value={row.mid} max={graphMax} />
-                            <PriceBar label="High" value={row.high} max={graphMax} />
+                            <PriceBar
+                              label="Low"
+                              value={row.low}
+                              max={graphMax}
+                            />
+                            <PriceBar
+                              label="Mid"
+                              value={row.mid}
+                              max={graphMax}
+                            />
+                            <PriceBar
+                              label="High"
+                              value={row.high}
+                              max={graphMax}
+                            />
                           </div>
                         ))}
                       </div>
                       <p className="mt-3 text-xs text-muted-foreground">
-                        TCGPlayer provides finish-level price points. Condition prices below are estimates adjusted from market data.
+                        TCGPlayer provides finish-level price points. Condition
+                        prices below are estimates adjusted from market data.
                       </p>
                       <div className="mt-3 space-y-1">
                         {conditionRows.map((row) => (
-                          <DetailRow key={`${row.finish}-${row.condition}`} label={`${row.label} ${condition}`} value={formatPrice(row.estimatedMarket)} />
+                          <DetailRow
+                            key={`${row.finish}-${row.condition}`}
+                            label={`${row.label} ${condition}`}
+                            value={formatPrice(row.estimatedMarket)}
+                          />
                         ))}
                       </div>
                     </div>
@@ -340,14 +454,25 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function PriceBar({ label, value, max }: { label: string; value: number | null; max: number }) {
+function PriceBar({
+  label,
+  value,
+  max,
+}: {
+  label: string
+  value: number | null
+  max: number
+}) {
   const width = value == null ? 0 : Math.max(4, (value / max) * 100)
 
   return (
     <div className="grid grid-cols-[42px_1fr_64px] items-center gap-2 text-xs">
       <span className="text-muted-foreground">{label}</span>
       <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${width}%` }} />
+        <div
+          className="h-full rounded-full bg-primary"
+          style={{ width: `${width}%` }}
+        />
       </div>
       <span className="text-right font-medium">{formatPrice(value)}</span>
     </div>

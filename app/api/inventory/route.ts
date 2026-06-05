@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       { error: "Invalid inventory item" },
       { status: 400 },
     )
-  }
+  } 
 
   const createdAt = item.createdAt ? new Date(item.createdAt) : new Date()
   const updatedAt = item.updatedAt ? new Date(item.updatedAt) : createdAt

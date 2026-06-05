@@ -29,7 +29,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       { status: 404 },
     )
   }
-
+ 
   const existing = rows[0]?.item as Record<string, unknown>
   const updatedAt = new Date().toISOString()
   const item = { ...existing, finish: "Normal", ...patch, updatedAt }

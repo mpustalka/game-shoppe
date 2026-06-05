@@ -167,6 +167,9 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           large: data.customImage || "/placeholder-card.png",
         },
       }
+      console.log("ADD ITEM CARD", manualCard)
+      console.log("ADD ITEM TCGPLAYER", manualCard.tcgplayer)
+      console.log("ADD ITEM PRICES", manualCard.tcgplayer?.prices)
 
       const newItem: InventoryItem = {
         id,
