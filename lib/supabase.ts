@@ -46,6 +46,7 @@ export async function supabaseTable(
     apikey: key!,
     Authorization: `Bearer ${key!}`,
     "Content-Type": "application/json",
+    Prefer: "return=representation",
   })
 
   const response = await fetch(url, {
@@ -62,6 +63,18 @@ export async function supabaseTable(
 
   if (response.status === 204) {
     return null
+  }
+
+  const text = await response.text()
+
+  if (!text || text.trim() === "") {
+    return null
+  }
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    return text
   }
 
   return response.json()
