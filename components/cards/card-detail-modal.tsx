@@ -63,6 +63,11 @@ export function CardDetailModal({
   const [price, setPrice] = useState("")
   const [quantity, setQuantity] = useState("1")
   const [notes, setNotes] = useState("")
+  const [manualMarketPrice, setManualMarketPrice] = useState("")
+  const [manualPriceSource, setManualPriceSource] = useState("")
+  const [loadingPrice, setLoadingPrice] = useState(false)
+  const [lookupPrice, setLookupPrice] = useState<number | null>(null)
+  const [priceSource, setPriceSource] = useState<string | null>(null)
   const [binderTier, setBinderTier] = useState<PriceTier | "none">("none")
   const [isAdding, setIsAdding] = useState(false)
 
@@ -117,8 +122,14 @@ export function CardDetailModal({
         price: priceValue,
         quantity: quantityValue,
         notes: notes || undefined,
-      })
 
+        manualMarketPrice:
+          manualMarketPrice.trim() !== ""
+            ? Number(manualMarketPrice)
+            : undefined,
+
+        manualPriceSource: manualPriceSource.trim() || undefined,
+      })
       if (!item) {
         toast.error("Failed to add card to inventory")
         return
@@ -155,6 +166,36 @@ export function CardDetailModal({
   const handleSetMarketPrice = () => {
     if (marketPrice !== null) {
       setPrice(marketPrice.toFixed(2))
+    }
+  }
+  async function handleFetchPrice() {
+    if (!card?.id) {
+      return
+    }
+
+    try {
+      setLoadingPrice(true)
+
+      const response = await fetch(`/api/pricing/${card.id}`)
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch price")
+      }
+
+      const data = await response.json()
+
+      console.log("Pricing API response:", data)
+
+      if (data.marketPrice) {
+        setLookupPrice(Number(data.marketPrice))
+        setPriceSource(data.source)
+
+        setPrice(Number(data.marketPrice).toFixed(2))
+      }
+    } catch (error) {
+      console.error("Price lookup failed:", error)
+    } finally {
+      setLoadingPrice(false)
     }
   }
 
@@ -264,7 +305,8 @@ export function CardDetailModal({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="price">Price ($)</Label>
-                    {marketPrice !== null && (
+
+                    {marketPrice !== null ? (
                       <Button
                         type="button"
                         variant="link"
@@ -274,6 +316,10 @@ export function CardDetailModal({
                       >
                         Use market price (${marketPrice.toFixed(2)})
                       </Button>
+                    ) : (
+                      <span className="text-xs text-orange-500">
+                        No TCGPlayer market price available
+                      </span>
                     )}
                   </div>
                   <Input
@@ -285,6 +331,29 @@ export function CardDetailModal({
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                   />
+                  {marketPrice === null && (
+                    <div className="space-y-2">
+                      <Button
+                        onClick={handleFetchPrice}
+                        disabled={loadingPrice}
+                      >
+                        {loadingPrice
+                          ? "Fetching Price..."
+                          : "Fetch Market Price"}
+                      </Button>
+
+                      {lookupPrice !== null && (
+                        <div className="text-sm">
+                          Market Price: ${lookupPrice.toFixed(2)}
+                          {priceSource && (
+                            <span className="ml-2 text-muted-foreground">
+                              ({priceSource})
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Quantity */}
@@ -385,7 +454,7 @@ export function CardDetailModal({
                   )}
 
                   {/* Market Prices */}
-                  {tcgRows.length > 0 && (
+                  {tcgRows.length > 0 ? (
                     <div className="pt-3 border-t border-border">
                       <p className="mb-2 text-sm font-medium">
                         TCGPlayer Prices
@@ -433,6 +502,35 @@ export function CardDetailModal({
                           />
                         ))}
                       </div>
+                    </div>
+                  ) : (
+                    <div className="pt-3 border-t border-border">
+                      <p className="font-medium">
+                        TCGPlayer pricing unavailable
+                      </p>
+
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        This card exists on TCGPlayer but price data has not yet
+                        been provided by the Pokemon TCG API.
+                      </p>
+
+                      {card.tcgplayer?.url && (
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          className="mt-3"
+                        >
+                          <a
+                            href={card.tcgplayer.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Check TCGPlayer Price
+                          </a>
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>

@@ -297,6 +297,8 @@ export interface InventoryItem {
   notes?: string
   customImage?: string // For manual entries with uploaded images
   isManualEntry?: boolean // Flag for manually added cards
+  manualMarketPrice?: number
+  manualPriceSource?: string
   squareItemId?: string
   squareVariationId?: string
   syncedToSquare: boolean
@@ -312,6 +314,8 @@ export interface InventoryFormData {
   price: number
   purchasePrice?: number
   marketValue?: number
+  manualMarketPrice?: number
+  manualPriceSource?: string
   quantity: number
   quantitySold?: number
   notes?: string

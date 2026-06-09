@@ -131,7 +131,10 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   )
 
   const addManualItem = useCallback(
-    async (data: ManualCardData): Promise<InventoryItem | null> => {
+    async (
+      data: ManualCardData,
+      options: { manualMarketPrice?: number; manualPriceSource?: string },
+    ): Promise<InventoryItem | null> => {
       const timestamp = Date.now()
       const sku = generateManualSKU(
         data.name,
@@ -183,6 +186,8 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         price: data.price,
         purchasePrice: data.purchasePrice || 0,
         marketValue: data.marketValue || data.price,
+        manualMarketPrice: options.manualMarketPrice,
+        manualPriceSource: options.manualPriceSource,
         quantity: data.quantity,
         quantitySold: data.quantitySold || 0,
         notes: data.notes,

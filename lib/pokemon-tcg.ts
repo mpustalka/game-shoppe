@@ -97,7 +97,9 @@ export async function getCardById(cardId: string): Promise<PokemonCard | null> {
   }
 
   const data = await response.json()
+
   console.log("API CARD FULL", JSON.stringify(data.data.tcgplayer, null, 2))
+
   return data.data as PokemonCard
 }
 
