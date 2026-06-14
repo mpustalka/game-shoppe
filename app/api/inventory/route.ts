@@ -49,6 +49,7 @@ export async function POST(request: Request) {
         id: String(normalizedItem.id),
         card_id: String(normalizedItem.cardId),
         item: normalizedItem,
+        language: normalizedItem.language ?? "en",
         created_at: createdAt.toISOString(),
         updated_at: updatedAt.toISOString(),
       },
@@ -87,6 +88,7 @@ export async function PUT(request: Request) {
       body: {
         card_id: String(normalizedItem.cardId),
         item: normalizedItem,
+        language: normalizedItem.language ?? "en",
         updated_at: updatedAt,
       },
       filters: [`id=eq.${String(normalizedItem.id)}`],

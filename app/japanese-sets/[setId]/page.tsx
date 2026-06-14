@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { getSetById, getAllCardsBySet } from "@/lib/pokemon-tcg"
+import { getJapaneseSetById, getJapaneseCardsBySet } from "@/lib/japanese-tcg"
 import { CardGrid } from "@/components/cards/card-grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,12 +12,12 @@ interface SetDetailPageProps {
 
 export async function generateMetadata({ params }: SetDetailPageProps) {
   const { setId } = await params
-  const set = await getSetById(setId)
-  
+  const set = await getJapaneseSetById(setId)
+
   if (!set) {
     return { title: "Set Not Found - Card Vault" }
   }
-  
+
   return {
     title: `${set.name} - Card Vault`,
     description: `Browse and add ${set.total} cards from ${set.name} to your inventory`,
@@ -26,10 +26,10 @@ export async function generateMetadata({ params }: SetDetailPageProps) {
 
 export default async function SetDetailPage({ params }: SetDetailPageProps) {
   const { setId } = await params
-  
+
   const [set, cards] = await Promise.all([
-    getSetById(setId),
-    getAllCardsBySet(setId),
+    getJapaneseSetById(setId),
+    getJapaneseCardsBySet(setId),
   ])
 
   if (!set) {
@@ -47,10 +47,9 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Back Button */}
       <Button asChild variant="ghost" size="sm" className="mb-6">
-        <Link href="/sets">
-          <Link href="/japanese-sets">Japanese Sets</Link>
+        <Link href="/japanese-sets">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          All Sets
+          Japanese Sets
         </Link>
       </Button>
 

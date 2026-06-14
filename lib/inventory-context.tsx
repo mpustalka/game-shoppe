@@ -88,7 +88,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       const timestamp = Date.now()
       const finish = data.finish ?? getDefaultCardFinish(card)
       const variant = data.variant ?? getDefaultCardVariant(card)
-      const sku = generateSKU(card, data.condition, finish, timestamp)
+      const sku = generateSKU(card, data.condition, finish, timestamp,"en")
       const barcode = generateBarcodeString(sku)
       const id = crypto.randomUUID()
 
@@ -96,6 +96,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         id,
         cardId: card.id,
         card,
+        language: data.language,
         sku,
         barcode,
         condition: data.condition,
@@ -172,6 +173,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         id,
         cardId: manualCard.id,
         card: manualCard,
+        language: data.language,
         sku,
         barcode,
         condition: data.condition,

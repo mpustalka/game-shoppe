@@ -43,11 +43,18 @@ export default function RootLayout({
         <InventoryProvider>
           <div className="relative flex min-h-screen flex-col">
             <Header />
-            <main className="flex-1">{children}</main>
+
+            <main className="flex-1">
+              {children}
+            </main>
           </div>
+
           <Toaster position="bottom-right" />
         </InventoryProvider>
-        {process.env.NODE_ENV === "production" && <Analytics />}
+
+        {process.env.NODE_ENV === "production" && (
+          <Analytics />
+        )}
       </body>
     </html>
   )

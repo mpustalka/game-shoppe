@@ -1,5 +1,10 @@
 import QRCode from "qrcode"
-import type { QRCodeData, CardCondition, CardFinish, PokemonCard } from "./types"
+import type {
+  QRCodeData,
+  CardCondition,
+  CardFinish,
+  PokemonCard,
+} from "./types"
 import { CONDITION_ABBREVIATIONS, FINISH_ABBREVIATIONS } from "./types"
 
 // Generate a unique SKU for an inventory item
@@ -7,7 +12,8 @@ export function generateSKU(
   card: PokemonCard,
   condition: CardCondition,
   finish: CardFinish = "Normal",
-  timestamp?: number
+  language: "en" | "ja",
+  timestamp?: number,
 ): string {
   const setAbbrev = card.set.id.toUpperCase().slice(0, 6)
   const cardNum = card.number.padStart(3, "0")
@@ -15,8 +21,9 @@ export function generateSKU(
   const finishAbbrev = FINISH_ABBREVIATIONS[finish]
   const ts = timestamp || Date.now()
   const uniqueId = ts.toString(36).toUpperCase().slice(-4)
-  
-  return `PKM-${setAbbrev}-${cardNum}-${condAbbrev}-${finishAbbrev}-${uniqueId}`
+  const languageCode = language.toUpperCase()
+
+  return `PKM-${languageCode}-${setAbbrev}-${cardNum}-${condAbbrev}-${finishAbbrev}-${uniqueId}`
 }
 
 // Generate a unique SKU for manually entered cards
@@ -25,18 +32,28 @@ export function generateManualSKU(
   setName: string,
   condition: CardCondition,
   finish: CardFinish = "Normal",
-  timestamp?: number
+  language: "en" | "ja",
+  timestamp?: number,
 ): string {
-  // Create abbreviation from card name (first 3 chars)
-  const cardAbbrev = cardName.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 3) || "XXX"
-  // Create abbreviation from set name (first 4 chars)
-  const setAbbrev = setName.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 4) || "MANU"
+  const cardAbbrev =
+    cardName
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase()
+      .slice(0, 3) || "XXX"
+
+  const setAbbrev =
+    setName
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase()
+      .slice(0, 4) || "MANU"
+
   const condAbbrev = CONDITION_ABBREVIATIONS[condition]
   const finishAbbrev = FINISH_ABBREVIATIONS[finish]
   const ts = timestamp || Date.now()
   const uniqueId = ts.toString(36).toUpperCase().slice(-4)
-  
-  return `MAN-${setAbbrev}-${cardAbbrev}-${condAbbrev}-${finishAbbrev}-${uniqueId}`
+  const languageCode = language.toUpperCase()
+
+  return `MAN-${languageCode}-${setAbbrev}-${cardAbbrev}-${condAbbrev}-${finishAbbrev}-${uniqueId}`
 }
 
 // Generate a unique barcode string
@@ -44,7 +61,9 @@ export function generateBarcodeString(sku: string): string {
   // Create a numeric barcode from SKU for scanning compatibility
   // Format: timestamp-based unique ID
   const timestamp = Date.now()
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, "0")
+  const random = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, "0")
   return `${timestamp}${random}`
 }
 
@@ -54,7 +73,7 @@ export function createQRCodeData(
   sku: string,
   card: PokemonCard,
   condition: CardCondition,
-  price: number
+  price: number,
 ): QRCodeData {
   return {
     id,
@@ -73,12 +92,12 @@ export async function generateQRCodeDataURL(
     width?: number
     margin?: number
     color?: { dark?: string; light?: string }
-  } = {}
+  } = {},
 ): Promise<string> {
   const { width = 200, margin = 2, color } = options
-  
+
   const qrData = JSON.stringify(data)
-  
+
   return QRCode.toDataURL(qrData, {
     width,
     margin,
@@ -97,12 +116,12 @@ export async function generateQRCodeSVG(
     width?: number
     margin?: number
     color?: { dark?: string; light?: string }
-  } = {}
+  } = {},
 ): Promise<string> {
   const { width = 200, margin = 2, color } = options
-  
+
   const qrData = JSON.stringify(data)
-  
+
   return QRCode.toString(qrData, {
     type: "svg",
     width,
@@ -119,7 +138,7 @@ export async function generateQRCodeSVG(
 export function parseQRCodeData(scannedData: string): QRCodeData | null {
   try {
     const data = JSON.parse(scannedData)
-    
+
     // Validate required fields
     if (
       typeof data.id === "string" &&
@@ -128,7 +147,7 @@ export function parseQRCodeData(scannedData: string): QRCodeData | null {
     ) {
       return data as QRCodeData
     }
-    
+
     return null
   } catch {
     return null
