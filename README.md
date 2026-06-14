@@ -1,36 +1,95 @@
 # game-shoppe
 
 This is a [Next.js](https://nextjs.org) project
-
+Need to setup Supabase for db
 
 ## Getting Started
 
-First, run the development server:
+First, run supabase & the development server:
+
+pnpm exec supabase start
+
+pnpm exec supabase login
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+pnpm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-## Learn More
-
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
-
-
 
 TO DO ongoing..
-?Integrate Square?
+
+Binder UI + Card Variant System Upgrade - Done
+Requested Features
+1. Real 9-Pocket Binder UI - Done
+
+The current binder page should visually resemble a real trading card binder.
+
+2. Reverse Holo Variants - Done
+
+Every:
+
+Common
+Uncommon
+Rare
+
+must support:
+
+Normal
+Reverse Holo
+3. Add EX Card Variant
+
+The inventory/add-card flow is missing:
+
+EX
+
+This should be selectable as a rarity/value type.
+
+Layout Goals
+
+The binder should feel like:
+
+-A physical Pokémon binder
+-9-pocket pages
+-Swipeable/mobile friendly
+-Tablet optimized
+Animated page turns - to do
+Glossy premium card pockets - to do maybe
+
+
+
+fixed - now for Inventory need a better way to srt and view cards and search, especially when the card shops will have thousands of cards available. Search inventory by set feature as well i think.
+
+
+Also grab images of the reverse holo versions, and reverse pokeball versions frompricecharting.com/category/pokemon-cards if tcgplayer doesnt have them if you can. also for the  finishing types dropdown just add everything and the user can choose  options  see below - Finishing Types:
+
+Normal - Common/Uncommon/Rare/ 
+Reverse Holo - Common/Uncommon/Rare 
+Pokeball Rev Holo - Common/Uncommon/Rare
+Energy Symbol Rev Holo -Common/Uncommon/Rare 
+Other Rev Holo - Common/Uncommon/Rare 
+Masterball Rev Holo - Common/Uncommon/Rare 
+Holo Rare Rare/Non Holo 
+Promo - Rev holo/Holo/Cosmo Holo/Stamped/Other 
+V - V / V-Max / V-Star 
+EX - EX / EX Full Art 
+Full Art Illustration 
+Rare Special
+Illustration Rare
+
+
+Other Competitions
+A fee on sales for sellers utilizing a third-party eCommerce platform like Crystal Commerce, BinderPOS, or Ion Sync - https://www.ionsuite.com/pricing. These fees are determined by the sync provider.
+
+
+Collector version & For Card Shop's version - Figure out models for getting paid? Tiered pricing by use maybe?
+
+Signup, register
+Need Login Page - use auth supabase
+fix routes to show nothing unless user is signed in so need a single homepage adn fix routes
+
+Also need to save up to 5 sessions that can last for 72 hours - where If a new customer walks up and needs cards searched I can save they're cards they have selected for later - or something similiar 
 
 Setup database so saves not locally anymore
 - eed a better earch with tcg player  some cards do NOT show up so need to search by name and number 
@@ -66,16 +125,3 @@ Need a way to save card lists for later - create a custom list for a customer an
 Need to save a session for later
 
 Have a BUY LIST with Store credit price  - need to have buy rate at 75% of card value
-
-
-
-recent searches
-
-- Add Japanese card's as well
-
-netlify database migrations apply
-
-netifly dev
-
-Run "Netlify: Set API Token" command to set your Netlify API token.
-netlify set api token
