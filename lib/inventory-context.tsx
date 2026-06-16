@@ -85,10 +85,16 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       card: PokemonCard,
       data: Omit<InventoryFormData, "cardId">,
     ): Promise<InventoryItem | null> => {
-      const timestamp = Date.now()
+      const timestamp = Date.now() //remove
       const finish = data.finish ?? getDefaultCardFinish(card)
       const variant = data.variant ?? getDefaultCardVariant(card)
-      const sku = generateSKU(card, data.condition, finish, timestamp,"en")
+
+      const sku = generateSKU(
+        card,
+        data.condition,
+        finish,
+        data.language ?? "en",
+      )
       const barcode = generateBarcodeString(sku)
       const id = crypto.randomUUID()
 
@@ -96,7 +102,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         id,
         cardId: card.id,
         card,
-        language: data.language,
+        language: data.language ?? "en",
         sku,
         barcode,
         condition: data.condition,
@@ -139,6 +145,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         data.setName,
         data.condition,
         data.finish,
+        data.language ?? "en",
         timestamp,
       )
       const barcode = generateBarcodeString(sku)
@@ -173,7 +180,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         id,
         cardId: manualCard.id,
         card: manualCard,
-        language: data.language,
+        language: data.language ?? "en",
         sku,
         barcode,
         condition: data.condition,

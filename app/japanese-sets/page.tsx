@@ -2,7 +2,7 @@ import { getAllJapaneseSets } from "@/lib/japanese-tcg"
 import { SetGrid } from "@/components/cards/set-grid"
 
 export const metadata = {
-  title: "Browse Pokemon Sets - Card Vault",
+  title: "Browse Japanese Only Pokemon Sets - Card Vault",
   description: "Browse all Pokemon TCG sets and add cards to your inventory",
 }
 
@@ -41,7 +41,7 @@ export default async function SetsPage() {
             <h2 className="mb-4 text-xl font-semibold text-foreground">
               {series}
             </h2>
-            <SetGrid sets={seriesSets} />
+            <SetGrid sets={seriesSets} basePath="/japanese-sets" />
           </section>
         ))}
       </div>

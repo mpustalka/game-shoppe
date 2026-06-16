@@ -32,9 +32,11 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Invalid binder tier" }, { status: 400 })
   }
 
+  const language = new URL(_request.url).searchParams.get("language") ?? "en"
+
   const rows = await supabaseTable("binder_entries", {
     select: "item",
-    filters: [`tier=eq.${tier}`],
+    filters: [`tier=eq.${tier}`, `language=eq.${language}`],
     order: "added_at.desc",
   })
 
@@ -48,6 +50,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
 export async function POST(request: Request, { params }: RouteContext) {
   const { tier } = await params
   const item = await request.json().catch(() => null)
+  const language = item.language === "ja" ? "ja" : "en"
 
   if (!validateTier(tier)) {
     return NextResponse.json({ error: "Invalid binder tier" }, { status: 400 })
@@ -64,12 +67,13 @@ export async function POST(request: Request, { params }: RouteContext) {
     method: "POST",
     body: {
       tier,
+      language,
       item_id: String(normalizedItem.id),
       item: normalizedItem,
       added_at: now,
       updated_at: now,
     },
-    onConflict: "tier,item_id",
+    onConflict: "tier,language,item_id",
   })
 
   return NextResponse.json(normalizedItem, { status: 201 })
@@ -88,9 +92,15 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Missing itemId" }, { status: 400 })
   }
 
+  const language = searchParams.get("language") ?? "en"
+
   await supabaseTable("binder_entries", {
     method: "DELETE",
-    filters: [`tier=eq.${tier}`, `item_id=eq.${itemId}`],
+    filters: [
+      `tier=eq.${tier}`,
+      `language=eq.${language}`,
+      `item_id=eq.${itemId}`,
+    ],
   })
 
   return NextResponse.json({ ok: true })

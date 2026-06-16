@@ -13,11 +13,11 @@ interface SetDetailPageProps {
 export async function generateMetadata({ params }: SetDetailPageProps) {
   const { setId } = await params
   const set = await getSetById(setId)
-  
+
   if (!set) {
     return { title: "Set Not Found - Card Vault" }
   }
-  
+
   return {
     title: `${set.name} - Card Vault`,
     description: `Browse and add ${set.total} cards from ${set.name} to your inventory`,
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: SetDetailPageProps) {
 
 export default async function SetDetailPage({ params }: SetDetailPageProps) {
   const { setId } = await params
-  
+
   const [set, cards] = await Promise.all([
     getSetById(setId),
     getAllCardsBySet(setId),
@@ -36,12 +36,16 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
     notFound()
   }
 
-  const releaseDate = new Date(set.releaseDate)
-  const formattedDate = releaseDate.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  })
+  const releaseDate = set.releaseDate ? new Date(set.releaseDate) : null
+  const formattedDate =
+    releaseDate && !Number.isNaN(releaseDate.getTime())
+      ? releaseDate.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "Unknown"
+
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -62,6 +66,12 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
             <img
               src={set.images.logo}
               alt={`${set.name} logo`}
+              className="max-h-full max-w-full object-contain"
+            />
+          ) : set.images.symbol ? (
+            <img
+              src={set.images.symbol}
+              alt={`${set.name} symbol`}
               className="max-h-full max-w-full object-contain"
             />
           ) : (

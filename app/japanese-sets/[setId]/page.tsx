@@ -36,12 +36,16 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
     notFound()
   }
 
-  const releaseDate = new Date(set.releaseDate)
-  const formattedDate = releaseDate.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  })
+  const releaseDate = set.releaseDate ? new Date(set.releaseDate) : null
+  const formattedDate =
+    releaseDate && !Number.isNaN(releaseDate.getTime())
+      ? releaseDate.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "Unknown"
+
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

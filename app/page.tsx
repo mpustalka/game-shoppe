@@ -220,15 +220,36 @@ export default function DashboardPage() {
               className="justify-start h-auto py-4"
             >
               <Link href="/sets">
-                <Link href="/japanese-sets">Japanese Sets</Link>
                 <div className="flex items-center gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                     <Package className="h-5 w-5 text-primary" />
                   </div>
+
                   <div className="text-left">
                     <p className="font-medium">Browse Pokemon Sets</p>
                     <p className="text-sm text-muted-foreground">
-                      View all sets and add cards to inventory
+                      View all English sets and add cards to inventory
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="justify-start h-auto py-4"
+            >
+              <Link href="/japanese-sets">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Layers className="h-5 w-5 text-primary" />
+                  </div>
+
+                  <div className="text-left">
+                    <p className="font-medium">Browse Japanese Sets</p>
+                    <p className="text-sm text-muted-foreground">
+                      View all Japanese sets and add cards to inventory
                     </p>
                   </div>
                 </div>

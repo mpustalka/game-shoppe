@@ -9,20 +9,31 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  Search, 
-  Plus, 
-  Grid3X3, 
-  List, 
-  MoreVertical, 
-  Pencil, 
+import {
+  Search,
+  Plus,
+  Grid3X3,
+  List,
+  MoreVertical,
+  Pencil,
   Trash2,
   Package,
   Filter,
-  X
+  X,
 } from "lucide-react"
 import { EditInventoryModal } from "@/components/inventory/edit-inventory-modal"
 import { DeleteConfirmDialog } from "@/components/inventory/delete-confirm-dialog"
@@ -35,7 +46,9 @@ export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
   const [sortBy, setSortBy] = useState<SortOption>("newest")
-  const [filterCondition, setFilterCondition] = useState<CardCondition | "all">("all")
+  const [filterCondition, setFilterCondition] = useState<CardCondition | "all">(
+    "all",
+  )
   const [editItem, setEditItem] = useState<string | null>(null)
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null)
 
@@ -51,7 +64,7 @@ export default function InventoryPage() {
           item.card.name.toLowerCase().includes(query) ||
           item.card.set.name.toLowerCase().includes(query) ||
           item.sku.toLowerCase().includes(query) ||
-          item.barcode.includes(searchQuery)
+          item.barcode.includes(searchQuery),
       )
     }
 
@@ -63,10 +76,16 @@ export default function InventoryPage() {
     // Sort
     switch (sortBy) {
       case "newest":
-        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        result.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )
         break
       case "oldest":
-        result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        result.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        )
         break
       case "price-high":
         result.sort((a, b) => b.price - a.price)
@@ -82,8 +101,14 @@ export default function InventoryPage() {
     return result
   }, [items, searchQuery, sortBy, filterCondition])
 
-  const totalValue = filteredItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const totalQuantity = filteredItems.reduce((sum, item) => sum + item.quantity, 0)
+  const totalValue = filteredItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  )
+  const totalQuantity = filteredItems.reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  )
 
   const [isDeleting, setIsDeleting] = useState(false)
   const handleDelete = async () => {
