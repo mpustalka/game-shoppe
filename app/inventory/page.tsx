@@ -142,7 +142,6 @@ export default function InventoryPage() {
         </div>
         <Button asChild>
           <Link href="/sets">
-            <Link href="/japanese-sets">Japanese Sets</Link>
             <Plus className="mr-2 h-4 w-4" />
             Add Cards
           </Link>

@@ -23,14 +23,20 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import type { BinderLanguage } from "@/lib/binders"
 
 interface CardGridProps {
   cards: PokemonCard[]
   setId?: string
+  language?: BinderLanguage
   onSelectCards?: (selected: PokemonCard[]) => void
 }
 
-export function CardGrid({ cards, onSelectCards }: CardGridProps) {
+export function CardGrid({
+  cards,
+  onSelectCards,
+  language = "en",
+}: CardGridProps) {
   const { addItem, items } = useInventory()
   const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -119,10 +125,10 @@ export function CardGrid({ cards, onSelectCards }: CardGridProps) {
           finish: getDefaultCardFinish(card),
           price: getMarketPrice(card) ?? 0.01,
           quantity: 1,
-          language: "en",
+          language,
         })
         if (item) {
-          await binderApi.addToBinder(bulkBinderTier, item)
+          await binderApi.addToBinder(bulkBinderTier, item, language)
           addedItems.push(item)
         }
       }

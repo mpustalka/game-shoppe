@@ -126,7 +126,7 @@ export function CardDetailModal({
       }
 
       if (binderTier !== "none") {
-        await binderApi.addToBinder(binderTier, item)
+        await binderApi.addToBinder(binderTier, item, language)
       }
 
       toast.success(
@@ -310,7 +310,7 @@ export function CardDetailModal({
                     onChange={(e) => setNotes(e.target.value)}
                     rows={2}
                   />
-                  //language dropdown?idkwhere to put it - move this
+                  //language dropdown
                   <Select
                     value={language}
                     onValueChange={(v) => setLanguage(v as "en" | "ja")}

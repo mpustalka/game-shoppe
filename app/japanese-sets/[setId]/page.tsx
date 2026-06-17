@@ -46,7 +46,6 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
         })
       : "Unknown"
 
-
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Back Button */}
@@ -98,7 +97,7 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
       </div>
 
       {/* Cards Grid */}
-      <CardGrid cards={cards} setId={setId} />
+      <CardGrid cards={cards} setId={setId} language="ja" />
     </div>
   )
 }

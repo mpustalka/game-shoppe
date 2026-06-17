@@ -105,7 +105,7 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
       </div>
 
       {/* Cards Grid */}
-      <CardGrid cards={cards} setId={setId} />
+      <CardGrid cards={cards} setId={setId} language="en" />
     </div>
   )
 }
