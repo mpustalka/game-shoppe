@@ -37,6 +37,8 @@ import {
 } from "lucide-react"
 import { EditInventoryModal } from "@/components/inventory/edit-inventory-modal"
 import { DeleteConfirmDialog } from "@/components/inventory/delete-confirm-dialog"
+import { SetFilter } from "@/components/inventory/set-filter"
+import { getAvailableSets } from "@/lib/card-metadata"
 
 type ViewMode = "grid" | "list"
 type SortOption = "newest" | "oldest" | "price-high" | "price-low" | "name"
@@ -49,6 +51,7 @@ export default function InventoryPage() {
   const [filterCondition, setFilterCondition] = useState<CardCondition | "all">(
     "all",
   )
+  const [filterSet, setFilterSet] = useState("all")
   const [editItem, setEditItem] = useState<string | null>(null)
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null)
 
@@ -71,6 +74,13 @@ export default function InventoryPage() {
     // Condition filter
     if (filterCondition !== "all") {
       result = result.filter((item) => item.condition === filterCondition)
+    }
+
+    // Set filter
+    if (filterSet !== "all") {
+      result = result.filter(
+        (item) => (item.card.set.id || item.card.set.name) === filterSet,
+      )
     }
 
     // Sort
@@ -99,7 +109,12 @@ export default function InventoryPage() {
     }
 
     return result
-  }, [items, searchQuery, sortBy, filterCondition])
+  }, [items, searchQuery, sortBy, filterCondition, filterSet])
+
+  const availableSets = useMemo(
+    () => getAvailableSets(items.map((item) => item.card)),
+    [items],
+  )
 
   const totalValue = filteredItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -169,6 +184,14 @@ export default function InventoryPage() {
           )}
         </div>
 
+        {/* Set Filter */}
+        <SetFilter
+          sets={availableSets}
+          value={filterSet}
+          onChange={setFilterSet}
+          className="w-full sm:w-[200px]"
+        />
+
         {/* Condition Filter */}
         <Select
           value={filterCondition}
@@ -230,11 +253,11 @@ export default function InventoryPage() {
             No inventory items
           </h3>
           <p className="mb-4 text-center text-sm text-muted-foreground">
-            {searchQuery || filterCondition !== "all"
+            {searchQuery || filterCondition !== "all" || filterSet !== "all"
               ? "No items match your search or filters"
               : "Start by browsing Pokemon sets and adding cards to your inventory"}
           </p>
-          {!searchQuery && filterCondition === "all" && (
+          {!searchQuery && filterCondition === "all" && filterSet === "all" && (
             <Button asChild>
               <Link href="/sets">Browse Pokemon Sets</Link>
             </Button>
