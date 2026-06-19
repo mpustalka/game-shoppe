@@ -116,6 +116,20 @@ export function getAvailableRarities(cards: PokemonCard[]): string[] {
   return Array.from(rarities).sort(compareRarity)
 }
 
+export function getAvailableSets(
+  cards: PokemonCard[],
+): { id: string; name: string }[] {
+  const map = new Map<string, string>()
+  for (const card of cards) {
+    const id = card.set?.id || card.set?.name
+    const name = card.set?.name
+    if (id && name && !map.has(id)) map.set(id, name)
+  }
+  return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  )
+}
+
 export function getTcgPriceRows(card: PokemonCard) {
   const prices = card.tcgplayer?.prices
   if (!prices) return []

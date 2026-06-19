@@ -14,10 +14,12 @@ import {
 import {
   compareRarity,
   getAvailableRarities,
+  getAvailableSets,
   getCardRarityLabel,
   rarityColors,
 } from "@/lib/card-metadata"
 import * as binderApi from "@/lib/binders"
+import { SetFilter } from "@/components/inventory/set-filter"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -77,6 +79,7 @@ export default function BindersPage() {
     "all",
   )
   const [filterRarity, setFilterRarity] = useState("all")
+  const [filterSet, setFilterSet] = useState("all")
   const [binderItems, setBinderItems] = useState<InventoryItem[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -171,6 +174,11 @@ export default function BindersPage() {
         (item) => getCardRarityLabel(item.card) === filterRarity,
       )
     }
+    if (filterSet !== "all") {
+      result = result.filter(
+        (item) => (item.card.set.id || item.card.set.name) === filterSet,
+      )
+    }
     switch (sortBy) {
       case "price-low":
         result.sort((a, b) => a.price - b.price)
@@ -204,11 +212,15 @@ export default function BindersPage() {
         break
     }
     return result
-  }, [binderItems, searchQuery, sortBy, filterCondition, filterRarity])
+  }, [binderItems, searchQuery, sortBy, filterCondition, filterRarity, filterSet])
 
   const activeTierInfo = PRICE_TIERS.find((t) => t.id === activeTier)!
   const allRarities = useMemo(
     () => getAvailableRarities(binderItems.map((item) => item.card)),
+    [binderItems],
+  )
+  const availableSets = useMemo(
+    () => getAvailableSets(binderItems.map((item) => item.card)),
     [binderItems],
   )
 
@@ -362,6 +374,14 @@ export default function BindersPage() {
                 </SelectContent>
               </Select>
 
+              {/* Set Filter */}
+              <SetFilter
+                sets={availableSets}
+                value={filterSet}
+                onChange={setFilterSet}
+                className="w-[200px]"
+              />
+
               {/* Sort */}
               <Select
                 value={sortBy}
@@ -417,7 +437,10 @@ export default function BindersPage() {
                   No cards in this binder
                 </h3>
                 <p className="mb-4 text-center text-sm text-muted-foreground">
-                  {searchQuery || filterCondition !== "all"
+                  {searchQuery ||
+                  filterCondition !== "all" ||
+                  filterRarity !== "all" ||
+                  filterSet !== "all"
                     ? "No cards match your filters"
                     : `Add cards to this binder below.`}
                 </p>
