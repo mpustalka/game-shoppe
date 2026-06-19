@@ -2,20 +2,25 @@
 
 import Link from "next/link"
 import { useInventory } from "@/lib/inventory-context"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Package, 
-  DollarSign, 
-  Layers, 
+import {
+  Package,
+  DollarSign,
+  Layers,
   AlertTriangle,
   ArrowRight,
   Plus,
   QrCode,
-  RefreshCw
+  RefreshCw,
 } from "lucide-react"
-
 
 export default function DashboardPage() {
   const { items } = useInventory()
@@ -23,7 +28,10 @@ export default function DashboardPage() {
   // Calculate stats
   const totalItems = items.length
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0)
-  const totalValue = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const totalValue = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  )
   const lowStockItems = items.filter((item) => item.quantity <= 2)
   const unsyncedItems = items.filter((item) => !item.syncedToSquare)
   const uniqueSets = new Set(items.map((item) => item.card.set.id)).size
@@ -36,7 +44,9 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Dashboard
+          </h1>
           <p className="mt-1 text-muted-foreground">
             Manage your Pokemon card inventory
           </p>
@@ -79,7 +89,11 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              $
+              {totalValue.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
             <p className="text-xs text-muted-foreground">
               Across {uniqueSets} sets
@@ -106,7 +120,9 @@ export default function DashboardPage() {
             <RefreshCw className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{items.length - unsyncedItems.length}/{items.length}</div>
+            <div className="text-2xl font-bold">
+              {items.length - unsyncedItems.length}/{items.length}
+            </div>
             <p className="text-xs text-muted-foreground">
               {unsyncedItems.length} items pending sync
             </p>
@@ -121,7 +137,9 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Recent Inventory</CardTitle>
-              <CardDescription>Latest cards added to your inventory</CardDescription>
+              <CardDescription>
+                Latest cards added to your inventory
+              </CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm">
               <Link href="/inventory">
@@ -134,7 +152,9 @@ export default function DashboardPage() {
             {recentItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Layers className="mb-4 h-12 w-12 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground">No inventory yet</p>
+                <p className="text-sm text-muted-foreground">
+                  No inventory yet
+                </p>
                 <Button asChild variant="link" className="mt-2">
                   <Link href="/sets">Browse sets to add cards</Link>
                 </Button>
@@ -153,7 +173,9 @@ export default function DashboardPage() {
                       className="h-16 w-12 rounded object-cover"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="truncate font-medium text-foreground">{item.card.name}</p>
+                      <p className="truncate font-medium text-foreground">
+                        {item.card.name}
+                      </p>
                       <p className="truncate text-sm text-muted-foreground">
                         {item.card.set.name} - #{item.card.number}
                       </p>
@@ -187,26 +209,58 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common tasks for managing your inventory</CardDescription>
+            <CardDescription>
+              Common tasks for managing your inventory
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
-            <Button asChild variant="outline" className="justify-start h-auto py-4">
+            <Button
+              asChild
+              variant="outline"
+              className="justify-start h-auto py-4"
+            >
               <Link href="/sets">
                 <div className="flex items-center gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                     <Package className="h-5 w-5 text-primary" />
                   </div>
+
                   <div className="text-left">
                     <p className="font-medium">Browse Pokemon Sets</p>
                     <p className="text-sm text-muted-foreground">
-                      View all sets and add cards to inventory
+                      View all English sets and add cards to inventory
                     </p>
                   </div>
                 </div>
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="justify-start h-auto py-4">
+            <Button
+              asChild
+              variant="outline"
+              className="justify-start h-auto py-4"
+            >
+              <Link href="/japanese-sets">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Layers className="h-5 w-5 text-primary" />
+                  </div>
+
+                  <div className="text-left">
+                    <p className="font-medium">Browse Japanese Sets</p>
+                    <p className="text-sm text-muted-foreground">
+                      View all Japanese sets and add cards to inventory
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="justify-start h-auto py-4"
+            >
               <Link href="/add">
                 <div className="flex items-center gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -222,7 +276,11 @@ export default function DashboardPage() {
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="justify-start h-auto py-4">
+            <Button
+              asChild
+              variant="outline"
+              className="justify-start h-auto py-4"
+            >
               <Link href="/scan">
                 <div className="flex items-center gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -238,7 +296,11 @@ export default function DashboardPage() {
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="justify-start h-auto py-4">
+            <Button
+              asChild
+              variant="outline"
+              className="justify-start h-auto py-4"
+            >
               <Link href="/search">
                 <div className="flex items-center gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -264,7 +326,9 @@ export default function DashboardPage() {
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
                 <CardTitle>Low Stock Alert</CardTitle>
               </div>
-              <CardDescription>These items have 2 or fewer in stock</CardDescription>
+              <CardDescription>
+                These items have 2 or fewer in stock
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -280,7 +344,9 @@ export default function DashboardPage() {
                       className="h-12 w-9 rounded object-cover"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-medium">{item.card.name}</p>
+                      <p className="truncate text-sm font-medium">
+                        {item.card.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         Stock: {item.quantity}
                       </p>

@@ -43,14 +43,14 @@ export async function getSetById(setId: string): Promise<PokemonSet | null> {
 export async function getCardsBySet(
   setId: string,
   page: number = 1,
-  pageSize: number = 50
+  pageSize: number = 50,
 ): Promise<{ cards: PokemonCard[]; totalCount: number }> {
   const response = await fetch(
     `${BASE_URL}/cards?q=set.id:${setId}&page=${page}&pageSize=${pageSize}&orderBy=number`,
     {
       headers,
       next: { revalidate: 3600 },
-    }
+    },
   )
 
   if (!response.ok) {
@@ -75,8 +75,8 @@ export async function getAllCardsBySet(setId: string): Promise<PokemonCard[]> {
 
   const remainingPages = await Promise.all(
     Array.from({ length: totalPages - 1 }, (_, index) =>
-      getCardsBySet(setId, index + 2, pageSize)
-    )
+      getCardsBySet(setId, index + 2, pageSize),
+    ),
   )
 
   return [
@@ -97,23 +97,24 @@ export async function getCardById(cardId: string): Promise<PokemonCard | null> {
   }
 
   const data = await response.json()
+  console.log("API CARD", data.data.id, data.data.tcgplayer)
   return data.data as PokemonCard
 }
 
 export async function searchCards(
   query: string,
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 20,
 ): Promise<{ cards: PokemonCard[]; totalCount: number }> {
   // Build search query - search by name
   const encodedQuery = encodeURIComponent(`name:"*${query}*"`)
-  
+
   const response = await fetch(
     `${BASE_URL}/cards?q=${encodedQuery}&page=${page}&pageSize=${pageSize}`,
     {
       headers,
       next: { revalidate: 300 }, // Cache for 5 minutes
-    }
+    },
   )
 
   if (!response.ok) {

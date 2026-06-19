@@ -47,6 +47,7 @@ export interface PokemonCard {
     printedTotal: number
     total: number
     releaseDate: string
+    updatedAt?: string
     images: {
       symbol: string
       logo: string
@@ -284,6 +285,7 @@ export interface InventoryItem {
   id: string
   cardId: string
   card: PokemonCard
+  language: "en" | "ja"
   sku: string
   barcode: string
   condition: CardCondition
@@ -306,6 +308,7 @@ export interface InventoryItem {
 
 export interface InventoryFormData {
   cardId: string
+  language: "en" | "ja"
   condition: CardCondition
   finish: CardFinish
   variant?: CardVariant | null
@@ -321,8 +324,10 @@ export interface InventoryFormData {
 // Manual Card Entry (for cards not in Pokemon TCG API)
 export interface ManualCardData {
   name: string
+  language: "en" | "ja"
   setName: string
   setId?: string
+  updatedAt?: string
   number?: string
   rarity?: string
   condition: CardCondition
@@ -341,6 +346,7 @@ export interface ManualCardData {
 export interface CSVImportRow {
   name: string
   set: string
+  updatedAt?: string
   number?: string
   condition: string
   price: string | number
@@ -359,6 +365,7 @@ export interface ImportResult {
 export interface InventoryFilters {
   search: string
   setId?: string
+  updatedAt?: string
   condition?: CardCondition
   minPrice?: number
   maxPrice?: number
@@ -372,6 +379,7 @@ export interface QRCodeData {
   sku: string
   cardName: string
   setName: string
+  updatedAt?: string
   condition: string
   price: number
 }

@@ -9,20 +9,31 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  Search, 
-  Plus, 
-  Grid3X3, 
-  List, 
-  MoreVertical, 
-  Pencil, 
+import {
+  Search,
+  Plus,
+  Grid3X3,
+  List,
+  MoreVertical,
+  Pencil,
   Trash2,
   Package,
   Filter,
-  X
+  X,
 } from "lucide-react"
 import { EditInventoryModal } from "@/components/inventory/edit-inventory-modal"
 import { DeleteConfirmDialog } from "@/components/inventory/delete-confirm-dialog"
@@ -35,7 +46,9 @@ export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
   const [sortBy, setSortBy] = useState<SortOption>("newest")
-  const [filterCondition, setFilterCondition] = useState<CardCondition | "all">("all")
+  const [filterCondition, setFilterCondition] = useState<CardCondition | "all">(
+    "all",
+  )
   const [editItem, setEditItem] = useState<string | null>(null)
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null)
 
@@ -51,7 +64,7 @@ export default function InventoryPage() {
           item.card.name.toLowerCase().includes(query) ||
           item.card.set.name.toLowerCase().includes(query) ||
           item.sku.toLowerCase().includes(query) ||
-          item.barcode.includes(searchQuery)
+          item.barcode.includes(searchQuery),
       )
     }
 
@@ -63,10 +76,16 @@ export default function InventoryPage() {
     // Sort
     switch (sortBy) {
       case "newest":
-        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        result.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )
         break
       case "oldest":
-        result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        result.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        )
         break
       case "price-high":
         result.sort((a, b) => b.price - a.price)
@@ -82,8 +101,14 @@ export default function InventoryPage() {
     return result
   }, [items, searchQuery, sortBy, filterCondition])
 
-  const totalValue = filteredItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const totalQuantity = filteredItems.reduce((sum, item) => sum + item.quantity, 0)
+  const totalValue = filteredItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  )
+  const totalQuantity = filteredItems.reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  )
 
   const [isDeleting, setIsDeleting] = useState(false)
   const handleDelete = async () => {
@@ -107,9 +132,12 @@ export default function InventoryPage() {
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Inventory</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Inventory
+          </h1>
           <p className="mt-1 text-muted-foreground">
-            {filteredItems.length} items - {totalQuantity} total cards - ${totalValue.toFixed(2)} value
+            {filteredItems.length} items - {totalQuantity} total cards - $
+            {totalValue.toFixed(2)} value
           </p>
         </div>
         <Button asChild>
@@ -142,7 +170,10 @@ export default function InventoryPage() {
         </div>
 
         {/* Condition Filter */}
-        <Select value={filterCondition} onValueChange={(v) => setFilterCondition(v as CardCondition | "all")}>
+        <Select
+          value={filterCondition}
+          onValueChange={(v) => setFilterCondition(v as CardCondition | "all")}
+        >
           <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Condition" />
@@ -150,13 +181,18 @@ export default function InventoryPage() {
           <SelectContent>
             <SelectItem value="all">All Conditions</SelectItem>
             {CARD_CONDITIONS.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         {/* Sort */}
-        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+        <Select
+          value={sortBy}
+          onValueChange={(v) => setSortBy(v as SortOption)}
+        >
           <SelectTrigger className="w-full sm:w-[160px]">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
@@ -170,7 +206,11 @@ export default function InventoryPage() {
         </Select>
 
         {/* View Mode */}
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="hidden sm:block">
+        <Tabs
+          value={viewMode}
+          onValueChange={(v) => setViewMode(v as ViewMode)}
+          className="hidden sm:block"
+        >
           <TabsList>
             <TabsTrigger value="grid">
               <Grid3X3 className="h-4 w-4" />
@@ -186,12 +226,13 @@ export default function InventoryPage() {
       {filteredItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
           <Package className="mb-4 h-12 w-12 text-muted-foreground/50" />
-          <h3 className="mb-2 text-lg font-medium text-foreground">No inventory items</h3>
+          <h3 className="mb-2 text-lg font-medium text-foreground">
+            No inventory items
+          </h3>
           <p className="mb-4 text-center text-sm text-muted-foreground">
-            {searchQuery || filterCondition !== "all" 
+            {searchQuery || filterCondition !== "all"
               ? "No items match your search or filters"
-              : "Start by browsing Pokemon sets and adding cards to your inventory"
-            }
+              : "Start by browsing Pokemon sets and adding cards to your inventory"}
           </p>
           {!searchQuery && filterCondition === "all" && (
             <Button asChild>
@@ -213,7 +254,10 @@ export default function InventoryPage() {
                   />
                   {/* Sync Status */}
                   {!item.syncedToSquare && (
-                    <Badge variant="secondary" className="absolute top-2 right-2 text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="absolute top-2 right-2 text-xs"
+                    >
                       Not Synced
                     </Badge>
                   )}
@@ -233,7 +277,11 @@ export default function InventoryPage() {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                      >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -242,7 +290,7 @@ export default function InventoryPage() {
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => setDeleteItemId(item.id)}
                         className="text-destructive focus:text-destructive"
                       >
@@ -266,9 +314,7 @@ export default function InventoryPage() {
                 <p className="mt-2 text-lg font-semibold text-primary">
                   ${item.price.toFixed(2)}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  SKU: {item.sku}
-                </p>
+                <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
               </CardContent>
             </Card>
           ))}
@@ -298,17 +344,29 @@ export default function InventoryPage() {
                   {item.card.set.name} - #{item.card.number}
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">{item.condition}</Badge>
-                  <Badge variant="outline" className="text-xs">{item.finish || "Normal"}</Badge>
-                  <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
-                  <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {item.condition}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {item.finish || "Normal"}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    Qty: {item.quantity}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    SKU: {item.sku}
+                  </span>
                   {!item.syncedToSquare && (
-                    <Badge variant="outline" className="text-xs">Not Synced</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      Not Synced
+                    </Badge>
                   )}
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-lg font-semibold text-foreground">${item.price.toFixed(2)}</p>
+                <p className="text-lg font-semibold text-foreground">
+                  ${item.price.toFixed(2)}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Total: ${(item.price * item.quantity).toFixed(2)}
                 </p>
@@ -324,7 +382,7 @@ export default function InventoryPage() {
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => setDeleteItemId(item.id)}
                     className="text-destructive focus:text-destructive"
                   >

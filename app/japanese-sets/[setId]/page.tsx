@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { getSetById, getAllCardsBySet } from "@/lib/pokemon-tcg"
+import { getJapaneseSetById, getJapaneseCardsBySet } from "@/lib/japanese-tcg"
 import { CardGrid } from "@/components/cards/card-grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,7 +12,7 @@ interface SetDetailPageProps {
 
 export async function generateMetadata({ params }: SetDetailPageProps) {
   const { setId } = await params
-  const set = await getSetById(setId)
+  const set = await getJapaneseSetById(setId)
 
   if (!set) {
     return { title: "Set Not Found - Card Vault" }
@@ -28,8 +28,8 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
   const { setId } = await params
 
   const [set, cards] = await Promise.all([
-    getSetById(setId),
-    getAllCardsBySet(setId),
+    getJapaneseSetById(setId),
+    getJapaneseCardsBySet(setId),
   ])
 
   if (!set) {
@@ -46,15 +46,13 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
         })
       : "Unknown"
 
-
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Back Button */}
       <Button asChild variant="ghost" size="sm" className="mb-6">
-        <Link href="/sets">
-          <Link href="/japanese-sets">Japanese Sets</Link>
+        <Link href="/japanese-sets">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          All Sets
+          Japanese Sets
         </Link>
       </Button>
 
@@ -66,12 +64,6 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
             <img
               src={set.images.logo}
               alt={`${set.name} logo`}
-              className="max-h-full max-w-full object-contain"
-            />
-          ) : set.images.symbol ? (
-            <img
-              src={set.images.symbol}
-              alt={`${set.name} symbol`}
               className="max-h-full max-w-full object-contain"
             />
           ) : (
@@ -105,7 +97,7 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
       </div>
 
       {/* Cards Grid */}
-      <CardGrid cards={cards} setId={setId} language="en" />
+      <CardGrid cards={cards} setId={setId} language="ja" />
     </div>
   )
 }
