@@ -1,8 +1,12 @@
+"use client"
+
+import { useMemo } from "react"
 import Link from "next/link"
 import type { PokemonSet } from "@/lib/types"
+import { useInventory } from "@/lib/inventory-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Layers } from "lucide-react"
+import { Calendar, CheckCircle2, Layers } from "lucide-react"
 
 interface SetGridProps {
   sets: PokemonSet[]
@@ -10,16 +14,44 @@ interface SetGridProps {
 }
 
 export function SetGrid({ sets, basePath = "/sets" }: SetGridProps) {
+  const { items } = useInventory()
+
+  // Count unique owned cards per set, matching the analytics "Popular Sets" logic.
+  const ownedBySet = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    for (const item of items) {
+      const setId = item.card.set.id
+      if (!setId) continue
+      const owned = map.get(setId) ?? new Set<string>()
+      owned.add(item.card.id)
+      map.set(setId, owned)
+    }
+    return map
+  }, [items])
+
   return (
     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {sets.map((set) => (
-        <SetCard key={set.id} set={set} basePath={basePath} />
+        <SetCard
+          key={set.id}
+          set={set}
+          basePath={basePath}
+          ownedCount={ownedBySet.get(set.id)?.size ?? 0}
+        />
       ))}
     </div>
   )
 }
 
-function SetCard({ set, basePath }: { set: PokemonSet; basePath: string }) {
+function SetCard({
+  set,
+  basePath,
+  ownedCount,
+}: {
+  set: PokemonSet
+  basePath: string
+  ownedCount: number
+}) {
   const releaseDate = set.releaseDate ? new Date(set.releaseDate) : null
   const formattedDate =
     releaseDate && !Number.isNaN(releaseDate.getTime())
@@ -28,6 +60,9 @@ function SetCard({ set, basePath }: { set: PokemonSet; basePath: string }) {
           year: "numeric",
         })
       : "Unknown"
+
+  const completionPercent =
+    set.total > 0 ? Math.min(100, (ownedCount / set.total) * 100) : 0
 
   return (
     <Link href={`${basePath}/${set.id}`}>
@@ -75,6 +110,23 @@ function SetCard({ set, basePath }: { set: PokemonSet; basePath: string }) {
               {formattedDate}
             </Badge>
           </div>
+
+          {ownedCount > 0 && (
+            <div className="mt-3 w-full">
+              <div className="mb-1 flex items-center justify-center gap-1.5 text-xs font-medium text-primary">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>
+                  {ownedCount}/{set.total} owned · {completionPercent.toFixed(0)}%
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{ width: `${completionPercent}%` }}
+                />
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </Link>
