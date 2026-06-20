@@ -17,6 +17,12 @@ export async function getAllSets(): Promise<PokemonSet[]> {
     next: { revalidate: 3600 }, // Cache for 1 hour
   })
 
+  // The upstream API can intermittently return 404; degrade to an empty list
+  // instead of crashing the page that renders these sets.
+  if (response.status === 404) {
+    return []
+  }
+
   if (!response.ok) {
     throw new Error(`Failed to fetch sets: ${response.statusText}`)
   }
