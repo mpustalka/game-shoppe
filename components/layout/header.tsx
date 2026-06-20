@@ -53,6 +53,16 @@ export function Header() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  // Hide the app chrome on public, pre-login pages so visitors never see the
+  // navigation before signing in. These routes ship their own minimal headers.
+  const publicRoutes = ["/welcome", "/login", "/reset-password", "/auth"]
+  const isPublicRoute = publicRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  )
+  if (isPublicRoute) {
+    return null
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">

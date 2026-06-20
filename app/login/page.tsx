@@ -163,6 +163,13 @@ function LoginForm() {
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Sign in
                 </Button>
+
+                <Link
+                  href="/reset-password"
+                  className="text-center text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                >
+                  Forgot your password?
+                </Link>
               </form>
             </TabsContent>
 
@@ -220,8 +227,8 @@ function LoginForm() {
       </Card>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        <Link href="/" className="underline underline-offset-4 hover:text-foreground">
-          Continue to the public vault
+        <Link href="/welcome" className="underline underline-offset-4 hover:text-foreground">
+          ← Back to home
         </Link>
       </p>
     </div>

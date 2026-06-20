@@ -7,16 +7,24 @@ const SUPABASE_ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
 
-// The middleware's only job is to keep the Supabase auth session fresh by
-// rotating tokens on every request and writing the refreshed cookies back.
-//
-// It intentionally does NOT redirect or block any route: the original Card
-// Vault instance stays fully public. Authentication is additive — signing in
-// simply unlocks per-account features without gating the existing app.
+// Routes that are reachable without signing in. Everything else requires an
+// authenticated session, so the dashboard and navigation stay private until a
+// user logs in.
+const PUBLIC_PATHS = ["/welcome", "/login", "/reset-password", "/auth"]
+
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  )
+}
+
+// The middleware keeps the Supabase auth session fresh (rotating tokens on
+// every request) AND gates the app: unauthenticated visitors are sent to the
+// public landing page, while signed-in users are kept out of the auth pages.
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
 
-  // If Supabase isn't configured for some reason, never break the request.
+  // If Supabase isn't configured, never break the request (and don't gate).
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return response
   }
@@ -38,12 +46,36 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  // Touch the user to trigger token refresh; ignore any failure so an auth
-  // hiccup never takes down the public site.
+  let user = null
   try {
-    await supabase.auth.getUser()
+    const result = await supabase.auth.getUser()
+    user = result.data.user
   } catch {
-    // no-op
+    // Treat an auth hiccup as "not signed in" rather than crashing.
+  }
+
+  const { pathname } = request.nextUrl
+
+  // API routes manage their own access (and return JSON). Don't rewrite them to
+  // an HTML landing page — just let them through with a refreshed session.
+  if (pathname.startsWith("/api")) {
+    return response
+  }
+
+  // Not signed in and asking for a protected page → send to the landing page.
+  if (!user && !isPublicPath(pathname)) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/welcome"
+    url.search = ""
+    return NextResponse.redirect(url)
+  }
+
+  // Already signed in but sitting on the landing or login page → go to the app.
+  if (user && (pathname === "/welcome" || pathname === "/login")) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/"
+    url.search = ""
+    return NextResponse.redirect(url)
   }
 
   return response

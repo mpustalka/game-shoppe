@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
-import { LogOut, LogIn, User as UserIcon, Loader2 } from "lucide-react"
+import { LogOut, LogIn, User as UserIcon, Loader2, ShieldCheck } from "lucide-react"
 import type { User } from "@supabase/supabase-js"
 
 import { createClient } from "@/lib/supabase/client"
+import { isAdminUser } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -92,6 +93,14 @@ export function AuthNav() {
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {isAdminUser(user) && (
+          <DropdownMenuItem asChild>
+            <Link href="/admin">
+              <ShieldCheck className="h-4 w-4" />
+              Admin portal
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onSelect={handleSignOut}>
           <LogOut className="h-4 w-4" />
           Log out
