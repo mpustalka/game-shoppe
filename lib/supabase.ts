@@ -3,9 +3,18 @@ const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   process.env.SUPABASE_DATABASE_URL
 
+// Public/anon key — safe for client, but subject to row level security.
 const SUPABASE_ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
+// Privileged server key — bypasses RLS. supabaseTable only runs server-side
+// (inside route handlers), so it is never shipped to the browser.
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SECRET_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SERVICE_ROLE_KEY
 
 export function hasSupabaseConfig() {
   return Boolean(

@@ -384,6 +384,28 @@ export interface QRCodeData {
   price: number
 }
 
+// Saved Customer Lists
+export interface CustomerListItem {
+  id: string
+  cardId: string
+  name: string
+  setName?: string
+  imageUrl?: string
+  condition?: CardCondition
+  finish?: CardFinish
+  price: number
+  quantity: number
+}
+
+export interface CustomerList {
+  id: string
+  customerName: string
+  note: string
+  items: CustomerListItem[]
+  createdAt: string
+  updatedAt: string
+}
+
 // Square Integration Types
 export interface SquareSyncResult {
   success: boolean

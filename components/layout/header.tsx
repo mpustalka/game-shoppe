@@ -17,15 +17,18 @@ import {
   BarChart3,
   Upload,
   ChevronDown,
+  ClipboardList,
 } from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { AuthNav } from "@/components/layout/auth-nav"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutGrid },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Binders", href: "/binders", icon: BookOpen },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Customer Lists", href: "/customer-lists", icon: ClipboardList },
   { name: "Add Card", href: "/add", icon: PlusCircle },
   { name: "Import", href: "/import", icon: Upload },
   { name: "Scan", href: "/scan", icon: QrCode },
@@ -39,6 +42,7 @@ const mobileNavigation = [
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Binders", href: "/binders", icon: BookOpen },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Customer Lists", href: "/customer-lists", icon: ClipboardList },
   { name: "Add Card", href: "/add", icon: PlusCircle },
   { name: "Import", href: "/import", icon: Upload },
   { name: "Scan", href: "/scan", icon: QrCode },
@@ -133,8 +137,12 @@ export function Header() {
           </form>
         </div>
 
-        {/* Mobile Menu */}
-        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        {/* Account */}
+        <div className="flex items-center gap-2">
+          <AuthNav />
+
+          {/* Mobile Menu */}
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
           <SheetTrigger asChild className="md:hidden">
             <Button variant="ghost" size="icon">
               <Menu className="h-5 w-5" />
@@ -181,6 +189,7 @@ export function Header() {
             </div>
           </SheetContent>
         </Sheet>
+        </div>
       </div>
     </header>
   )
