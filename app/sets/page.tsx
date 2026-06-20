@@ -1,6 +1,11 @@
 import { getAllSets } from "@/lib/pokemon-tcg"
 import { SetGrid } from "@/components/cards/set-grid"
 
+// The sets list is fetched from the external Pokemon TCG API, which is not
+// guaranteed to be reachable at build time. Render at request time so a
+// transient upstream error can't crash static generation.
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "Browse Pokemon Sets - Card Vault",
   description: "Browse all Pokemon TCG sets and add cards to your inventory",
