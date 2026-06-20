@@ -281,6 +281,24 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         if (!response.ok) {
           console.error("Failed to record sale in inventory")
         }
+
+        // Append to the realized-sales ledger that powers revenue/ROI trends.
+        fetch("/api/analytics/sales", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            inventoryId: item.id,
+            cardId: item.cardId,
+            cardName: item.card.name,
+            setName: item.card.set.name,
+            rarity: item.card.rarity,
+            finish: item.finish,
+            condition: item.condition,
+            quantity: qty,
+            unitPrice: item.price,
+            purchasePrice: item.purchasePrice || 0,
+          }),
+        }).catch(() => undefined)
       }
     },
     [items],
