@@ -2,11 +2,14 @@ import Link from "next/link"
 import {
   Package,
   LogIn,
-  Mail,
   Search,
   BookOpen,
   BarChart3,
   ArrowRight,
+  Sparkles,
+  Camera,
+  Tag,
+  ShieldCheck,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -30,9 +33,24 @@ export default function WelcomePage() {
       body: "Track inventory in 9-pocket binders by set, rarity, condition, and finish.",
     },
     {
+      icon: Camera,
+      title: "Snap from your phone",
+      body: "Add front, back, and detail photos of a card right from a phone or tablet.",
+    },
+    {
+      icon: Tag,
+      title: "Buy & sell with confidence",
+      body: "Built-in buy list and store-credit calculator price every card in seconds.",
+    },
+    {
       icon: BarChart3,
       title: "Know what's hot",
       body: "Analytics on the most searched and sold cards so you stock the right singles.",
+    },
+    {
+      icon: ShieldCheck,
+      title: "One clean record",
+      body: "Every condition, finish, and sale logged so your inventory always ties out.",
     },
   ]
 
@@ -46,44 +64,50 @@ export default function WelcomePage() {
           </div>
           <span className="text-lg font-semibold tracking-tight">Card Vault</span>
         </div>
-        <Button asChild size="sm">
-          <Link href="/login">
-            <LogIn className="h-4 w-4" /> Sign in
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/login">
+              <LogIn className="h-4 w-4" /> Sign in
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/login?mode=signup">Sign up free</Link>
+          </Button>
+        </div>
       </header>
 
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:py-20">
         <div>
-          <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            Pokémon Card Singles Management
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <Sparkles className="h-3.5 w-3.5" /> Free to start · No card required
           </span>
           <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
-            Run your singles inventory like a pro.
+            Manage your Pokémon singles like a pro.
           </h1>
           <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-            Card Vault is the all-in-one platform for Pokémon card shops to catalog,
-            price, and sell single cards. Scan a card, check the market, drop it in a
-            binder, and keep a clean record of everything in stock — on tablet, desktop,
-            or phone.
+            Card Vault is the all-in-one command center for Pokémon card shops. Scan a
+            single, check the live market, drop it in a 9-pocket binder, and keep one
+            clean record of everything you own, buy, and sell — on tablet, desktop, or
+            phone. Pricing, photos, conditions, and analytics, all in one place. Spend
+            less time on spreadsheets and more time moving cards.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
-              <Link href="/login">
-                Sign in <ArrowRight className="h-4 w-4" />
+              <Link href="/login?mode=signup">
+                Sign up for free <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <a href={`mailto:${ADMIN_EMAIL}?subject=Card%20Vault%20access`}>
-                <Mail className="h-4 w-4" /> Request access
-              </a>
+              <Link href="/login">
+                <LogIn className="h-4 w-4" /> Sign in
+              </Link>
             </Button>
           </div>
 
           <p className="mt-4 text-sm text-muted-foreground">
-            Need an account? Email{" "}
+            14 days free, then $5/month. Questions? Email{" "}
             <a
               href={`mailto:${ADMIN_EMAIL}`}
               className="font-medium text-foreground underline underline-offset-4"
@@ -113,7 +137,7 @@ export default function WelcomePage() {
 
       {/* Features */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <div className="grid gap-6 sm:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
             <div
               key={f.title}
@@ -131,18 +155,18 @@ export default function WelcomePage() {
         <div className="mt-12 flex flex-col items-center gap-3 rounded-2xl border bg-card px-6 py-10 text-center shadow-sm">
           <h2 className="text-2xl font-semibold">Ready to get started?</h2>
           <p className="max-w-md text-muted-foreground">
-            Sign in to your store, or reach out to set up a new account for your shop.
+            Start your free trial in under a minute — no credit card needed.
           </p>
           <div className="mt-2 flex flex-wrap justify-center gap-3">
             <Button asChild>
-              <Link href="/login">
-                <LogIn className="h-4 w-4" /> Sign in
+              <Link href="/login?mode=signup">
+                <Sparkles className="h-4 w-4" /> Sign up for free
               </Link>
             </Button>
             <Button asChild variant="outline">
-              <a href={`mailto:${ADMIN_EMAIL}?subject=Card%20Vault%20access`}>
-                <Mail className="h-4 w-4" /> {ADMIN_EMAIL}
-              </a>
+              <Link href="/login">
+                <LogIn className="h-4 w-4" /> Sign in
+              </Link>
             </Button>
           </div>
         </div>

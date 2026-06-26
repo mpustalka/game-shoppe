@@ -18,6 +18,7 @@ import {
   Upload,
   ChevronDown,
   ClipboardList,
+  Share2,
 } from "lucide-react"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -27,6 +28,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutGrid },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Binders", href: "/binders", icon: BookOpen },
+  { name: "Showcase", href: "/showcase", icon: Share2 },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Customer Lists", href: "/customer-lists", icon: ClipboardList },
   { name: "Add Card", href: "/add", icon: PlusCircle },
@@ -41,6 +43,7 @@ const mobileNavigation = [
   { name: "Japanese Sets", href: "/japanese-sets", icon: Package },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Binders", href: "/binders", icon: BookOpen },
+  { name: "Showcase", href: "/showcase", icon: Share2 },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Customer Lists", href: "/customer-lists", icon: ClipboardList },
   { name: "Add Card", href: "/add", icon: PlusCircle },
@@ -55,7 +58,7 @@ export function Header() {
 
   // Hide the app chrome on public, pre-login pages so visitors never see the
   // navigation before signing in. These routes ship their own minimal headers.
-  const publicRoutes = ["/welcome", "/login", "/reset-password", "/auth"]
+  const publicRoutes = ["/welcome", "/login", "/reset-password", "/auth", "/share"]
   const isPublicRoute = publicRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   )
