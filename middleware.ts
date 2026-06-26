@@ -10,7 +10,7 @@ const SUPABASE_ANON_KEY =
 // Routes that are reachable without signing in. Everything else requires an
 // authenticated session, so the dashboard and navigation stay private until a
 // user logs in.
-const PUBLIC_PATHS = ["/welcome", "/login", "/reset-password", "/auth"]
+const PUBLIC_PATHS = ["/welcome", "/login", "/reset-password", "/auth", "/share"]
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some(

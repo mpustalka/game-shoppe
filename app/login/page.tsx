@@ -32,7 +32,10 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") || "/"
 
-  const [mode, setMode] = useState<"signin" | "signup">("signin")
+  // Allow deep-linking straight to the sign-up tab, e.g. /login?mode=signup
+  const initialMode = searchParams.get("mode") === "signup" ? "signup" : "signin"
+
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [storeName, setStoreName] = useState("")
