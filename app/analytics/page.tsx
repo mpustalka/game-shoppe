@@ -24,12 +24,15 @@ import {
   Boxes,
   Clock,
   DollarSign,
+  Flame,
   LineChart,
   PiggyBank,
   Search,
+  Sparkles,
   Star,
   TrendingDown,
   TrendingUp,
+  Zap,
 } from "lucide-react"
 
 type Mover = {
@@ -74,6 +77,49 @@ type Summary = {
   }
 }
 
+type StreakInsight = {
+  cardId: string
+  name: string
+  set: string
+  finish: string
+  weeks: number
+  last: number
+  changePercent: number
+}
+
+type UnusualInsight = {
+  cardId: string
+  name: string
+  set: string
+  finish: string
+  last: number
+  changePercent: number
+  z: number
+  direction: "up" | "down"
+}
+
+type Insights = {
+  trackedCards: number
+  daysTracked: number
+  weeksTracked: number
+  threshold: number
+  bigGainers: Mover[]
+  bigDrops: Mover[]
+  gainStreaks: StreakInsight[]
+  unusual: UnusualInsight[]
+}
+
+const EMPTY_INSIGHTS: Insights = {
+  trackedCards: 0,
+  daysTracked: 0,
+  weeksTracked: 0,
+  threshold: 10,
+  bigGainers: [],
+  bigDrops: [],
+  gainStreaks: [],
+  unusual: [],
+}
+
 const EMPTY_SUMMARY: Summary = {
   days: 30,
   topSearches: [],
@@ -114,6 +160,7 @@ export default function AnalyticsPage() {
   const { items } = useInventory()
   const [days, setDays] = useState(30)
   const [summary, setSummary] = useState<Summary>(EMPTY_SUMMARY)
+  const [insights, setInsights] = useState<Insights>(EMPTY_INSIGHTS)
   const snapshotSent = useRef(false)
 
   useEffect(() => {
@@ -124,6 +171,15 @@ export default function AnalyticsPage() {
       })
       .catch(() => undefined)
   }, [days])
+
+  useEffect(() => {
+    fetch("/api/analytics/insights")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (data) setInsights(data)
+      })
+      .catch(() => undefined)
+  }, [])
 
   // Capture today's price reading for every inventory line, once per visit.
   // The server keeps one row per card+finish per day, so this safely seeds the
@@ -254,6 +310,9 @@ export default function AnalyticsPage() {
               </button>
             ))}
           </div>
+          <Button asChild>
+            <Link href="/analytics/collection">Collection Insights</Link>
+          </Button>
           <Button asChild variant="outline">
             <Link href="/inventory">Inventory</Link>
           </Button>
@@ -339,6 +398,87 @@ export default function AnalyticsPage() {
           ) : (
             priceMovers.losers.map((mover) => (
               <MoverRow key={`${mover.cardId}-${mover.finish}`} mover={mover} />
+            ))
+          )}
+        </ListCard>
+      </div>
+
+      {/* Smart insights — watchlist-style alerts on top of the price history */}
+      <div className="mb-2 flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-primary" />
+        <h2 className="text-lg font-semibold">Insights & Alerts</h2>
+        <span className="text-xs font-normal text-muted-foreground">
+          {insights.trackedCards} cards · {insights.daysTracked} day
+          {insights.daysTracked === 1 ? "" : "s"} of history
+        </span>
+      </div>
+      <div className="mb-6 grid gap-6 lg:grid-cols-2">
+        <ListCard
+          title={`Up more than ${insights.threshold}% this week`}
+          icon={TrendingUp}
+          hint={insights.bigGainers.length ? `${insights.bigGainers.length} cards` : undefined}
+        >
+          {insights.bigGainers.length === 0 ? (
+            <InsightEmpty
+              ready={insights.daysTracked >= 2}
+              label="No cards are up more than 10% over the last week yet."
+            />
+          ) : (
+            insights.bigGainers.map((mover) => (
+              <MoverRow key={`${mover.cardId}-${mover.finish}`} mover={mover} />
+            ))
+          )}
+        </ListCard>
+
+        <ListCard
+          title={`Down more than ${insights.threshold}% this week`}
+          icon={TrendingDown}
+          hint={insights.bigDrops.length ? `${insights.bigDrops.length} cards` : undefined}
+        >
+          {insights.bigDrops.length === 0 ? (
+            <InsightEmpty
+              ready={insights.daysTracked >= 2}
+              label="No cards are down more than 10% over the last week yet."
+            />
+          ) : (
+            insights.bigDrops.map((mover) => (
+              <MoverRow key={`${mover.cardId}-${mover.finish}`} mover={mover} />
+            ))
+          )}
+        </ListCard>
+
+        <ListCard
+          title="On a winning streak"
+          icon={Flame}
+          hint={insights.gainStreaks.length ? `${insights.gainStreaks.length} cards` : undefined}
+        >
+          {insights.gainStreaks.length === 0 ? (
+            <InsightEmpty
+              ready={insights.weeksTracked >= 4}
+              label="Cards with 3+ consecutive weeks of gains will appear here."
+              weekly
+            />
+          ) : (
+            insights.gainStreaks.map((s) => (
+              <StreakRow key={`${s.cardId}-${s.finish}`} streak={s} />
+            ))
+          )}
+        </ListCard>
+
+        <ListCard
+          title="Unusual movement"
+          icon={Zap}
+          hint={insights.unusual.length ? `${insights.unusual.length} cards` : undefined}
+        >
+          {insights.unusual.length === 0 ? (
+            <InsightEmpty
+              ready={insights.weeksTracked >= 5}
+              label="Cards moving far outside their normal weekly trend will appear here."
+              weekly
+            />
+          ) : (
+            insights.unusual.map((u) => (
+              <UnusualRow key={`${u.cardId}-${u.finish}`} unusual={u} />
             ))
           )}
         </ListCard>
@@ -744,8 +884,82 @@ function EmptyMovers() {
   return (
     <p className="text-sm text-muted-foreground">
       Price movement needs at least two days of readings. A snapshot of every
-      card&apos;s market value is captured each day this page is opened — check
+      card&apos;s market value is now captured automatically each day — check
       back tomorrow to see gainers and drops.
+    </p>
+  )
+}
+
+function StreakRow({ streak }: { streak: StreakInsight }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
+      <div className="min-w-0">
+        <p className="truncate font-medium">{streak.name}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {streak.set ? `${streak.set} · ` : ""}
+          {streak.finish} · now {usd(streak.last)}
+        </p>
+      </div>
+      <div className="flex flex-col items-end">
+        <Badge variant="secondary" className="gap-1">
+          <Flame className="h-3.5 w-3.5" />
+          {streak.weeks} wks up
+        </Badge>
+        <span className="mt-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+          +{streak.changePercent.toFixed(1)}%
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function UnusualRow({ unusual }: { unusual: UnusualInsight }) {
+  const up = unusual.direction === "up"
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
+      <div className="min-w-0">
+        <p className="truncate font-medium">{unusual.name}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {unusual.set ? `${unusual.set} · ` : ""}
+          {unusual.finish} · now {usd(unusual.last)} ·{" "}
+          {Math.abs(unusual.z).toFixed(1)}× normal
+        </p>
+      </div>
+      <div
+        className={`flex items-center gap-1 text-right font-semibold ${
+          up
+            ? "text-emerald-600 dark:text-emerald-400"
+            : "text-red-600 dark:text-red-400"
+        }`}
+      >
+        {up ? (
+          <ArrowUpRight className="h-4 w-4" />
+        ) : (
+          <ArrowDownRight className="h-4 w-4" />
+        )}
+        {up ? "+" : ""}
+        {unusual.changePercent.toFixed(1)}%
+      </div>
+    </div>
+  )
+}
+
+function InsightEmpty({
+  ready,
+  label,
+  weekly,
+}: {
+  ready: boolean
+  label: string
+  weekly?: boolean
+}) {
+  if (ready) {
+    return <p className="text-sm text-muted-foreground">{label}</p>
+  }
+  return (
+    <p className="text-sm text-muted-foreground">
+      {label} Still gathering {weekly ? "a few weeks" : "a second day"} of price
+      readings — this fills in automatically as daily snapshots accrue.
     </p>
   )
 }
