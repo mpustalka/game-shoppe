@@ -57,9 +57,76 @@ import {
   X,
   Filter,
   Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from "lucide-react"
 
 type ViewMode = "grid" | "list"
+
+type PriceMove = {
+  last: number
+  prev: number
+  change: number
+  changePercent: number
+  direction: "up" | "down" | "flat"
+  spanDays: number
+}
+
+type PriceMovesResponse = {
+  asOf: string | null
+  tracked: number
+  moves: Record<string, PriceMove>
+}
+
+const moveKey = (item: InventoryItem) =>
+  `${item.cardId}|${item.finish || "Normal"}`
+
+/** Compact weekly up/down badge for a single card. */
+function WeeklyMoveBadge({
+  move,
+  size = "sm",
+}: {
+  move?: PriceMove
+  size?: "sm" | "xs"
+}) {
+  const text = size === "xs" ? "text-[10px]" : "text-xs"
+  if (!move || move.direction === "flat") {
+    return (
+      <Badge
+        variant="secondary"
+        className={`gap-1 bg-white/90 ${text} text-slate-500 shadow-sm`}
+        title={
+          move
+            ? "No change over the last week"
+            : "No price history yet for this card"
+        }
+      >
+        <Minus className="h-3 w-3" />
+        Flat
+      </Badge>
+    )
+  }
+  const up = move.direction === "up"
+  return (
+    <Badge
+      className={`gap-1 border-0 ${text} text-white shadow ${
+        up ? "bg-emerald-600" : "bg-red-600"
+      }`}
+      title={`Market ${up ? "up" : "down"} from $${move.prev.toFixed(
+        2,
+      )} to $${move.last.toFixed(2)} over ~${move.spanDays} days`}
+    >
+      {up ? (
+        <TrendingUp className="h-3 w-3" />
+      ) : (
+        <TrendingDown className="h-3 w-3" />
+      )}
+      {up ? "+" : ""}
+      {move.changePercent.toFixed(1)}%
+    </Badge>
+  )
+}
 type SortOption =
   | "price-low"
   | "price-high"
@@ -86,6 +153,21 @@ export default function BindersPage() {
   const [addCardId, setAddCardId] = useState<string>("")
   const [adding, setAdding] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [priceMoves, setPriceMoves] = useState<PriceMovesResponse | null>(null)
+
+  // Load the weekly price-movement map once. It's keyed by cardId|finish so we
+  // can annotate each binder card with whether its market value is up or down.
+  useEffect(() => {
+    fetch("/api/analytics/price-moves")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (data) setPriceMoves(data as PriceMovesResponse)
+      })
+      .catch(() => undefined)
+  }, [])
+
+  const moveFor = (item: InventoryItem): PriceMove | undefined =>
+    priceMoves?.moves[moveKey(item)]
 
   // Compute tierStats from binderItems
   const tierStats = useMemo(() => {
@@ -215,6 +297,25 @@ export default function BindersPage() {
   }, [binderItems, searchQuery, sortBy, filterCondition, filterRarity, filterSet])
 
   const activeTierInfo = PRICE_TIERS.find((t) => t.id === activeTier)!
+
+  // Weekly movement summary for the cards currently shown in the active binder.
+  const weeklySummary = useMemo(() => {
+    let up = 0
+    let down = 0
+    let flat = 0
+    let netValueChange = 0
+    for (const item of filteredItems) {
+      const move = priceMoves?.moves[moveKey(item)]
+      if (!move || move.direction === "flat") {
+        flat += 1
+        continue
+      }
+      if (move.direction === "up") up += 1
+      else down += 1
+      netValueChange += move.change * (item.quantity ?? 1)
+    }
+    return { up, down, flat, netValueChange, tracked: up + down }
+  }, [filteredItems, priceMoves])
   const allRarities = useMemo(
     () => getAvailableRarities(binderItems.map((item) => item.card)),
     [binderItems],
@@ -315,6 +416,45 @@ export default function BindersPage() {
                 <Printer className="mr-2 h-4 w-4" />
                 Print Binder List
               </Button>
+            </div>
+            {/* Weekly price-movement summary for this binder */}
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-blue-100 bg-white/70 px-3 py-2 text-sm shadow-sm">
+              <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+                This week
+              </span>
+              <Badge className="gap-1 border-0 bg-emerald-600 text-white">
+                <TrendingUp className="h-3 w-3" />
+                {weeklySummary.up} up
+              </Badge>
+              <Badge className="gap-1 border-0 bg-red-600 text-white">
+                <TrendingDown className="h-3 w-3" />
+                {weeklySummary.down} down
+              </Badge>
+              <Badge variant="secondary" className="gap-1 text-slate-600">
+                <Minus className="h-3 w-3" />
+                {weeklySummary.flat} flat
+              </Badge>
+              {weeklySummary.tracked > 0 && (
+                <span
+                  className={`ml-auto font-semibold ${
+                    weeklySummary.netValueChange >= 0
+                      ? "text-emerald-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {weeklySummary.netValueChange >= 0 ? "+" : "−"}$
+                  {Math.abs(weeklySummary.netValueChange).toFixed(2)} market
+                  value this week
+                </span>
+              )}
+              {priceMoves?.asOf && (
+                <span className="w-full text-xs text-slate-400 sm:w-auto">
+                  {weeklySummary.tracked === 0
+                    ? "Price trends fill in as daily snapshots accrue."
+                    : `as of ${priceMoves.asOf}`}
+                </span>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -490,21 +630,24 @@ export default function BindersPage() {
                         {(item.finish || "Normal") !== "Normal" && (
                           <div className="absolute inset-1 rounded-lg bg-[linear-gradient(125deg,transparent_15%,rgba(255,255,255,.68)_35%,transparent_52%,rgba(56,189,248,.22)_75%,transparent)] opacity-0 mix-blend-screen transition-opacity group-hover:opacity-100" />
                         )}
-                        <div className="absolute left-2 right-2 top-2 flex items-center justify-between gap-1">
+                        <div className="absolute left-2 right-2 top-2 flex items-start justify-between gap-1">
                           <Badge
                             className={`${activeTierInfo.color} border-0 text-[10px] text-white shadow`}
                           >
                             ${item.price.toFixed(2)}
                           </Badge>
-                          {(item.finish || "Normal") !== "Normal" && (
-                            <Badge
-                              variant="secondary"
-                              className="gap-1 bg-white/90 text-[10px] text-blue-950 shadow-sm"
-                            >
-                              <Sparkles className="h-3 w-3 text-yellow-500" />
-                              {item.finish}
-                            </Badge>
-                          )}
+                          <div className="flex flex-col items-end gap-1">
+                            <WeeklyMoveBadge move={moveFor(item)} size="xs" />
+                            {(item.finish || "Normal") !== "Normal" && (
+                              <Badge
+                                variant="secondary"
+                                className="gap-1 bg-white/90 text-[10px] text-blue-950 shadow-sm"
+                              >
+                                <Sparkles className="h-3 w-3 text-yellow-500" />
+                                {item.finish}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <div className="absolute bottom-2 left-2 right-2 rounded-lg bg-white/92 p-2 text-slate-950 opacity-0 shadow-lg ring-1 ring-blue-100 transition-opacity group-hover:opacity-100">
                           <p className="truncate text-xs font-semibold">
@@ -587,6 +730,9 @@ export default function BindersPage() {
                       >
                         ${item.price.toFixed(2)}
                       </p>
+                      <div className="mt-1 flex justify-end">
+                        <WeeklyMoveBadge move={moveFor(item)} />
+                      </div>
                     </div>
                     <Button
                       variant="destructive"
