@@ -44,6 +44,8 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 
+import { AdminPaymentsPanel } from "@/components/admin/admin-payments-panel"
+
 type AdminUser = {
   id: string
   email: string | null
@@ -176,6 +178,10 @@ function AdminPortal() {
           )}
         </CardContent>
       </Card>
+
+      <div className="mt-6">
+        <AdminPaymentsPanel />
+      </div>
     </div>
   )
 }

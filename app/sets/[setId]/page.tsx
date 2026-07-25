@@ -105,7 +105,21 @@ export default async function SetDetailPage({ params }: SetDetailPageProps) {
       </div>
 
       {/* Cards Grid */}
-      <CardGrid cards={cards} setId={setId} language="en" />
+      {cards.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-muted/40 px-6 py-16 text-center">
+          <Layers className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+          <h2 className="text-lg font-semibold text-foreground">
+            Card list coming soon
+          </h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+            {set.name} is a brand-new release. Individual cards will appear here
+            automatically as soon as they&apos;re published. You can already add
+            cards manually from the Add Card page.
+          </p>
+        </div>
+      ) : (
+        <CardGrid cards={cards} setId={setId} language="en" />
+      )}
     </div>
   )
 }

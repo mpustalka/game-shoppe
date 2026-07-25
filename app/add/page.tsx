@@ -8,16 +8,29 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CardDetailModal } from "@/components/cards/card-detail-modal"
-import { 
-  Search, 
-  Loader2, 
-  Package, 
-  PenSquare, 
+import { FeatureGate } from "@/components/billing/trial-banner"
+import {
+  Search,
+  Loader2,
+  Package,
+  PenSquare,
   Upload as UploadIcon,
   Database
 } from "lucide-react"
 
 export default function AddCardPage() {
+  return (
+    <FeatureGate
+      allowed={(e) => e.canAddCards}
+      title="Adding cards is a full-access feature"
+      description="Your free trial can browse sets and keep a small sample inventory, but adding new cards needs a subscription. Upgrade to add unlimited cards from any set."
+    >
+      <AddCardPageInner />
+    </FeatureGate>
+  )
+}
+
+function AddCardPageInner() {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<PokemonCard[]>([])
   const [isSearching, setIsSearching] = useState(false)

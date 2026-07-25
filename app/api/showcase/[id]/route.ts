@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 import { SHOWCASE_CARD_LIMIT } from "@/lib/showcase"
+import { resolveDataScope, scopeFilters, type DataScope } from "@/lib/user-scope"
 import type { InventoryItem } from "@/lib/types"
 import { rowToShowcase, type ShowcaseRow } from "../route"
 
@@ -9,10 +10,18 @@ interface RouteContext {
   params: Promise<{ id: string }>
 }
 
-async function fetchShowcase(id: string): Promise<ShowcaseRow | null> {
+// Owner-scoped lookup: a showcase belonging to another account reads as missing.
+// Public viewing happens through /api/showcase/share/[token], which is
+// intentionally unauthenticated — that's the point of a share link.
+async function fetchShowcase(
+  id: string,
+  scope: DataScope,
+): Promise<ShowcaseRow | null> {
+  if (scope.mode === "isolated") return null
+
   const rows = (await supabaseTable("showcase_binders", {
     select: "id,share_token,name,items,created_at,updated_at",
-    filters: [`id=eq.${id}`],
+    filters: [`id=eq.${id}`, ...scopeFilters(scope)],
     limit: 1,
   })) as ShowcaseRow[] | null
 
@@ -20,8 +29,11 @@ async function fetchShowcase(id: string): Promise<ShowcaseRow | null> {
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+
   const { id } = await params
-  const row = await fetchShowcase(id)
+  const row = await fetchShowcase(id, scope)
 
   if (!row) {
     return NextResponse.json({ error: "Showcase not found" }, { status: 404 })
@@ -31,10 +43,13 @@ export async function GET(_request: Request, { params }: RouteContext) {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+
   const { id } = await params
   const body = await request.json().catch(() => null)
 
-  const existing = await fetchShowcase(id)
+  const existing = await fetchShowcase(id, scope)
   if (!existing) {
     return NextResponse.json({ error: "Showcase not found" }, { status: 404 })
   }
@@ -66,7 +81,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const updated = (await supabaseTable("showcase_binders", {
       method: "PATCH",
-      filters: [`id=eq.${id}`],
+      filters: [`id=eq.${id}`, ...scopeFilters(scope)],
       body: patch,
     })) as ShowcaseRow[] | null
 
@@ -82,12 +97,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+  if (scope.mode === "isolated") return NextResponse.json({ ok: true })
+
   const { id } = await params
 
   try {
     await supabaseTable("showcase_binders", {
       method: "DELETE",
-      filters: [`id=eq.${id}`],
+      filters: [`id=eq.${id}`, ...scopeFilters(scope)],
     })
   } catch (error) {
     console.error("Showcase DELETE failed", error)

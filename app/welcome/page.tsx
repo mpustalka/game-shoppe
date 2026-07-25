@@ -10,6 +10,7 @@ import {
   Camera,
   Tag,
   ShieldCheck,
+  Check,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -71,7 +72,7 @@ export default function WelcomePage() {
             </Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="/login?mode=signup">Sign up free</Link>
+            <Link href="/login?mode=signup">Start free trial</Link>
           </Button>
         </div>
       </header>
@@ -80,7 +81,7 @@ export default function WelcomePage() {
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:py-20">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            <Sparkles className="h-3.5 w-3.5" /> Free to start · No card required
+            <Sparkles className="h-3.5 w-3.5" /> 14-day free trial · No card required
           </span>
           <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
             Manage your Pokémon singles like a pro.
@@ -96,7 +97,7 @@ export default function WelcomePage() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
               <Link href="/login?mode=signup">
-                Sign up for free <ArrowRight className="h-4 w-4" />
+                Start 14-day free trial <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
@@ -107,7 +108,8 @@ export default function WelcomePage() {
           </div>
 
           <p className="mt-4 text-sm text-muted-foreground">
-            14 days free, then $5/month. Questions? Email{" "}
+            14 days free, then just <span className="font-semibold text-foreground">$7.99/month</span> for
+            full access. Questions? Email{" "}
             <a
               href={`mailto:${ADMIN_EMAIL}`}
               className="font-medium text-foreground underline underline-offset-4"
@@ -155,12 +157,12 @@ export default function WelcomePage() {
         <div className="mt-12 flex flex-col items-center gap-3 rounded-2xl border bg-card px-6 py-10 text-center shadow-sm">
           <h2 className="text-2xl font-semibold">Ready to get started?</h2>
           <p className="max-w-md text-muted-foreground">
-            Start your free trial in under a minute — no credit card needed.
+            Start your 14-day free trial in under a minute — no credit card needed.
           </p>
           <div className="mt-2 flex flex-wrap justify-center gap-3">
             <Button asChild>
               <Link href="/login?mode=signup">
-                <Sparkles className="h-4 w-4" /> Sign up for free
+                <Sparkles className="h-4 w-4" /> Start free trial
               </Link>
             </Button>
             <Button asChild variant="outline">
@@ -169,6 +171,57 @@ export default function WelcomePage() {
               </Link>
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+        <div className="mx-auto max-w-md">
+          <div className="rounded-3xl border-2 border-primary/40 bg-card p-8 shadow-lg">
+            <div className="flex items-center justify-center">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                <Sparkles className="h-3.5 w-3.5" /> 14-day free trial
+              </span>
+            </div>
+            <h2 className="mt-5 text-center text-2xl font-semibold">All Access</h2>
+            <div className="mt-3 flex items-end justify-center gap-1">
+              <span className="text-5xl font-bold tracking-tight">$7.99</span>
+              <span className="mb-2 text-muted-foreground">/month</span>
+            </div>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              Free for 14 days, then $7.99/month. Cancel anytime.
+            </p>
+
+            <ul className="mt-6 space-y-3 text-sm">
+              {[
+                "Unlimited binders & inventory",
+                "Live TCGplayer pricing & analytics",
+                "Bulk import, add cards & photo uploads",
+                "Square POS sync & sales tracking",
+                "Buy list, store-credit calculator & customer lists",
+              ].map((line) => (
+                <li key={line} className="flex items-start gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+
+            <Button asChild size="lg" className="mt-8 w-full">
+              <Link href="/login?mode=signup">
+                Start your free trial <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+
+            <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Existing members keep full access free, forever.
+            </p>
+          </div>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            During the free trial you get 1 binder, up to 50 cards, and limited
+            analytics. Upgrade any time to unlock everything.
+          </p>
         </div>
       </section>
 

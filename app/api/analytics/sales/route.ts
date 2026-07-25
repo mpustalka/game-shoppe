@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
+import {
+  resolveDataScope,
+  ownerStamp,
+  pendingSetupResponse,
+} from "@/lib/user-scope"
 
 /**
  * Append-only ledger of realized sales. Recorded from inventory-context's
@@ -8,6 +13,10 @@ import { supabaseTable } from "@/lib/supabase"
  * cost of goods sold, and realized ROI/margin trends.
  */
 export async function POST(request: Request) {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+  if (scope.mode === "isolated") return pendingSetupResponse()
+
   const body = await request.json().catch(() => null)
 
   const cardId = typeof body?.cardId === "string" ? body.cardId : ""
@@ -23,6 +32,7 @@ export async function POST(request: Request) {
     await supabaseTable("card_sales", {
       method: "POST",
       body: {
+        ...ownerStamp(scope),
         inventory_id:
           typeof body?.inventoryId === "string" ? body.inventoryId : null,
         card_id: cardId,

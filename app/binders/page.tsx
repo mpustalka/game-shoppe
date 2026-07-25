@@ -61,6 +61,9 @@ import {
   TrendingDown,
   Minus,
 } from "lucide-react"
+import { Lock } from "lucide-react"
+import { useEntitlements } from "@/hooks/use-entitlements"
+import { TrialBanner } from "@/components/billing/trial-banner"
 
 type ViewMode = "grid" | "list"
 
@@ -137,6 +140,7 @@ type SortOption =
 
 export default function BindersPage() {
   const { items: inventoryItems } = useInventory()
+  const { entitlements } = useEntitlements()
   const [activeTier, setActiveTier] = useState<PriceTier>("budget")
   const [language, setLanguage] = useState<"en" | "ja">("en")
   const [searchQuery, setSearchQuery] = useState("")
@@ -328,6 +332,9 @@ export default function BindersPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_12%_6%,rgba(255,213,79,.34),transparent_28%),radial-gradient(circle_at_92%_2%,rgba(59,130,246,.18),transparent_24%),linear-gradient(180deg,#fffdf4_0%,#f4fbff_48%,#fff9ea_100%)]">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <TrialBanner />
+        </div>
         {/* Header */}
         <div className="mb-8 rounded-2xl border border-yellow-200/70 bg-white/72 p-5 shadow-sm backdrop-blur">
           <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
@@ -356,27 +363,48 @@ export default function BindersPage() {
 
         {/* Price Tier Cards */}
         <div className="mb-8 grid gap-4 md:grid-cols-3">
-          {PRICE_TIERS.map((tier) => {
+          {PRICE_TIERS.map((tier, tierIndex) => {
             const stats = tierStats[tier.id]
             const isActive = activeTier === tier.id
+            // Trial accounts can only open the first binder; the rest are locked.
+            const locked =
+              entitlements.maxBinders != null &&
+              tierIndex >= entitlements.maxBinders
 
             return (
               <Card
                 key={tier.id}
                 className={`cursor-pointer border-yellow-200/80 bg-white/82 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md ${
                   isActive ? "border-blue-500 ring-2 ring-yellow-300/50" : ""
-                }`}
-                onClick={() => setActiveTier(tier.id)}
+                } ${locked ? "opacity-70" : ""}`}
+                onClick={() => {
+                  if (locked) {
+                    window.location.href = "/settings?tab=billing"
+                    return
+                  }
+                  setActiveTier(tier.id)
+                }}
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{tier.label}</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      {tier.label}
+                      {locked && (
+                        <Lock className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </CardTitle>
                     <div className={`h-3 w-3 rounded-full ${tier.color}`} />
                   </div>
                   <CardDescription>
-                    {tier.id === "budget" && "Great for casual players"}
-                    {tier.id === "mid" && "Popular competitive cards"}
-                    {tier.id === "premium" && "Rare and valuable cards"}
+                    {locked
+                      ? "Upgrade to unlock this binder"
+                      : (
+                        <>
+                          {tier.id === "budget" && "Great for casual players"}
+                          {tier.id === "mid" && "Popular competitive cards"}
+                          {tier.id === "premium" && "Rare and valuable cards"}
+                        </>
+                      )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

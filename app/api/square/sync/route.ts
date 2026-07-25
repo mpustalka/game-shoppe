@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { syncItemToSquare, isSquareConfigured } from "@/lib/square"
+import { requireFeature } from "@/lib/subscription-server"
 import type { InventoryItem } from "@/lib/types"
 
 export async function POST(request: NextRequest) {
+  // Square sync is a paid feature.
+  const gate = await requireFeature((e) => e.canSyncSquare, "Square sync")
+  if (gate instanceof NextResponse) return gate
+
   // Check if Square is configured
   if (!isSquareConfigured()) {
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
+import { resolveDataScope, scopeFilters, type DataScope } from "@/lib/user-scope"
 
 function daysAgoIso(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
@@ -32,10 +33,50 @@ type SnapshotRow = {
   captured_on: string
 }
 
-async function buildSearches(windowIso: string, fourteenIso: string) {
+// Empty shapes, shared by the no-ownership path and the failure path so an
+// account that owns nothing looks the same as an account with nothing to report.
+const EMPTY_SEARCHES = {
+  topSearches: [] as Array<{
+    query: string
+    searches: number
+    last_result_count: number
+  }>,
+  dailySearches: [] as Array<{ day: string; searches: number }>,
+  totalSearches: 0,
+  unmetDemand: [] as Array<{
+    query: string
+    searches: number
+    last_result_count: number
+  }>,
+}
+
+const EMPTY_SALES = {
+  hasData: false,
+  revenue: 0,
+  cost: 0,
+  profit: 0,
+  units: 0,
+  roi: 0,
+  margin: 0,
+  avgSalePrice: 0,
+  daily: [] as Array<{ day: string; revenue: number; units: number }>,
+  topByRevenue: [] as Array<{
+    name: string
+    set: string
+    units: number
+    revenue: number
+    profit: number
+  }>,
+}
+
+async function buildSearches(
+  windowIso: string,
+  fourteenIso: string,
+  scope: DataScope,
+) {
   const rows = (await supabaseTable("card_search_events", {
     select: "normalized_query,result_count,created_at",
-    filters: [`created_at=gte.${windowIso}`],
+    filters: [...scopeFilters(scope), `created_at=gte.${windowIso}`],
     order: "created_at.desc",
     limit: 5000,
   })) as SearchRow[]
@@ -63,7 +104,7 @@ async function buildSearches(windowIso: string, fourteenIso: string) {
 
   const dailyRows = (await supabaseTable("card_search_events", {
     select: "created_at",
-    filters: [`created_at=gte.${fourteenIso}`],
+    filters: [...scopeFilters(scope), `created_at=gte.${fourteenIso}`],
     order: "created_at.asc",
     limit: 5000,
   })) as Array<{ created_at: string }>
@@ -88,11 +129,11 @@ async function buildSearches(windowIso: string, fourteenIso: string) {
   }
 }
 
-async function buildSales(windowIso: string) {
+async function buildSales(windowIso: string, scope: DataScope) {
   const rows = (await supabaseTable("card_sales", {
     select:
       "card_id,card_name,set_name,quantity,unit_price,purchase_price,sold_at",
-    filters: [`sold_at=gte.${windowIso}`],
+    filters: [...scopeFilters(scope), `sold_at=gte.${windowIso}`],
     order: "sold_at.asc",
     limit: 10000,
   }).catch(() => [])) as SaleRow[]
@@ -230,6 +271,9 @@ async function buildPriceMovers(windowIso: string) {
 }
 
 export async function GET(request: Request) {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+
   const url = new URL(request.url)
   const days = Math.min(
     365,
@@ -238,25 +282,16 @@ export async function GET(request: Request) {
   const windowIso = daysAgoIso(days)
   const fourteenIso = daysAgoIso(14)
 
+  // Price movers come from shared market data, so they stay visible either way.
+  const isolated = scope.mode === "isolated"
+
   const [searches, sales, priceMovers] = await Promise.all([
-    buildSearches(windowIso, fourteenIso).catch(() => ({
-      topSearches: [],
-      dailySearches: [],
-      totalSearches: 0,
-      unmetDemand: [],
-    })),
-    buildSales(windowIso).catch(() => ({
-      hasData: false,
-      revenue: 0,
-      cost: 0,
-      profit: 0,
-      units: 0,
-      roi: 0,
-      margin: 0,
-      avgSalePrice: 0,
-      daily: [],
-      topByRevenue: [],
-    })),
+    isolated
+      ? EMPTY_SEARCHES
+      : buildSearches(windowIso, fourteenIso, scope).catch(
+          () => EMPTY_SEARCHES,
+        ),
+    isolated ? EMPTY_SALES : buildSales(windowIso, scope).catch(() => EMPTY_SALES),
     buildPriceMovers(windowIso).catch(() => ({
       trackedCards: 0,
       gainers: [],

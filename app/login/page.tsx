@@ -179,7 +179,7 @@ function LoginForm() {
             <TabsContent value="signup" className="mt-0">
               <CardTitle className="mb-1 text-lg">Start your free trial</CardTitle>
               <CardDescription className="mb-4">
-                Two weeks free, then $5/month. No card required to start.
+                Two weeks free, then $7.99/month. No card required to start.
               </CardDescription>
 
               <form onSubmit={handleSignUp} className="flex flex-col gap-4">

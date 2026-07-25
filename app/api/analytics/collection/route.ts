@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
+import { resolveDataScope, scopeFilters } from "@/lib/user-scope"
 
 // ---------------------------------------------------------------------------
 // Collection analytics.
@@ -150,6 +151,9 @@ function round(value: number, places = 2) {
 }
 
 export async function GET(request: Request) {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+
   const url = new URL(request.url)
   // Trend window. Movement math ("this week" / "30-day change") always uses
   // fixed 7- and 30-day baselines regardless of the chart window below.
@@ -168,14 +172,19 @@ export async function GET(request: Request) {
   let inventoryRows: Array<{ item: Record<string, unknown> }> = []
   let snapshotRows: SnapshotRow[] = []
 
-  try {
-    inventoryRows = (await supabaseTable("inventory_items", {
-      select: "item",
-      order: "created_at.desc",
-      limit: 50000,
-    })) as Array<{ item: Record<string, unknown> }>
-  } catch {
-    inventoryRows = []
+  // An account with no ownership of its own analyses an empty collection
+  // rather than everyone else's.
+  if (scope.mode !== "isolated") {
+    try {
+      inventoryRows = (await supabaseTable("inventory_items", {
+        select: "item",
+        filters: scopeFilters(scope),
+        order: "created_at.desc",
+        limit: 50000,
+      })) as Array<{ item: Record<string, unknown> }>
+    } catch {
+      inventoryRows = []
+    }
   }
 
   try {

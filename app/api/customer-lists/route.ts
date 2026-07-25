@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
+import {
+  resolveDataScope,
+  scopeFilters,
+  ownerStamp,
+  pendingSetupResponse,
+} from "@/lib/user-scope"
 import type { CustomerList, CustomerListItem } from "@/lib/types"
 
 type CustomerListRow = {
@@ -24,8 +30,13 @@ function rowToList(row: CustomerListRow): CustomerList {
 }
 
 export async function GET() {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+  if (scope.mode === "isolated") return NextResponse.json([])
+
   const rows = (await supabaseTable("customer_lists", {
     select: "id,customer_name,note,items,created_at,updated_at",
+    filters: scopeFilters(scope),
     order: "updated_at.desc",
   })) as CustomerListRow[]
 
@@ -33,6 +44,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+  if (scope.mode === "isolated") return pendingSetupResponse()
+
   const body = await request.json().catch(() => null)
 
   if (!body?.id) {
@@ -51,6 +66,7 @@ export async function POST(request: Request) {
       onConflict: "id",
       body: {
         id: String(body.id),
+        ...ownerStamp(scope),
         customer_name: String(body.customerName ?? ""),
         note: String(body.note ?? ""),
         items,

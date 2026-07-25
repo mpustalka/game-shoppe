@@ -61,11 +61,20 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Load from Netlify Database on mount.
+  // Load from the database on mount. Inventory is per-account, so this returns
+  // only the signed-in user's items — a brand-new account starts empty.
   useEffect(() => {
     async function fetchInventory() {
       try {
         const response = await fetch("/api/inventory")
+
+        // Signed out (e.g. this provider also wraps the public landing page):
+        // there is simply no inventory to show, which isn't an error.
+        if (response.status === 401) {
+          setItems([])
+          return
+        }
+
         if (!response.ok) {
           throw new Error("Failed to fetch inventory")
         }
