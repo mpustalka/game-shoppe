@@ -20,6 +20,8 @@ import {
   FileText
 } from "lucide-react"
 
+import { FeatureGate } from "@/components/billing/trial-banner"
+
 // Parse condition string to CardCondition type
 function parseCondition(str: string): CardCondition {
   const normalized = str.toLowerCase().trim()
@@ -75,6 +77,18 @@ function parseCSV(csvText: string): string[][] {
 }
 
 export default function ImportPage() {
+  return (
+    <FeatureGate
+      allowed={(e) => e.canImport}
+      title="Bulk import is a full-access feature"
+      description="Importing spreadsheets of cards is available on the paid plan. Upgrade to import your entire catalog in one go."
+    >
+      <ImportPageInner />
+    </FeatureGate>
+  )
+}
+
+function ImportPageInner() {
   const { bulkImport } = useInventory()
   const fileInputRef = useRef<HTMLInputElement>(null)
   

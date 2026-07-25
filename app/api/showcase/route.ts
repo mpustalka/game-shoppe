@@ -2,6 +2,12 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 import { SHOWCASE_CARD_LIMIT } from "@/lib/showcase"
+import {
+  resolveDataScope,
+  scopeFilters,
+  ownerStamp,
+  pendingSetupResponse,
+} from "@/lib/user-scope"
 import type { InventoryItem } from "@/lib/types"
 
 export interface ShowcaseRow {
@@ -30,8 +36,13 @@ function generateShareToken() {
 }
 
 export async function GET() {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+  if (scope.mode === "isolated") return NextResponse.json([])
+
   const rows = (await supabaseTable("showcase_binders", {
     select: "id,share_token,name,items,created_at,updated_at",
+    filters: scopeFilters(scope),
     order: "updated_at.desc",
   })) as ShowcaseRow[] | null
 
@@ -39,6 +50,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+  if (scope.mode === "isolated") return pendingSetupResponse()
+
   const body = await request.json().catch(() => null)
 
   const name =
@@ -54,6 +69,7 @@ export async function POST(request: Request) {
   const now = new Date().toISOString()
   const row = {
     id: globalThis.crypto.randomUUID(),
+    ...ownerStamp(scope),
     share_token: generateShareToken(),
     name,
     items,

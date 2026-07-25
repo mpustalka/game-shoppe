@@ -12,6 +12,11 @@ import { supabaseTable } from "@/lib/supabase"
  * history keeps accruing every day even when nobody opens the page. That is
  * what guarantees the "price movers" and "insights" views have a second day of
  * readings to compare against.
+ *
+ * This read is deliberately NOT scoped to a user. It runs unattended with no
+ * session, and it feeds card_price_snapshots — shared market-price history,
+ * keyed by card rather than by owner. It reads every account's inventory only to
+ * decide which cards are worth pricing; no per-user data is written or exposed.
  */
 
 type StoredItem = {

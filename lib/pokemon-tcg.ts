@@ -1,5 +1,18 @@
 import type { PokemonSet, PokemonCard } from "./types"
 import { getPrimaryMarketPrice } from "./card-metadata"
+import { CUSTOM_SETS, getCustomSetById } from "./custom-sets"
+
+// Merge any locally-defined custom sets (brand-new releases the upstream API
+// doesn't serve yet) with the live API results, newest first, de-duplicated by
+// id so a set that later appears in the API doesn't show up twice.
+function mergeCustomSets(apiSets: PokemonSet[]): PokemonSet[] {
+  const apiIds = new Set(apiSets.map((set) => set.id))
+  const extras = CUSTOM_SETS.filter((set) => !apiIds.has(set.id))
+  return [...extras, ...apiSets].sort(
+    (a, b) =>
+      new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime(),
+  )
+}
 
 const BASE_URL = "https://api.pokemontcg.io/v2"
 
@@ -20,7 +33,7 @@ export async function getAllSets(): Promise<PokemonSet[]> {
   // The upstream API can intermittently return 404; degrade to an empty list
   // instead of crashing the page that renders these sets.
   if (response.status === 404) {
-    return []
+    return mergeCustomSets([])
   }
 
   if (!response.ok) {
@@ -28,10 +41,14 @@ export async function getAllSets(): Promise<PokemonSet[]> {
   }
 
   const data = await response.json()
-  return data.data as PokemonSet[]
+  return mergeCustomSets(data.data as PokemonSet[])
 }
 
 export async function getSetById(setId: string): Promise<PokemonSet | null> {
+  // Custom (locally-defined) sets short-circuit the upstream lookup.
+  const custom = getCustomSetById(setId)
+  if (custom) return custom
+
   const response = await fetch(`${BASE_URL}/sets/${setId}`, {
     headers,
     next: { revalidate: 3600 },

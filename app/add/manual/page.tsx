@@ -18,6 +18,8 @@ import {
   CheckCircle2,
   Package
 } from "lucide-react"
+
+import { FeatureGate } from "@/components/billing/trial-banner"
 import Link from "next/link"
 
 // Common Pokemon sets for quick selection
@@ -73,6 +75,18 @@ const RARITIES = [
 ]
 
 export default function ManualAddCardPage() {
+  return (
+    <FeatureGate
+      allowed={(e) => e.canAddCards}
+      title="Adding cards is a full-access feature"
+      description="Manually adding cards is available on the paid plan. Upgrade to build out your full inventory."
+    >
+      <ManualAddCardPageInner />
+    </FeatureGate>
+  )
+}
+
+function ManualAddCardPageInner() {
   const router = useRouter()
   const { addManualItem } = useInventory()
   const fileInputRef = useRef<HTMLInputElement>(null)

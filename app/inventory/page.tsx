@@ -39,6 +39,8 @@ import { EditInventoryModal } from "@/components/inventory/edit-inventory-modal"
 import { DeleteConfirmDialog } from "@/components/inventory/delete-confirm-dialog"
 import { SetFilter } from "@/components/inventory/set-filter"
 import { getAvailableSets } from "@/lib/card-metadata"
+import { useEntitlements } from "@/hooks/use-entitlements"
+import { TrialBanner } from "@/components/billing/trial-banner"
 
 type ViewMode = "grid" | "list"
 type SortOption = "newest" | "oldest" | "price-high" | "price-low" | "name"
@@ -116,6 +118,18 @@ export default function InventoryPage() {
     [items],
   )
 
+  // Trial accounts can only see a capped slice of their inventory.
+  const { entitlements } = useEntitlements()
+  const inventoryLimit = entitlements.maxInventoryVisible
+  const visibleItems = useMemo(
+    () =>
+      inventoryLimit != null
+        ? filteredItems.slice(0, inventoryLimit)
+        : filteredItems,
+    [filteredItems, inventoryLimit],
+  )
+  const hiddenCount = filteredItems.length - visibleItems.length
+
   const totalValue = filteredItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -144,6 +158,10 @@ export default function InventoryPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <TrialBanner />
+      </div>
+
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -265,7 +283,7 @@ export default function InventoryPage() {
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {filteredItems.map((item) => (
+          {visibleItems.map((item) => (
             <Card key={item.id} className="group overflow-hidden">
               <Link href={`/inventory/${item.id}`}>
                 <div className="relative aspect-[2.5/3.5] w-full overflow-hidden bg-muted">
@@ -344,7 +362,7 @@ export default function InventoryPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filteredItems.map((item) => (
+          {visibleItems.map((item) => (
             <div
               key={item.id}
               className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
@@ -420,6 +438,21 @@ export default function InventoryPage() {
       )}
 
       {/* Edit Modal */}
+      {hiddenCount > 0 && (
+        <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-6 py-8 text-center">
+          <p className="text-sm font-medium text-foreground">
+            {hiddenCount} more {hiddenCount === 1 ? "card is" : "cards are"} hidden
+          </p>
+          <p className="max-w-md text-sm text-muted-foreground">
+            Your free trial shows the first {inventoryLimit} cards. Upgrade to
+            see and manage your entire inventory.
+          </p>
+          <Button asChild size="sm" className="mt-1">
+            <Link href="/settings?tab=billing">Upgrade to view all</Link>
+          </Button>
+        </div>
+      )}
+
       <EditInventoryModal
         item={itemToEdit}
         open={!!editItem}

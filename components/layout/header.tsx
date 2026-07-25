@@ -23,21 +23,31 @@ import {
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { AuthNav } from "@/components/layout/auth-nav"
+import { Lock } from "lucide-react"
+import { useEntitlements } from "@/hooks/use-entitlements"
+import type { Entitlements } from "@/lib/entitlements"
 
-const navigation = [
+type NavItem = {
+  name: string
+  href: string
+  icon: typeof LayoutGrid
+  gate?: (e: Entitlements) => boolean
+}
+
+const navigation: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutGrid },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Binders", href: "/binders", icon: BookOpen },
   { name: "Showcase", href: "/showcase", icon: Share2 },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Customer Lists", href: "/customer-lists", icon: ClipboardList },
-  { name: "Add Card", href: "/add", icon: PlusCircle },
-  { name: "Import", href: "/import", icon: Upload },
+  { name: "Add Card", href: "/add", icon: PlusCircle, gate: (e) => e.canAddCards },
+  { name: "Import", href: "/import", icon: Upload, gate: (e) => e.canImport },
   { name: "Scan", href: "/scan", icon: QrCode },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
-const mobileNavigation = [
+const mobileNavigation: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutGrid },
   { name: "English Sets", href: "/sets", icon: Package },
   { name: "Japanese Sets", href: "/japanese-sets", icon: Package },
@@ -46,8 +56,8 @@ const mobileNavigation = [
   { name: "Showcase", href: "/showcase", icon: Share2 },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Customer Lists", href: "/customer-lists", icon: ClipboardList },
-  { name: "Add Card", href: "/add", icon: PlusCircle },
-  { name: "Import", href: "/import", icon: Upload },
+  { name: "Add Card", href: "/add", icon: PlusCircle, gate: (e) => e.canAddCards },
+  { name: "Import", href: "/import", icon: Upload, gate: (e) => e.canImport },
   { name: "Scan", href: "/scan", icon: QrCode },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
@@ -55,6 +65,7 @@ const mobileNavigation = [
 export function Header() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { entitlements } = useEntitlements()
 
   // Hide the app chrome on public, pre-login pages so visitors never see the
   // navigation before signing in. These routes ship their own minimal headers.
@@ -118,19 +129,22 @@ export function Header() {
             const isActive =
               pathname === item.href ||
               (item.href !== "/" && pathname.startsWith(item.href))
+            const locked = item.gate ? !item.gate(entitlements) : false
 
             return (
               <Link
                 key={item.name}
-                href={item.href}
+                href={locked ? "/settings?tab=billing" : item.href}
+                title={locked ? "Upgrade to unlock" : undefined}
                 className={cn(
                   "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  locked && "opacity-60",
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                {locked ? <Lock className="h-4 w-4" /> : <item.icon className="h-4 w-4" />}
                 {item.name}
               </Link>
             )
@@ -180,21 +194,28 @@ export function Header() {
                   const isActive =
                     pathname === item.href ||
                     (item.href !== "/" && pathname.startsWith(item.href))
+                  const locked = item.gate ? !item.gate(entitlements) : false
 
                   return (
                     <Link
                       key={item.name}
-                      href={item.href}
+                      href={locked ? "/settings?tab=billing" : item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={cn(
                         "flex items-center gap-3 rounded-lg px-3 py-3 text-base font-medium transition-colors",
                         isActive
                           ? "bg-primary/10 text-primary"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        locked && "opacity-60",
                       )}
                     >
-                      <item.icon className="h-5 w-5" />
+                      {locked ? <Lock className="h-5 w-5" /> : <item.icon className="h-5 w-5" />}
                       {item.name}
+                      {locked && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          Upgrade
+                        </span>
+                      )}
                     </Link>
                   )
                 })}

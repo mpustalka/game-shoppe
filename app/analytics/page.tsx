@@ -35,6 +35,10 @@ import {
   Zap,
 } from "lucide-react"
 
+import { Lock } from "lucide-react"
+import { useEntitlements } from "@/hooks/use-entitlements"
+import { TrialBanner } from "@/components/billing/trial-banner"
+
 type Mover = {
   cardId: string
   name: string
@@ -264,6 +268,10 @@ export default function AnalyticsPage() {
 
   const { sales, priceMovers } = summary
 
+  // Trial accounts get a limited analytics view (headline numbers only).
+  const { entitlements } = useEntitlements()
+  const limited = entitlements.limitedAnalytics
+
   // Prefer the exact ledger; fall back to the inventory-derived estimate when
   // no sales have been recorded through the ledger yet.
   const realizedRevenue = sales.hasData ? sales.revenue : fin.realizedRevenue
@@ -283,6 +291,9 @@ export default function AnalyticsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <TrialBanner />
+      </div>
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight text-foreground">
@@ -378,6 +389,10 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Price movers — the price-increase tracker */}
+      {limited ? (
+        <AnalyticsLocked />
+      ) : (
+        <>
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
         <ListCard
           title="Top Price Increases"
@@ -775,6 +790,29 @@ export default function AnalyticsPage() {
           )}
         </ListCard>
       </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function AnalyticsLocked() {
+  return (
+    <div className="mb-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-6 py-14 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <Lock className="h-6 w-6" />
+      </div>
+      <h2 className="text-lg font-semibold text-foreground">
+        Full analytics is a paid feature
+      </h2>
+      <p className="max-w-md text-sm text-muted-foreground">
+        Your free trial shows the headline numbers above. Upgrade to unlock
+        price movers, insights &amp; alerts, sales history, search demand, and
+        the full inventory breakdowns.
+      </p>
+      <Button asChild className="mt-1">
+        <Link href="/settings?tab=billing">Upgrade to unlock analytics</Link>
+      </Button>
     </div>
   )
 }
