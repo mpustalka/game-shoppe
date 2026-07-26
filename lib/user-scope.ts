@@ -66,10 +66,13 @@ export async function resolveDataScope(): Promise<DataScope | NextResponse> {
   }
 
   if (await hasOwnershipColumn()) {
+    // Transitional compatibility: rows created before the ownership migration
+    // have NULL user_id. Keep them visible/editable to the signed-in account
+    // so existing collections do not appear to vanish overnight.
     return {
       mode: "owned",
       userId: user.id,
-      filters: [`user_id=eq.${user.id}`],
+      filters: [`or=(user_id.eq.${user.id},user_id.is.null)`],
     }
   }
 
