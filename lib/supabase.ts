@@ -12,9 +12,9 @@ const SUPABASE_ANON_KEY =
 // Privileged server key — bypasses RLS. supabaseTable only runs server-side
 // (inside route handlers), so it is never shipped to the browser.
 const SUPABASE_SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SECRET_KEY ||
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.SERVICE_ROLE_KEY
+  process.env.SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_SECRET_KEY
 
 export function hasSupabaseConfig() {
   return Boolean(
@@ -88,7 +88,10 @@ export async function supabaseTable(
     for (let offset = 0; offset < desired; offset += PAGE_SIZE) {
       const to = Math.min(offset + PAGE_SIZE, desired) - 1
       const response = await fetch(url, {
-        headers: buildHeaders({ "Range-Unit": "items", Range: `${offset}-${to}` }),
+        headers: buildHeaders({
+          "Range-Unit": "items",
+          Range: `${offset}-${to}`,
+        }),
       })
 
       // Asking past the last row yields 416; treat it as a clean end-of-data.
