@@ -147,8 +147,13 @@ export function CardDetailModal({
       setBinderTier("none")
       onOpenChange(false)
     } catch (error) {
-      toast.error("Failed to add card to inventory")
-    } finally {
+  console.error("ADD TO INVENTORY ERROR:", error)
+  toast.error(
+    error instanceof Error
+      ? error.message
+      : "Failed to add card to inventory",
+  )
+} finally {
       setIsAdding(false)
     }
   }

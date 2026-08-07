@@ -23,24 +23,39 @@ function normalizeInventoryItem(
 }
 
 export async function GET() {
+
+  console.log("Inventory GET started")
+
   const scope = await resolveDataScope()
+
+   console.log("Inventory scope:", scope)
+
   if (scope instanceof NextResponse) return scope
 
   // A post-launch account with ownership not yet in place owns nothing.
-  if (scope.mode === "isolated") return NextResponse.json([])
+  if (scope.mode === "isolated") {
+    console.log("Inventory isolated mode - returning empty") // log
+    return NextResponse.json([])
+  }
+
+const filters = scopeFilters(scope)
+
+console.log("Inventory filters:", filters)
+
 
   const rows = await supabaseTable("inventory_items", {
     select: "item",
     filters: scopeFilters(scope),
     order: "created_at.desc",
   })
+ console.log("Inventory rows:", rows.length)
 
   return NextResponse.json(
     rows.map((row: { item: unknown }) =>
       normalizeInventoryItem(row.item as Record<string, unknown>),
     ),
   )
-}
+} 
 
 export async function POST(request: Request) {
   const scope = await resolveDataScope()
@@ -79,11 +94,17 @@ export async function POST(request: Request) {
       onConflict: "id",
     })
   } catch (error) {
-    console.error("Inventory POST failed", error)
+    console.error("Inventory POST failed")
+    console.error(error)
+
+    if (error instanceof Error) {
+      console.error(error.message)
+      console.error(error.stack)
+    }
+
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Unknown inventory error",
+        error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 },
     )

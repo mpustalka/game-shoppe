@@ -40,7 +40,8 @@ export async function hasOwnershipColumn(): Promise<boolean> {
     // representative of the whole set.
     await supabaseTable("inventory_items", { select: "user_id", limit: 1 })
     present = true
-  } catch {
+  } catch (error) {
+    console.error("OWNERSHIP PROBE FAILED:", error)
     present = false
   }
 
