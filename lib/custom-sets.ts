@@ -9,6 +9,9 @@ import type { PokemonSet } from "./types"
 // A custom set uses a `customSet: true` marker so the rest of the app can tell
 // it apart from an API-backed set (its card list is curated/empty until the
 // upstream API adds the cards).
+// Found in pokemon-tcg.ts
+// return [...extras, ...apiSets] & if (custom) {}
+
 export interface CustomPokemonSet extends PokemonSet {
   customSet: true
 }
