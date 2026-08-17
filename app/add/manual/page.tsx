@@ -576,4 +576,85 @@ function ManualAddCardPageInner() {
                       }))
                     }
                     required
-              
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity">Quantity Available *</Label>
+
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min="1"
+                      value={formData.quantity}
+                      onChange={(event) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          quantity:
+                            Number.parseInt(event.target.value, 10) || 1,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="quantitySold">Quantity Sold</Label>
+
+                    <Input
+                      id="quantitySold"
+                      type="number"
+                      min="0"
+                      value={formData.quantitySold ?? 0}
+                      onChange={(event) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          quantitySold:
+                            Number.parseInt(event.target.value, 10) || 0,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+
+                  <Textarea
+                    id="notes"
+                    placeholder="Any additional notes about this card..."
+                    value={formData.notes ?? ""}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        notes: event.target.value,
+                      }))
+                    }
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <div className="mt-8 flex justify-end gap-4">
+          <Button variant="outline" type="button" asChild>
+            <Link href="/add">Cancel</Link>
+          </Button>
+
+          <Button type="submit" disabled={isSubmitting}>
+            <Package
+              className={
+                isSubmitting ? "mr-2 h-4 w-4 animate-pulse" : "mr-2 h-4 w-4"
+              }
+            />
+
+            {isSubmitting ? "Adding..." : "Add to Inventory"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}
