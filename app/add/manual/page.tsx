@@ -1,26 +1,49 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRef, useState } from "react"
+import Link from "next/link"
+
 import { useInventory } from "@/lib/inventory-context"
-import { CARD_CONDITIONS, CARD_FINISHES, type CardCondition, type CardFinish, type ManualCardData } from "@/lib/types"
+
+import {
+  CARD_CONDITIONS,
+  CARD_FINISHES,
+  type CardCondition,
+  type CardFinish,
+  type ManualCardData,
+} from "@/lib/types"
+
+import { FeatureGate } from "@/components/billing/trial-banner"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { 
-  ArrowLeft, 
-  Upload, 
-  ImageIcon, 
-  X, 
-  CheckCircle2,
-  Package
-} from "lucide-react"
 
-import { FeatureGate } from "@/components/billing/trial-banner"
-import Link from "next/link"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+import {
+  ArrowLeft,
+  Upload,
+  ImageIcon,
+  X,
+  CheckCircle2,
+  Package,
+} from "lucide-react"
 
 // Common Pokemon sets for quick selection
 const COMMON_SETS = [
@@ -74,12 +97,34 @@ const RARITIES = [
   "Promo",
 ]
 
+function getEmptyFormData(): ManualCardData {
+  return {
+    name: "",
+    setName: "",
+    number: "",
+    rarity: "",
+
+    // Required by ManualCardData
+    language: "en",
+
+    condition: "Near Mint",
+    finish: "Normal",
+
+    price: 0,
+    quantity: 1,
+    quantitySold: 0,
+
+    notes: "",
+    customImage: "",
+  }
+}
+
 export default function ManualAddCardPage() {
   return (
     <FeatureGate
       allowed={(e) => e.canAddCards}
-      title="Adding cards is a full-access feature"
-      description="Manually adding cards is available on the paid plan. Upgrade to build out your full inventory."
+      title="Active subscription required"
+      description="Manual card entry is included with both Basic and Premium. Choose a plan to continue adding cards to your inventory."
     >
       <ManualAddCardPageInner />
     </FeatureGate>
@@ -87,105 +132,125 @@ export default function ManualAddCardPage() {
 }
 
 function ManualAddCardPageInner() {
-  const router = useRouter()
   const { addManualItem } = useInventory()
+
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
-  const [formData, setFormData] = useState<ManualCardData>({
-    name: "",
-    setName: "",
-    number: "",
-    rarity: "",
-    condition: "Near Mint",
-    finish: "Normal",
-    price: 0,
-    quantity: 1,
-    quantitySold: 0,
-    notes: "",
-    customImage: "",
-  })
-  
+
+  const [formData, setFormData] = useState<ManualCardData>(getEmptyFormData())
+
   const [customSet, setCustomSet] = useState("")
+
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+
   const [isSubmitting, setIsSubmitting] = useState(false)
+
   const [success, setSuccess] = useState(false)
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+
     if (!file) return
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       alert("Please upload an image file")
       return
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert("Image must be less than 5MB")
       return
     }
 
     const reader = new FileReader()
+
     reader.onloadend = () => {
       const base64 = reader.result as string
+
       setImagePreview(base64)
-      setFormData(prev => ({ ...prev, customImage: base64 }))
+
+      setFormData((prev) => ({
+        ...prev,
+        customImage: base64,
+      }))
     }
+
     reader.readAsDataURL(file)
   }
 
   const removeImage = () => {
     setImagePreview(null)
-    setFormData(prev => ({ ...prev, customImage: "" }))
+
+    setFormData((prev) => ({
+      ...prev,
+      customImage: "",
+    }))
+
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+
     if (!formData.name.trim()) {
       alert("Please enter a card name")
       return
     }
-    
-    const setName = formData.setName === "Custom / Other" ? customSet : formData.setName
+
+    const setName =
+      formData.setName === "Custom / Other" ? customSet : formData.setName
+
     if (!setName.trim()) {
       alert("Please select or enter a set name")
+      return
+    }
+
+    if (!Number.isFinite(formData.price) || formData.price <= 0) {
+      alert("Please enter a valid price")
+      return
+    }
+
+    if (!Number.isFinite(formData.quantity) || formData.quantity <= 0) {
+      alert("Please enter a valid quantity")
       return
     }
 
     setIsSubmitting(true)
 
     try {
-      await addManualItem({
+      const addedItem = await addManualItem({
         ...formData,
-        setName,
+        setName: setName.trim(),
       })
+
+      // addManualItem returns null when the API rejects the write.
+      if (!addedItem) {
+        throw new Error("Failed to add card to inventory")
+      }
+
       setSuccess(true)
-      setTimeout(() => {
-        setFormData({
-          name: "",
-          setName: "",
-          number: "",
-          rarity: "",
-          condition: "Near Mint",
-          finish: "Normal",
-          price: 0,
-          quantity: 1,
-          quantitySold: 0,
-          notes: "",
-          customImage: "",
-        })
-        setCustomSet("")
-        setImagePreview(null)
+
+      setFormData(getEmptyFormData())
+
+      setCustomSet("")
+      setImagePreview(null)
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+
+      window.setTimeout(() => {
         setSuccess(false)
       }, 2000)
     } catch (error) {
       console.error("Failed to add card:", error)
-      alert("Failed to add card. Please try again.")
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to add card. Please try again.",
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -200,10 +265,14 @@ function ManualAddCardPageInner() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
+
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Add Card Manually</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Add Card Manually
+          </h1>
+
           <p className="mt-1 text-muted-foreground">
-            Enter card details manually for cards not in the database
+            Enter card details manually for cards not in the database.
           </p>
         </div>
       </div>
@@ -212,6 +281,7 @@ function ManualAddCardPageInner() {
         <Card className="mb-6 border-green-500 bg-green-500/10">
           <CardContent className="flex items-center gap-3 py-4">
             <CheckCircle2 className="h-5 w-5 text-green-500" />
+
             <p className="font-medium text-green-700 dark:text-green-400">
               Card added to inventory successfully!
             </p>
@@ -221,12 +291,16 @@ function ManualAddCardPageInner() {
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Left Column - Image Upload */}
+          {/* LEFT COLUMN */}
           <Card>
             <CardHeader>
               <CardTitle>Card Image</CardTitle>
-              <CardDescription>Upload a photo of the card (optional)</CardDescription>
+
+              <CardDescription>
+                Upload a photo of the card (optional)
+              </CardDescription>
             </CardHeader>
+
             <CardContent>
               <div className="space-y-4">
                 {imagePreview ? (
@@ -238,27 +312,35 @@ function ManualAddCardPageInner() {
                         className="h-full w-full object-contain"
                       />
                     </div>
+
                     <Button
                       type="button"
                       variant="destructive"
                       size="icon"
-                      className="absolute -top-2 -right-2 h-8 w-8"
+                      className="absolute -right-2 -top-2 h-8 w-8"
                       onClick={removeImage}
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 ) : (
-                  <div
+                  <button
+                    type="button"
                     className="flex aspect-[2.5/3.5] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 transition-colors hover:border-primary/50 hover:bg-muted"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <ImageIcon className="mb-3 h-12 w-12 text-muted-foreground/50" />
-                    <p className="text-sm font-medium text-foreground">Click to upload image</p>
-                    <p className="mt-1 text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
-                  </div>
+
+                    <p className="text-sm font-medium text-foreground">
+                      Click to upload image
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      PNG, JPG up to 5MB
+                    </p>
+                  </button>
                 )}
-                
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -266,7 +348,7 @@ function ManualAddCardPageInner() {
                   onChange={handleImageUpload}
                   className="hidden"
                 />
-                
+
                 {!imagePreview && (
                   <Button
                     type="button"
@@ -282,46 +364,63 @@ function ManualAddCardPageInner() {
             </CardContent>
           </Card>
 
-          {/* Right Column - Card Details */}
+          {/* RIGHT COLUMN */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Card Details</CardTitle>
+
                 <CardDescription>Enter the card information</CardDescription>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Card Name *</Label>
+
                   <Input
                     id="name"
                     placeholder="e.g., Charizard ex"
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        name: event.target.value,
+                      }))
+                    }
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="setName">Pokemon Set *</Label>
+                  <Label htmlFor="setName">Pokémon Set *</Label>
+
                   <Select
                     value={formData.setName}
-                    onValueChange={(v) => setFormData(prev => ({ ...prev, setName: v }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        setName: value,
+                      }))
+                    }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="setName">
                       <SelectValue placeholder="Select a set" />
                     </SelectTrigger>
+
                     <SelectContent>
                       {COMMON_SETS.map((set) => (
-                        <SelectItem key={set} value={set}>{set}</SelectItem>
+                        <SelectItem key={set} value={set}>
+                          {set}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  
+
                   {formData.setName === "Custom / Other" && (
                     <Input
                       placeholder="Enter custom set name"
                       value={customSet}
-                      onChange={(e) => setCustomSet(e.target.value)}
+                      onChange={(event) => setCustomSet(event.target.value)}
                       className="mt-2"
                     />
                   )}
@@ -330,29 +429,70 @@ function ManualAddCardPageInner() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="number">Card Number</Label>
+
                     <Input
                       id="number"
                       placeholder="e.g., 006/165"
-                      value={formData.number}
-                      onChange={(e) => setFormData(prev => ({ ...prev, number: e.target.value }))}
+                      value={formData.number ?? ""}
+                      onChange={(event) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          number: event.target.value,
+                        }))
+                      }
                     />
                   </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="rarity">Rarity</Label>
+
                     <Select
-                      value={formData.rarity}
-                      onValueChange={(v) => setFormData(prev => ({ ...prev, rarity: v }))}
+                      value={formData.rarity ?? ""}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          rarity: value,
+                        }))
+                      }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="rarity">
                         <SelectValue placeholder="Select rarity" />
                       </SelectTrigger>
+
                       <SelectContent>
                         {RARITIES.map((rarity) => (
-                          <SelectItem key={rarity} value={rarity}>{rarity}</SelectItem>
+                          <SelectItem key={rarity} value={rarity}>
+                            {rarity}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                {/* Language */}
+                <div className="space-y-2">
+                  <Label htmlFor="language">Language *</Label>
+
+                  <Select
+                    value={formData.language}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        language: value as "en" | "ja",
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="language">
+                      <SelectValue />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="en">🇺🇸 English</SelectItem>
+
+                      <SelectItem value="ja">🇯🇵 Japanese</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
@@ -360,21 +500,34 @@ function ManualAddCardPageInner() {
             <Card>
               <CardHeader>
                 <CardTitle>Inventory Details</CardTitle>
-                <CardDescription>Set pricing and stock information</CardDescription>
+
+                <CardDescription>
+                  Set pricing and stock information
+                </CardDescription>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="condition">Condition *</Label>
+
                   <Select
                     value={formData.condition}
-                    onValueChange={(v) => setFormData(prev => ({ ...prev, condition: v as CardCondition }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        condition: value as CardCondition,
+                      }))
+                    }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="condition">
                       <SelectValue />
                     </SelectTrigger>
+
                     <SelectContent>
-                      {CARD_CONDITIONS.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      {CARD_CONDITIONS.map((condition) => (
+                        <SelectItem key={condition} value={condition}>
+                          {condition}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -382,16 +535,25 @@ function ManualAddCardPageInner() {
 
                 <div className="space-y-2">
                   <Label htmlFor="finish">Finish / Type *</Label>
+
                   <Select
                     value={formData.finish}
-                    onValueChange={(v) => setFormData(prev => ({ ...prev, finish: v as CardFinish }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        finish: value as CardFinish,
+                      }))
+                    }
                   >
                     <SelectTrigger id="finish">
                       <SelectValue />
                     </SelectTrigger>
+
                     <SelectContent>
                       {CARD_FINISHES.map((finish) => (
-                        <SelectItem key={finish} value={finish}>{finish}</SelectItem>
+                        <SelectItem key={finish} value={finish}>
+                          {finish}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -399,77 +561,19 @@ function ManualAddCardPageInner() {
 
                 <div className="space-y-2">
                   <Label htmlFor="price">Price ($) *</Label>
+
                   <Input
                     id="price"
                     type="number"
-                    min="0"
+                    min="0.01"
                     step="0.01"
                     placeholder="0.00"
                     value={formData.price || ""}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        price: Number.parseFloat(event.target.value) || 0,
+                      }))
+                    }
                     required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="quantity">Quantity Available *</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      min="1"
-                      value={formData.quantity}
-                      onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="quantitySold">Quantity Sold</Label>
-                    <Input
-                      id="quantitySold"
-                      type="number"
-                      min="0"
-                      value={formData.quantitySold}
-                      onChange={(e) => setFormData(prev => ({ ...prev, quantitySold: parseInt(e.target.value) || 0 }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Any additional notes about this card..."
-                    value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Submit Button */}
-        <div className="mt-8 flex justify-end gap-4">
-          <Button variant="outline" type="button" asChild>
-            <Link href="/add">Cancel</Link>
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Package className="mr-2 h-4 w-4 animate-pulse" />
-                Adding...
-              </>
-            ) : (
-              <>
-                <Package className="mr-2 h-4 w-4" />
-                Add to Inventory
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
-    </div>
-  )
-}
+              

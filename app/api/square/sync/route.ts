@@ -5,8 +5,15 @@ import type { InventoryItem } from "@/lib/types"
 
 export async function POST(request: NextRequest) {
   // Square sync is a paid feature.
-  const gate = await requireFeature((e) => e.canSyncSquare, "Square sync")
-  if (gate instanceof NextResponse) return gate
+  const gate = await requireFeature(
+    (e) => e.canSyncSquare,
+    "Square sync",
+    "premium",
+  )
+
+  if (gate instanceof NextResponse) {
+    return gate
+  }
 
   // Check if Square is configured
   if (!isSquareConfigured()) {

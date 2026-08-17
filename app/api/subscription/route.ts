@@ -3,31 +3,46 @@ import { NextResponse } from "next/server"
 import { resolveEntitlements } from "@/lib/subscription-server"
 import { DEFAULT_ENTITLEMENTS } from "@/lib/entitlements"
 
-// Returns the signed-in account's billing entitlements. The client billing hook
-// reads this to gate features and render the trial / upgrade UI. Computed
-// server-side so the browser can't spoof its own access level.
+// Returns the signed-in account's computed subscription entitlements.
+//
+// The browser uses this endpoint to:
+// - render current plan
+// - show trial status
+// - lock Premium features
+// - display Basic / Premium upgrade UI
+//
+// Entitlements are computed server-side so the client cannot spoof access.
 export async function GET() {
   try {
     const { user, entitlements } = await resolveEntitlements()
 
     if (!user || !entitlements) {
-      // Not signed in — hand back conservative defaults so public code paths
-      // don't crash. Middleware already gates the real app behind auth.
       return NextResponse.json({
         signedIn: false,
+        email: null,
         entitlements: DEFAULT_ENTITLEMENTS,
       })
     }
 
     return NextResponse.json({
       signedIn: true,
-      email: user.email,
+
+      email: user.email ?? null,
+
       entitlements,
     })
-  } catch {
-    // Never block the app on a billing hiccup.
+  } catch (error) {
+    console.error("Subscription entitlement lookup failed:", error)
+
+    /**
+     * Preserve your existing fail-open behavior.
+     *
+     * A billing/database hiccup should not make an existing
+     * collection suddenly disappear or lock the whole app.
+     */
     return NextResponse.json({
       signedIn: false,
+      email: null,
       entitlements: DEFAULT_ENTITLEMENTS,
     })
   }

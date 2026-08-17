@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
+import { requireFeature } from "@/lib/subscription-server"
 
 /**
  * Smart insights / alerts derived from the daily price-snapshot history.
@@ -88,6 +89,16 @@ function weeklyPrices(readings: Array<{ date: string; price: number }>) {
 }
 
 export async function GET() {
+  const gate = await requireFeature(
+    (e) => e.canUseAnalytics,
+    "Analytics insights",
+    "premium",
+  )
+
+  if (gate instanceof NextResponse) {
+    return gate
+  }
+
   try {
     const rows = (await supabaseTable("card_price_snapshots", {
       select: "card_id,card_name,set_name,finish,market_price,captured_on",

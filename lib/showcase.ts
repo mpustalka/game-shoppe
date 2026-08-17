@@ -1,8 +1,7 @@
 import type { InventoryItem } from "./types"
 
-// Soft cap on how many cards a Showcase binder can hold. Adding beyond this is
-// blocked in the UI and the API. A future paid upgrade ($5) is planned to lift
-// this limit — intentionally NOT implemented yet.
+// Soft cap on how many cards a Showcase binder can hold.
+// Adding beyond this is blocked in both the UI and API.
 export const SHOWCASE_CARD_LIMIT = 50
 
 export interface ShowcaseBinder {
