@@ -22,8 +22,8 @@ export default function AddCardPage() {
   return (
     <FeatureGate
       allowed={(e) => e.canAddCards}
-      title="Adding cards is a full-access feature"
-      description="Your free trial can browse sets and keep a small sample inventory, but adding new cards needs a subscription. Upgrade to add unlimited cards from any set."
+      title="Active subscription required"
+      description="Choose Basic or Premium to add cards to your inventory."
     >
       <AddCardPageInner />
     </FeatureGate>

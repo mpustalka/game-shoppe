@@ -2,12 +2,16 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 import { SHOWCASE_CARD_LIMIT } from "@/lib/showcase"
+
 import {
   resolveDataScope,
   scopeFilters,
   ownerStamp,
   pendingSetupResponse,
 } from "@/lib/user-scope"
+
+import { requireFeature } from "@/lib/subscription-server"
+
 import type { InventoryItem } from "@/lib/types"
 
 export interface ShowcaseRow {
@@ -30,29 +34,85 @@ export function rowToShowcase(row: ShowcaseRow) {
   }
 }
 
-// A short, URL-friendly token for the public share link.
 function generateShareToken() {
-  return globalThis.crypto.randomUUID().replace(/-/g, "").slice(0, 12)
+  const raw =
+    typeof globalThis.crypto?.randomUUID === "function"
+      ? globalThis.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+  return raw.replace(/-/g, "").slice(0, 12)
 }
 
+const id =
+  typeof globalThis.crypto?.randomUUID === "function"
+    ? globalThis.crypto.randomUUID()
+    : `showcase-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
 export async function GET() {
+  const gate = await requireFeature(
+    (e) => e.canUseShowcase,
+    "Showcase",
+    "premium",
+  )
+
+  if (gate instanceof NextResponse) {
+    return gate
+  }
+
   const scope = await resolveDataScope()
-  if (scope instanceof NextResponse) return scope
-  if (scope.mode === "isolated") return NextResponse.json([])
 
-  const rows = (await supabaseTable("showcase_binders", {
-    select: "id,share_token,name,items,created_at,updated_at",
-    filters: scopeFilters(scope),
-    order: "updated_at.desc",
-  })) as ShowcaseRow[] | null
+  if (scope instanceof NextResponse) {
+    return scope
+  }
 
-  return NextResponse.json((rows ?? []).map(rowToShowcase))
+  if (scope.mode === "isolated") {
+    return NextResponse.json([])
+  }
+
+  try {
+    const rows = (await supabaseTable("showcase_binders", {
+      select: "id,share_token,name,items,created_at,updated_at",
+
+      filters: scopeFilters(scope),
+
+      order: "updated_at.desc",
+    })) as ShowcaseRow[] | null
+
+    return NextResponse.json((rows ?? []).map(rowToShowcase))
+  } catch (error) {
+    console.error("Showcase GET failed", error)
+
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      {
+        status: 500,
+      },
+    )
+  }
 }
 
 export async function POST(request: Request) {
+  const gate = await requireFeature(
+    (e) => e.canUseShowcase,
+    "Showcase",
+    "premium",
+  )
+
+  if (gate instanceof NextResponse) {
+    return gate
+  }
+
   const scope = await resolveDataScope()
-  if (scope instanceof NextResponse) return scope
-  if (scope.mode === "isolated") return pendingSetupResponse()
+
+  if (scope instanceof NextResponse) {
+    return scope
+  }
+
+  if (scope.mode === "isolated") {
+    return pendingSetupResponse()
+  }
 
   const body = await request.json().catch(() => null)
 
@@ -61,19 +121,33 @@ export async function POST(request: Request) {
       ? body.name.trim().slice(0, 120)
       : "Showcase"
 
-  // Allow seeding a new showcase with cards, but never above the limit.
-  const items: InventoryItem[] = Array.isArray(body?.items)
-    ? body.items.slice(0, SHOWCASE_CARD_LIMIT)
-    : []
+  const items: InventoryItem[] = Array.isArray(body?.items) ? body.items : []
+
+  if (items.length > SHOWCASE_CARD_LIMIT) {
+    return NextResponse.json(
+      {
+        error: `A showcase is limited to ${SHOWCASE_CARD_LIMIT} cards.`,
+        limit: SHOWCASE_CARD_LIMIT,
+      },
+      { status: 422 },
+    )
+  }
 
   const now = new Date().toISOString()
+
   const row = {
     id: globalThis.crypto.randomUUID(),
+
     ...ownerStamp(scope),
+
     share_token: generateShareToken(),
+
     name,
+
     items,
+
     created_at: now,
+
     updated_at: now,
   }
 
@@ -84,14 +158,20 @@ export async function POST(request: Request) {
     })) as ShowcaseRow[] | null
 
     const created = Array.isArray(inserted) ? inserted[0] : null
+
     return NextResponse.json(rowToShowcase(created ?? (row as ShowcaseRow)), {
       status: 201,
     })
   } catch (error) {
     console.error("Showcase POST failed", error)
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
+      {
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      {
+        status: 500,
+      },
     )
   }
 }

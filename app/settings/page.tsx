@@ -39,7 +39,8 @@ export default function SettingsPage() {
 
 function SettingsInner() {
   const searchParams = useSearchParams()
-  const initialTab = searchParams.get("tab") === "billing" ? "billing" : "general"
+  const initialTab =
+    searchParams.get("tab") === "billing" ? "billing" : "general"
   const [tab, setTab] = useState(initialTab)
 
   const { items, updateSquareSync } = useInventory()
@@ -118,9 +119,12 @@ function SettingsInner() {
       </Button>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          Settings
+        </h1>
         <p className="mt-2 text-muted-foreground">
-          Configure integrations, manage billing, and control your inventory system
+          Configure integrations, manage billing, and control your inventory
+          system
         </p>
       </div>
 
@@ -149,11 +153,15 @@ function SettingsInner() {
                   </div>
                   <div>
                     <CardTitle>Square POS Integration</CardTitle>
-                    <CardDescription>Sync inventory with Square</CardDescription>
+                    <CardDescription>
+                      Sync inventory with Square
+                    </CardDescription>
                   </div>
                 </div>
                 {squareStatus && (
-                  <Badge variant={squareStatus.configured ? "default" : "secondary"}>
+                  <Badge
+                    variant={squareStatus.configured ? "default" : "secondary"}
+                  >
                     {squareStatus.configured ? (
                       <>
                         <CheckCircle className="mr-1 h-3 w-3" />
@@ -173,9 +181,14 @@ function SettingsInner() {
               {!canSync && (
                 <Alert className="border-primary/40">
                   <Lock className="h-4 w-4" />
-                  <AlertTitle>Square sync is a full-access feature</AlertTitle>
+                  <AlertTitle> Square sync is a Premium feature</AlertTitle>
                   <AlertDescription className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <span>Upgrade to push your inventory to Square.</span>
+                    <span>
+                      {" "}
+                      Business User's Only - If you are interested and have an
+                      actual registered company please reach out
+                      admin@evileevee.com
+                    </span>
                     <Button size="sm" onClick={() => setTab("billing")}>
                       Upgrade
                     </Button>
@@ -186,12 +199,20 @@ function SettingsInner() {
                 <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="rounded-lg border border-border p-3">
-                      <p className="text-sm text-muted-foreground">Environment</p>
-                      <p className="font-medium capitalize">{squareStatus.environment}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Environment
+                      </p>
+                      <p className="font-medium capitalize">
+                        {squareStatus.environment}
+                      </p>
                     </div>
                     <div className="rounded-lg border border-border p-3">
-                      <p className="text-sm text-muted-foreground">Pending Sync</p>
-                      <p className="font-medium">{unsyncedItems.length} items</p>
+                      <p className="text-sm text-muted-foreground">
+                        Pending Sync
+                      </p>
+                      <p className="font-medium">
+                        {unsyncedItems.length} items
+                      </p>
                     </div>
                   </div>
 
@@ -200,10 +221,14 @@ function SettingsInner() {
                       <div>
                         <p className="font-medium">Bulk Sync</p>
                         <p className="text-sm text-muted-foreground">
-                          Sync all {unsyncedItems.length} unsynced items to Square
+                          Sync all {unsyncedItems.length} unsynced items to
+                          Square
                         </p>
                       </div>
-                      <Button onClick={handleBulkSync} disabled={isBulkSyncing || !canSync}>
+                      <Button
+                        onClick={handleBulkSync}
+                        disabled={isBulkSyncing || !canSync}
+                      >
                         {isBulkSyncing ? (
                           <>
                             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -222,18 +247,46 @@ function SettingsInner() {
               ) : (
                 <Alert>
                   <AlertTitle>Square not configured</AlertTitle>
+
                   <AlertDescription className="space-y-3">
                     <p>
-                      To connect Square, add the following environment variables to your project:
+                      To connect Square, add the following environment variables
+                      to your project:
                     </p>
+
                     <ul className="list-disc list-inside text-sm space-y-1">
-                      <li><code className="bg-muted px-1 py-0.5 rounded">SQUARE_ACCESS_TOKEN</code></li>
-                      <li><code className="bg-muted px-1 py-0.5 rounded">SQUARE_APPLICATION_ID</code></li>
-                      <li><code className="bg-muted px-1 py-0.5 rounded">SQUARE_LOCATION_ID</code></li>
-                      <li><code className="bg-muted px-1 py-0.5 rounded">SQUARE_ENVIRONMENT</code> (sandbox or production)</li>
+                      <li>
+                        <code className="bg-muted px-1 py-0.5 rounded">
+                          SQUARE_ACCESS_TOKEN
+                        </code>
+                      </li>
+
+                      <li>
+                        <code className="bg-muted px-1 py-0.5 rounded">
+                          SQUARE_APPLICATION_ID
+                        </code>
+                      </li>
+
+                      <li>
+                        <code className="bg-muted px-1 py-0.5 rounded">
+                          SQUARE_LOCATION_ID
+                        </code>
+                      </li>
+
+                      <li>
+                        <code className="bg-muted px-1 py-0.5 rounded">
+                          SQUARE_ENVIRONMENT
+                        </code>{" "}
+                        (sandbox or production)
+                      </li>
                     </ul>
+
                     <Button asChild variant="outline" size="sm">
-                      <a href="https://developer.squareup.com/apps" target="_blank" rel="noopener noreferrer">
+                      <a
+                        href="https://developer.squareup.com/apps"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <ExternalLink className="mr-2 h-4 w-4" />
                         Get Square API Credentials
                       </a>
@@ -251,27 +304,38 @@ function SettingsInner() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                   <Database className="h-5 w-5 text-primary" />
                 </div>
+
                 <div>
                   <CardTitle>Data Storage</CardTitle>
-                  <CardDescription>Current storage configuration</CardDescription>
+                  <CardDescription>
+                    Current storage configuration
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
+
             <CardContent>
               <Alert>
-                <AlertTitle>Using Netlify Database</AlertTitle>
+                <AlertTitle>Using Supabase</AlertTitle>
+
                 <AlertDescription>
                   <p className="mb-2">
-                    Your inventory and binder data is stored in the site&apos;s Netlify Database.
-                    This keeps saved cards available across sessions and devices.
+                    Your inventory, binders, customer lists, and account data
+                    are stored in Supabase.
                   </p>
+
                   <p className="text-sm">
-                    Search analytics, inventory records, and binder assignments share the same managed database.
+                    Inventory records and other account data are scoped to your
+                    signed-in account.
                   </p>
                 </AlertDescription>
               </Alert>
+
               <div className="mt-4 rounded-lg border border-border p-3">
-                <p className="text-sm text-muted-foreground">Items in Inventory</p>
+                <p className="text-sm text-muted-foreground">
+                  Items in Inventory
+                </p>
+
                 <p className="text-2xl font-bold">{items.length}</p>
               </div>
             </CardContent>

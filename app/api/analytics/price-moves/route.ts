@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
+import { requireFeature } from "@/lib/subscription-server"
 
 /**
  * Weekly price movement per card + finish.
@@ -55,6 +56,16 @@ function daySpan(fromIso: string, toIso: string) {
 }
 
 export async function GET() {
+  const gate = await requireFeature(
+    (e) => e.canUseAnalytics,
+    "Price movement analytics",
+    "premium",
+  )
+
+  if (gate instanceof NextResponse) {
+    return gate
+  }
+
   try {
     const rows = (await supabaseTable("card_price_snapshots", {
       select: "card_id,finish,market_price,captured_on",
