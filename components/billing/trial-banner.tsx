@@ -1,44 +1,94 @@
 "use client"
 
 import Link from "next/link"
-import { Lock, Sparkles, Clock } from "lucide-react"
+import { Lock, Sparkles, Clock, Crown, BadgeDollarSign } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useEntitlements } from "@/hooks/use-entitlements"
-import { MONTHLY_PRICE_USD } from "@/lib/entitlements"
 
-// A slim banner shown at the top of gated pages while an account is on the
-// trial (or the trial has expired). Grandfathered / paid / admin accounts see
-// nothing. Links to the billing tab in Settings.
+import { useEntitlements } from "@/hooks/use-entitlements"
+
+import {
+  BASIC_MONTHLY_PRICE_USD,
+  PREMIUM_MONTHLY_PRICE_USD,
+} from "@/lib/entitlements"
+
+/**
+ * Top-of-page subscription banner.
+ *
+ * Behavior:
+ *
+ * trial
+ *   → show Premium trial countdown
+ *
+ * expired
+ *   → prompt user to choose Basic or Premium
+ *
+ * basic
+ *   → no general warning banner
+ *
+ * premium / grandfathered / admin
+ *   → no banner
+ */
 export function TrialBanner() {
   const { entitlements: e, loading, signedIn } = useEntitlements()
 
-  if (loading || !signedIn || e.fullAccess) return null
+  if (loading || !signedIn) {
+    return null
+  }
+
+  // Premium-equivalent accounts do not need a warning banner,
+  // except for trial users where we want to show the countdown.
+  if (e.fullAccess && e.plan !== "trial") {
+    return null
+  }
+
+  // Basic is a valid active subscription.
+  // Don't nag Basic users on every page.
+  if (e.plan === "basic") {
+    return null
+  }
 
   const expired = e.plan === "expired"
 
+  const trial = e.plan === "trial"
+
+  if (!expired && !trial) {
+    return null
+  }
+
   return (
     <Alert className={expired ? "border-destructive/50" : "border-primary/40"}>
-      {expired ? (
-        <Lock className="h-4 w-4" />
-      ) : (
-        <Clock className="h-4 w-4" />
-      )}
+      {expired ? <Lock className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+
       <AlertTitle>
         {expired
-          ? "Your free trial has ended"
-          : `Free trial — ${e.trialDaysLeft} day${e.trialDaysLeft === 1 ? "" : "s"} left`}
+          ? "Your Premium trial has ended"
+          : `Premium trial — ${e.trialDaysLeft ?? 0} day${
+              e.trialDaysLeft === 1 ? "" : "s"
+            } left`}
       </AlertTitle>
+
       <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-sm text-muted-foreground">
           {expired
-            ? `Subscribe for $${MONTHLY_PRICE_USD}/month to unlock unlimited binders, full inventory, imports, and analytics.`
-            : `You're on the limited trial (1 binder, 50 cards, no import/add/sync). Upgrade any time for $${MONTHLY_PRICE_USD}/month.`}
+            ? `Choose Basic for $${BASIC_MONTHLY_PRICE_USD.toFixed(
+                2,
+              )}/month to keep managing your collection, or Premium for $${PREMIUM_MONTHLY_PRICE_USD.toFixed(
+                2,
+              )}/month to unlock analytics, showcase, customer lists, import, scan, and advanced tools.`
+            : `You currently have full Premium access during your trial. After it ends, choose Basic for $${BASIC_MONTHLY_PRICE_USD.toFixed(
+                2,
+              )}/month or Premium for $${PREMIUM_MONTHLY_PRICE_USD.toFixed(
+                2,
+              )}/month.`}
         </span>
+
         <Button asChild size="sm" className="shrink-0">
           <Link href="/settings?tab=billing">
-            <Sparkles className="h-4 w-4" /> Upgrade
+            <Sparkles className="mr-2 h-4 w-4" />
+
+            {expired ? "Choose a Plan" : "View Plans"}
           </Link>
         </Button>
       </AlertDescription>
@@ -46,8 +96,17 @@ export function TrialBanner() {
   )
 }
 
-// A full "this feature is locked" panel used to replace the body of a page a
-// trial account can't use (Import, Add Card, Scan-to-sync, etc.).
+/**
+ * Full-page locked-state panel.
+ *
+ * Used for Premium-only features like:
+ *
+ * - Analytics
+ * - Showcase
+ * - Customer Lists
+ * - Import
+ * - Scan
+ */
 export function FeatureLocked({
   title,
   description,
@@ -55,22 +114,63 @@ export function FeatureLocked({
   title: string
   description: string
 }) {
+  const { entitlements } = useEntitlements()
+
+  const isBasic = entitlements.plan === "basic"
+
+  const isExpired = entitlements.plan === "expired"
+
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-muted/40 px-6 py-16 text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        <Lock className="h-6 w-6" />
+        {isBasic ? <Crown className="h-6 w-6" /> : <Lock className="h-6 w-6" />}
       </div>
+
       <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+
       <p className="max-w-md text-sm text-muted-foreground">{description}</p>
-      <p className="text-sm font-medium text-foreground">
-        Unlock everything for ${MONTHLY_PRICE_USD}/month.
-      </p>
-      <div className="flex gap-3">
+
+      {isBasic ? (
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground">
+            This feature is included with Premium.
+          </p>
+
+          <p className="text-sm text-muted-foreground">
+            Upgrade from Basic to Premium for $
+            {PREMIUM_MONTHLY_PRICE_USD.toFixed(2)}
+            /month.
+          </p>
+        </div>
+      ) : isExpired ? (
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground">
+            Choose a subscription to continue.
+          </p>
+
+          <p className="text-sm text-muted-foreground">
+            Basic starts at ${BASIC_MONTHLY_PRICE_USD.toFixed(2)}
+            /month. Premium is ${PREMIUM_MONTHLY_PRICE_USD.toFixed(2)}
+            /month.
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm font-medium text-foreground">
+          Unlock this feature with Premium for $
+          {PREMIUM_MONTHLY_PRICE_USD.toFixed(2)}
+          /month.
+        </p>
+      )}
+
+      <div className="flex flex-col gap-3 sm:flex-row">
         <Button asChild>
           <Link href="/settings?tab=billing">
-            <Sparkles className="h-4 w-4" /> Upgrade now
+            <BadgeDollarSign className="mr-2 h-4 w-4" />
+
+            {isBasic ? "Upgrade to Premium" : "View Plans"}
           </Link>
         </Button>
+
         <Button asChild variant="outline">
           <Link href="/">Back to dashboard</Link>
         </Button>
@@ -79,8 +179,19 @@ export function FeatureLocked({
   )
 }
 
-// Wraps a gated page: shows a spinner-free permissive render while loading,
-// the locked panel when the account lacks `allowed`, otherwise the children.
+/**
+ * Generic feature gate.
+ *
+ * Example:
+ *
+ * <FeatureGate
+ *   allowed={(e) => e.canUseAnalytics}
+ *   title="Premium Analytics"
+ *   description="Upgrade to Premium to unlock advanced analytics."
+ * >
+ *   <AnalyticsPage />
+ * </FeatureGate>
+ */
 export function FeatureGate({
   allowed,
   title,
@@ -88,13 +199,22 @@ export function FeatureGate({
   children,
 }: {
   allowed: (e: ReturnType<typeof useEntitlements>["entitlements"]) => boolean
+
   title: string
   description: string
   children: React.ReactNode
 }) {
   const { entitlements, loading } = useEntitlements()
 
-  if (loading) return <>{children}</>
+  /**
+   * Keep the existing permissive-loading behavior
+   * so legitimate Premium users don't briefly see
+   * a locked screen while /api/subscription loads.
+   */
+  if (loading) {
+    return <>{children}</>
+  }
+
   if (!allowed(entitlements)) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -102,5 +222,6 @@ export function FeatureGate({
       </div>
     )
   }
+
   return <>{children}</>
 }

@@ -80,8 +80,8 @@ export default function ImportPage() {
   return (
     <FeatureGate
       allowed={(e) => e.canImport}
-      title="Bulk import is a full-access feature"
-      description="Importing spreadsheets of cards is available on the paid plan. Upgrade to import your entire catalog in one go."
+      title="Premium Import"
+      description="Bulk inventory import is included with Premium. Upgrade to import your collection from CSV or Google Sheets."
     >
       <ImportPageInner />
     </FeatureGate>
@@ -139,6 +139,7 @@ function ImportPageInner() {
           ? headers.indexOf("quantitysold") 
           : headers.indexOf("sold")
         const finishIdx = headers.indexOf("finish")
+        const languageIdx = headers.indexOf("language")
         const notesIdx = headers.indexOf("notes")
 
         // Parse rows into ManualCardData
@@ -157,16 +158,33 @@ function ImportPageInner() {
               parseErrors.push(`Row ${idx + 2}: Missing name or set`)
               return
             }
+            const language =
+              languageIdx >= 0 &&
+              row[languageIdx]?.trim().toLowerCase() === "ja"
+                ? "ja"
+                : "en"
 
             parsedItems.push({
               name,
               setName,
+
               number: numberIdx >= 0 ? row[numberIdx]?.trim() : undefined,
+
+              language,
+
               condition,
-              finish: finishIdx >= 0 ? parseFinish(row[finishIdx]) : "Normal",
+
+              finish:
+                finishIdx >= 0 ? parseFinish(row[finishIdx] || "") : "Normal",
+
               price,
               quantity,
-              quantitySold: quantitySoldIdx >= 0 ? parseInt(row[quantitySoldIdx]) || 0 : 0,
+
+              quantitySold:
+                quantitySoldIdx >= 0
+                  ? parseInt(row[quantitySoldIdx] || "0", 10) || 0
+                  : 0,
+
               notes: notesIdx >= 0 ? row[notesIdx]?.trim() : undefined,
             })
           } catch (err) {
@@ -211,17 +229,19 @@ function ImportPageInner() {
   }
 
   const downloadTemplate = () => {
-    const template = `name,set,number,condition,price,quantity,quantitysold,notes
-"Charizard ex","Obsidian Flames","006/197","Near Mint",45.99,2,0,"Pack fresh"
-"Pikachu VMAX","Vivid Voltage","044/185","Lightly Played",12.50,1,0,""
-"Mewtwo V","Pokemon GO","030/078","Near Mint",8.99,3,1,"Promo card"`
+    const template = `name,set,number,language,condition,finish,price,quantity,quantitysold,notes
+"Charizard ex","Obsidian Flames","006/197","en","Near Mint","Normal",45.99,2,0,"Pack fresh"
+"Pikachu VMAX","Vivid Voltage","044/185","en","Lightly Played","Holo",12.50,1,0,""
+"Mewtwo V","Pokemon GO","030/078","en","Near Mint","Normal",8.99,3,1,"Promo card"`
 
     const blob = new Blob([template], { type: "text/csv" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
+
     a.href = url
     a.download = "pokemon-inventory-template.csv"
     a.click()
+
     URL.revokeObjectURL(url)
   }
 
@@ -235,7 +255,9 @@ function ImportPageInner() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Import Inventory</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Import Inventory
+          </h1>
           <p className="mt-1 text-muted-foreground">
             Bulk import cards from CSV or Google Sheets
           </p>
@@ -269,9 +291,11 @@ function ImportPageInner() {
                 <Download className="mr-2 h-4 w-4" />
                 Download CSV Template
               </Button>
-              
+
               <div className="mt-4 rounded-lg bg-muted p-4">
-                <p className="text-sm font-medium text-foreground mb-2">Required Columns:</p>
+                <p className="text-sm font-medium text-foreground mb-2">
+                  Required Columns:
+                </p>
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="secondary">name</Badge>
                   <Badge variant="secondary">set</Badge>
@@ -279,9 +303,14 @@ function ImportPageInner() {
                   <Badge variant="secondary">price</Badge>
                   <Badge variant="secondary">quantity</Badge>
                 </div>
-                <p className="text-sm font-medium text-foreground mt-4 mb-2">Optional Columns:</p>
+                <p className="mb-2 mt-4 text-sm font-medium text-foreground">
+                  Optional Columns:
+                </p>
+
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline">number</Badge>
+                  <Badge variant="outline">language</Badge>
+                  <Badge variant="outline">finish</Badge>
                   <Badge variant="outline">quantitysold</Badge>
                   <Badge variant="outline">notes</Badge>
                 </div>
@@ -303,10 +332,14 @@ function ImportPageInner() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="mb-3 h-10 w-10 text-muted-foreground/50" />
-                <p className="text-sm font-medium text-foreground">Click to upload CSV file</p>
-                <p className="mt-1 text-xs text-muted-foreground">or drag and drop</p>
+                <p className="text-sm font-medium text-foreground">
+                  Click to upload CSV file
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  or drag and drop
+                </p>
               </div>
-              
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -350,10 +383,16 @@ function ImportPageInner() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border">
-                        <th className="px-3 py-2 text-left font-medium">Name</th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          Name
+                        </th>
                         <th className="px-3 py-2 text-left font-medium">Set</th>
-                        <th className="px-3 py-2 text-left font-medium">Condition</th>
-                        <th className="px-3 py-2 text-left font-medium">Price</th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          Condition
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium">
+                          Price
+                        </th>
                         <th className="px-3 py-2 text-left font-medium">Qty</th>
                       </tr>
                     </thead>
@@ -363,16 +402,20 @@ function ImportPageInner() {
                           <td className="px-3 py-2">{item.name}</td>
                           <td className="px-3 py-2">{item.setName}</td>
                           <td className="px-3 py-2">
-                            <Badge variant="secondary" className="text-xs">{item.condition}</Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {item.condition}
+                            </Badge>
                           </td>
-                          <td className="px-3 py-2">${item.price.toFixed(2)}</td>
+                          <td className="px-3 py-2">
+                            ${item.price.toFixed(2)}
+                          </td>
                           <td className="px-3 py-2">{item.quantity}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                
+
                 <div className="mt-6 flex justify-end">
                   <Button onClick={handleImport} disabled={isProcessing}>
                     {isProcessing ? (
@@ -391,7 +434,13 @@ function ImportPageInner() {
 
           {/* Import Result */}
           {importResult && (
-            <Card className={importResult.failed > 0 ? "border-amber-500" : "border-green-500"}>
+            <Card
+              className={
+                importResult.failed > 0
+                  ? "border-amber-500"
+                  : "border-green-500"
+              }
+            >
               <CardContent className="flex items-center gap-4 py-6">
                 {importResult.failed === 0 ? (
                   <CheckCircle2 className="h-8 w-8 text-green-500" />
@@ -399,12 +448,11 @@ function ImportPageInner() {
                   <AlertTriangle className="h-8 w-8 text-amber-500" />
                 )}
                 <div>
-                  <p className="font-medium text-foreground">
-                    Import Complete
-                  </p>
+                  <p className="font-medium text-foreground">Import Complete</p>
                   <p className="text-sm text-muted-foreground">
                     {importResult.success} cards imported successfully
-                    {importResult.failed > 0 && `, ${importResult.failed} failed`}
+                    {importResult.failed > 0 &&
+                      `, ${importResult.failed} failed`}
                   </p>
                 </div>
                 <Button asChild className="ml-auto">
@@ -426,26 +474,38 @@ function ImportPageInner() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="rounded-lg bg-muted p-6">
-                <h3 className="font-medium text-foreground mb-4">How to export from Google Sheets:</h3>
+                <h3 className="font-medium text-foreground mb-4">
+                  How to export from Google Sheets:
+                </h3>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                   <li>Open your Google Sheet with inventory data</li>
-                  <li>Make sure your columns match the required format (name, set, condition, price, quantity)</li>
-                  <li>Click <strong>File</strong> &rarr; <strong>Download</strong> &rarr; <strong>Comma Separated Values (.csv)</strong></li>
-                  <li>Upload the downloaded CSV file using the uploader above</li>
+                  <li>
+                    Make sure your columns match the required format (name, set,
+                    condition, price, quantity)
+                  </li>
+                  <li>
+                    Click <strong>File</strong> &rarr; <strong>Download</strong>{" "}
+                    &rarr; <strong>Comma Separated Values (.csv)</strong>
+                  </li>
+                  <li>
+                    Upload the downloaded CSV file using the uploader above
+                  </li>
                 </ol>
               </div>
 
               <div className="flex items-center gap-4 p-4 rounded-lg border border-border bg-card">
                 <FileSpreadsheet className="h-10 w-10 text-green-600" />
                 <div className="flex-1">
-                  <p className="font-medium text-foreground">Google Sheets Template</p>
+                  <p className="font-medium text-foreground">
+                    Google Sheets Template
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     Make a copy of our template to get started quickly
                   </p>
                 </div>
                 <Button variant="outline" asChild>
-                  <a 
-                    href="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit?usp=sharing" 
+                  <a
+                    href="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit?usp=sharing"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -456,7 +516,8 @@ function ImportPageInner() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Note: Direct Google Sheets API integration coming soon. For now, please export as CSV.
+                Note: Direct Google Sheets API integration coming soon. For now,
+                please export as CSV.
               </p>
             </CardContent>
           </Card>
@@ -468,8 +529,34 @@ function ImportPageInner() {
 
 function parseFinish(value: string): ManualCardData["finish"] {
   const normalized = value.trim().toLowerCase().replace(/[-_]/g, " ")
-  if (normalized === "reverse" || normalized === "reverse holo" || normalized === "reverse holofoil") return "Reverse Holo"
-  if (normalized === "holo" || normalized === "holofoil") return "Holo"
-  if (normalized === "ex") return "EX"
+
+  if (
+    normalized === "reverse" ||
+    normalized === "reverse holo" ||
+    normalized === "reverse holofoil"
+  ) {
+    return "Reverse Holo"
+  }
+
+  if (normalized === "holo" || normalized === "holofoil") {
+    return "Holo"
+  }
+
+  if (normalized === "non holo" || normalized === "non holofoil") {
+    return "Non Holo"
+  }
+
+  if (normalized === "cosmo" || normalized === "cosmo holo") {
+    return "Cosmo Holo"
+  }
+
+  if (normalized === "stamped") {
+    return "Stamped"
+  }
+
+  if (normalized === "full art") {
+    return "Full Art"
+  }
+
   return "Normal"
 }

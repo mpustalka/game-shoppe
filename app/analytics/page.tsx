@@ -35,9 +35,9 @@ import {
   Zap,
 } from "lucide-react"
 
-import { Lock } from "lucide-react"
+// import { Lock } from "lucide-react"
 import { useEntitlements } from "@/hooks/use-entitlements"
-import { TrialBanner } from "@/components/billing/trial-banner"
+import { TrialBanner, FeatureLocked } from "@/components/billing/trial-banner"
 
 type Mover = {
   cardId: string
@@ -162,34 +162,50 @@ const pct = (value: number) => `${value >= 0 ? "" : ""}${value.toFixed(1)}%`
 
 export default function AnalyticsPage() {
   const { items } = useInventory()
+  const { entitlements, loading: entitlementsLoading } = useEntitlements()
+
+  const analyticsAllowed = entitlements.canUseAnalytics
+
   const [days, setDays] = useState(30)
   const [summary, setSummary] = useState<Summary>(EMPTY_SUMMARY)
   const [insights, setInsights] = useState<Insights>(EMPTY_INSIGHTS)
   const snapshotSent = useRef(false)
 
   useEffect(() => {
+    if (entitlementsLoading || !analyticsAllowed) return
+
     fetch(`/api/analytics/summary?days=${days}`)
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
         if (data) setSummary(data)
       })
       .catch(() => undefined)
-  }, [days])
+  }, [days, entitlementsLoading, analyticsAllowed])
 
   useEffect(() => {
+    if (entitlementsLoading || !analyticsAllowed) return
+
     fetch("/api/analytics/insights")
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
         if (data) setInsights(data)
       })
       .catch(() => undefined)
-  }, [])
+  }, [entitlementsLoading, analyticsAllowed])
 
   // Capture today's price reading for every inventory line, once per visit.
-  // The server keeps one row per card+finish per day, so this safely seeds the
-  // price-history that drives the "price movers" view over time.
+  // Only Premium-equivalent accounts seed this client-side snapshot. The
+  // scheduled snapshot route can still collect shared market history daily.
   useEffect(() => {
-    if (snapshotSent.current || items.length === 0) return
+    if (
+      entitlementsLoading ||
+      !analyticsAllowed ||
+      snapshotSent.current ||
+      items.length === 0
+    ) {
+      return
+    }
+
     snapshotSent.current = true
 
     const snapshots = items
@@ -209,7 +225,7 @@ export default function AnalyticsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ snapshots }),
     }).catch(() => undefined)
-  }, [items])
+  }, [items, entitlementsLoading, analyticsAllowed])
 
   const fin = useMemo(() => getFinancialSummary(items), [items])
 
@@ -268,26 +284,38 @@ export default function AnalyticsPage() {
 
   const { sales, priceMovers } = summary
 
-  // Trial accounts get a limited analytics view (headline numbers only).
-  const { entitlements } = useEntitlements()
-  const limited = entitlements.limitedAnalytics
-
-  // Prefer the exact ledger; fall back to the inventory-derived estimate when
-  // no sales have been recorded through the ledger yet.
+  // Prefer the exact ledger; fall back to the inventory-derived estimate
+  // when no sales have been recorded through the ledger yet.
   const realizedRevenue = sales.hasData ? sales.revenue : fin.realizedRevenue
+
   const realizedProfit = sales.hasData ? sales.profit : fin.realizedProfit
+
   const realizedMargin = sales.hasData ? sales.margin : fin.realizedMargin
+
   const unitsSold = sales.hasData ? sales.units : fin.unitsSold
+
   const avgSalePrice = sales.hasData ? sales.avgSalePrice : fin.avgSalePrice
 
   const maxDailySearches = Math.max(
     1,
     ...summary.dailySearches.map((item) => item.searches),
   )
+
   const maxDailyRevenue = Math.max(
     1,
     ...sales.daily.map((item) => item.revenue),
   )
+
+  if (!entitlementsLoading && !analyticsAllowed) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <FeatureLocked
+          title="Premium Analytics"
+          description="Upgrade to Premium to unlock collection analytics, profit and ROI tracking, price movers, sales trends, market insights, search demand, and inventory performance."
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -389,430 +417,445 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Price movers — the price-increase tracker */}
-      {limited ? (
-        <AnalyticsLocked />
-      ) : (
-        <>
-      <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <ListCard
-          title="Top Price Increases"
-          icon={TrendingUp}
-          hint={`${priceMovers.trackedCards} cards tracked`}
-        >
-          {priceMovers.gainers.length === 0 ? (
-            <EmptyMovers />
-          ) : (
-            priceMovers.gainers.map((mover) => (
-              <MoverRow key={`${mover.cardId}-${mover.finish}`} mover={mover} />
-            ))
-          )}
-        </ListCard>
-        <ListCard title="Top Price Drops" icon={TrendingDown}>
-          {priceMovers.losers.length === 0 ? (
-            <EmptyMovers />
-          ) : (
-            priceMovers.losers.map((mover) => (
-              <MoverRow key={`${mover.cardId}-${mover.finish}`} mover={mover} />
-            ))
-          )}
-        </ListCard>
-      </div>
+      <>
+        <div className="mb-6 grid gap-6 lg:grid-cols-2">
+          <ListCard
+            title="Top Price Increases"
+            icon={TrendingUp}
+            hint={`${priceMovers.trackedCards} cards tracked`}
+          >
+            {priceMovers.gainers.length === 0 ? (
+              <EmptyMovers />
+            ) : (
+              priceMovers.gainers.map((mover) => (
+                <MoverRow
+                  key={`${mover.cardId}-${mover.finish}`}
+                  mover={mover}
+                />
+              ))
+            )}
+          </ListCard>
+          <ListCard title="Top Price Drops" icon={TrendingDown}>
+            {priceMovers.losers.length === 0 ? (
+              <EmptyMovers />
+            ) : (
+              priceMovers.losers.map((mover) => (
+                <MoverRow
+                  key={`${mover.cardId}-${mover.finish}`}
+                  mover={mover}
+                />
+              ))
+            )}
+          </ListCard>
+        </div>
 
-      {/* Smart insights — watchlist-style alerts on top of the price history */}
-      <div className="mb-2 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold">Insights & Alerts</h2>
-        <span className="text-xs font-normal text-muted-foreground">
-          {insights.trackedCards} cards · {insights.daysTracked} day
-          {insights.daysTracked === 1 ? "" : "s"} of history
-        </span>
-      </div>
-      <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <ListCard
-          title={`Up more than ${insights.threshold}% this week`}
-          icon={TrendingUp}
-          hint={insights.bigGainers.length ? `${insights.bigGainers.length} cards` : undefined}
-        >
-          {insights.bigGainers.length === 0 ? (
-            <InsightEmpty
-              ready={insights.daysTracked >= 2}
-              label="No cards are up more than 10% over the last week yet."
-            />
-          ) : (
-            insights.bigGainers.map((mover) => (
-              <MoverRow key={`${mover.cardId}-${mover.finish}`} mover={mover} />
-            ))
-          )}
-        </ListCard>
+        {/* Smart insights — watchlist-style alerts on top of the price history */}
+        <div className="mb-2 flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Insights & Alerts</h2>
+          <span className="text-xs font-normal text-muted-foreground">
+            {insights.trackedCards} cards · {insights.daysTracked} day
+            {insights.daysTracked === 1 ? "" : "s"} of history
+          </span>
+        </div>
+        <div className="mb-6 grid gap-6 lg:grid-cols-2">
+          <ListCard
+            title={`Up more than ${insights.threshold}% this week`}
+            icon={TrendingUp}
+            hint={
+              insights.bigGainers.length
+                ? `${insights.bigGainers.length} cards`
+                : undefined
+            }
+          >
+            {insights.bigGainers.length === 0 ? (
+              <InsightEmpty
+                ready={insights.daysTracked >= 2}
+                label="No cards are up more than 10% over the last week yet."
+              />
+            ) : (
+              insights.bigGainers.map((mover) => (
+                <MoverRow
+                  key={`${mover.cardId}-${mover.finish}`}
+                  mover={mover}
+                />
+              ))
+            )}
+          </ListCard>
 
-        <ListCard
-          title={`Down more than ${insights.threshold}% this week`}
-          icon={TrendingDown}
-          hint={insights.bigDrops.length ? `${insights.bigDrops.length} cards` : undefined}
-        >
-          {insights.bigDrops.length === 0 ? (
-            <InsightEmpty
-              ready={insights.daysTracked >= 2}
-              label="No cards are down more than 10% over the last week yet."
-            />
-          ) : (
-            insights.bigDrops.map((mover) => (
-              <MoverRow key={`${mover.cardId}-${mover.finish}`} mover={mover} />
-            ))
-          )}
-        </ListCard>
+          <ListCard
+            title={`Down more than ${insights.threshold}% this week`}
+            icon={TrendingDown}
+            hint={
+              insights.bigDrops.length
+                ? `${insights.bigDrops.length} cards`
+                : undefined
+            }
+          >
+            {insights.bigDrops.length === 0 ? (
+              <InsightEmpty
+                ready={insights.daysTracked >= 2}
+                label="No cards are down more than 10% over the last week yet."
+              />
+            ) : (
+              insights.bigDrops.map((mover) => (
+                <MoverRow
+                  key={`${mover.cardId}-${mover.finish}`}
+                  mover={mover}
+                />
+              ))
+            )}
+          </ListCard>
 
-        <ListCard
-          title="On a winning streak"
-          icon={Flame}
-          hint={insights.gainStreaks.length ? `${insights.gainStreaks.length} cards` : undefined}
-        >
-          {insights.gainStreaks.length === 0 ? (
-            <InsightEmpty
-              ready={insights.weeksTracked >= 4}
-              label="Cards with 3+ consecutive weeks of gains will appear here."
-              weekly
-            />
-          ) : (
-            insights.gainStreaks.map((s) => (
-              <StreakRow key={`${s.cardId}-${s.finish}`} streak={s} />
-            ))
-          )}
-        </ListCard>
+          <ListCard
+            title="On a winning streak"
+            icon={Flame}
+            hint={
+              insights.gainStreaks.length
+                ? `${insights.gainStreaks.length} cards`
+                : undefined
+            }
+          >
+            {insights.gainStreaks.length === 0 ? (
+              <InsightEmpty
+                ready={insights.weeksTracked >= 4}
+                label="Cards with 3+ consecutive weeks of gains will appear here."
+                weekly
+              />
+            ) : (
+              insights.gainStreaks.map((s) => (
+                <StreakRow key={`${s.cardId}-${s.finish}`} streak={s} />
+              ))
+            )}
+          </ListCard>
 
-        <ListCard
-          title="Unusual movement"
-          icon={Zap}
-          hint={insights.unusual.length ? `${insights.unusual.length} cards` : undefined}
-        >
-          {insights.unusual.length === 0 ? (
-            <InsightEmpty
-              ready={insights.weeksTracked >= 5}
-              label="Cards moving far outside their normal weekly trend will appear here."
-              weekly
-            />
-          ) : (
-            insights.unusual.map((u) => (
-              <UnusualRow key={`${u.cardId}-${u.finish}`} unusual={u} />
-            ))
-          )}
-        </ListCard>
-      </div>
+          <ListCard
+            title="Unusual movement"
+            icon={Zap}
+            hint={
+              insights.unusual.length
+                ? `${insights.unusual.length} cards`
+                : undefined
+            }
+          >
+            {insights.unusual.length === 0 ? (
+              <InsightEmpty
+                ready={insights.weeksTracked >= 5}
+                label="Cards moving far outside their normal weekly trend will appear here."
+                weekly
+              />
+            ) : (
+              insights.unusual.map((u) => (
+                <UnusualRow key={`${u.cardId}-${u.finish}`} unusual={u} />
+              ))
+            )}
+          </ListCard>
+        </div>
 
-      {/* Sales */}
-      <div className="mb-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <LineChart className="h-5 w-5 text-primary" />
-                Sales Revenue · last {days} days
-              </span>
-              {sales.hasData && (
-                <Badge variant="secondary">{pct(sales.roi)} ROI</Badge>
+        {/* Sales */}
+        <div className="mb-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <LineChart className="h-5 w-5 text-primary" />
+                  Sales Revenue · last {days} days
+                </span>
+                {sales.hasData && (
+                  <Badge variant="secondary">{pct(sales.roi)} ROI</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {sales.daily.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Recorded sales will chart here. Sales logged through the
+                  inventory sale action build this trend with exact revenue and
+                  profit.
+                </p>
+              ) : (
+                sales.daily.map((entry) => (
+                  <div
+                    key={entry.day}
+                    className="grid grid-cols-[56px_1fr_72px] items-center gap-2 text-sm"
+                  >
+                    <span className="text-muted-foreground">{entry.day}</span>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{
+                          width: `${(entry.revenue / maxDailyRevenue) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-right font-medium">
+                      {usd(entry.revenue)}
+                    </span>
+                  </div>
+                ))
               )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {sales.daily.length === 0 ? (
+            </CardContent>
+          </Card>
+
+          <ListCard title="Best Sellers by Revenue" icon={Star}>
+            {(sales.hasData ? sales.topByRevenue : []).length === 0 &&
+            inventory.topSold.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Recorded sales will chart here. Sales logged through the
-                inventory sale action build this trend with exact revenue and
-                profit.
+                Sold cards appear after sales are recorded.
+              </p>
+            ) : sales.hasData && sales.topByRevenue.length > 0 ? (
+              sales.topByRevenue.map((card) => (
+                <div
+                  key={`${card.name}-${card.set}`}
+                  className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{card.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {card.set} · {card.units} sold
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{usd(card.revenue)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {usd(card.profit)} profit
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              inventory.topSold.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/inventory/${item.id}`}
+                  className="flex items-center gap-3 rounded-md border border-border p-3 hover:bg-muted/50"
+                >
+                  <img
+                    src={item.customImage || item.card.images.small}
+                    alt={item.card.name}
+                    className="h-14 w-10 rounded object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{item.card.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {item.card.set.name}
+                    </p>
+                  </div>
+                  <Badge>{item.quantitySold} sold</Badge>
+                </Link>
+              ))
+            )}
+          </ListCard>
+        </div>
+
+        {/* Search demand */}
+        <div className="mb-6 grid gap-6 lg:grid-cols-3">
+          <ListCard title="Most Searched" icon={Search}>
+            {summary.topSearches.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Search activity appears here after customers use inventory
+                search.
               </p>
             ) : (
-              sales.daily.map((entry) => (
+              summary.topSearches.slice(0, 8).map((item, index) => (
                 <div
-                  key={entry.day}
-                  className="grid grid-cols-[56px_1fr_72px] items-center gap-2 text-sm"
+                  key={item.query}
+                  className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
                 >
-                  <span className="text-muted-foreground">{entry.day}</span>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+                  <p className="min-w-0 truncate font-medium capitalize">
+                    {index + 1}. {item.query}
+                  </p>
+                  <Badge variant="secondary">{item.searches}</Badge>
+                </div>
+              ))
+            )}
+          </ListCard>
+
+          <ListCard
+            title="Restock Signals"
+            icon={Search}
+            hint="Searched, 0 in stock"
+          >
+            {summary.unmetDemand.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No unmet search demand in this window.
+              </p>
+            ) : (
+              summary.unmetDemand.map((item) => (
+                <div
+                  key={item.query}
+                  className="flex items-center justify-between gap-3 rounded-md border border-amber-300/60 bg-amber-50/50 p-3 dark:border-amber-500/30 dark:bg-amber-900/10"
+                >
+                  <p className="min-w-0 truncate font-medium capitalize">
+                    {item.query}
+                  </p>
+                  <Badge variant="secondary">{item.searches} searches</Badge>
+                </div>
+              ))
+            )}
+          </ListCard>
+
+          <ListCard title="14-Day Search Trend" icon={BarChart3}>
+            {summary.dailySearches.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No search trend data yet.
+              </p>
+            ) : (
+              summary.dailySearches.map((item) => (
+                <div
+                  key={item.day}
+                  className="grid grid-cols-[56px_1fr_34px] items-center gap-2 text-sm"
+                >
+                  <span className="text-muted-foreground">{item.day}</span>
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full rounded-full bg-primary"
                       style={{
-                        width: `${(entry.revenue / maxDailyRevenue) * 100}%`,
+                        width: `${(item.searches / maxDailySearches) * 100}%`,
                       }}
                     />
                   </div>
                   <span className="text-right font-medium">
-                    {usd(entry.revenue)}
+                    {item.searches}
                   </span>
                 </div>
               ))
             )}
-          </CardContent>
-        </Card>
+          </ListCard>
+        </div>
 
-        <ListCard title="Best Sellers by Revenue" icon={Star}>
-          {(sales.hasData ? sales.topByRevenue : []).length === 0 &&
-          inventory.topSold.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Sold cards appear after sales are recorded.
-            </p>
-          ) : sales.hasData && sales.topByRevenue.length > 0 ? (
-            sales.topByRevenue.map((card) => (
+        {/* Inventory breakdowns */}
+        <div className="mb-6 grid gap-6 lg:grid-cols-3">
+          <ListCard title="Set Performance" icon={Boxes}>
+            {inventory.popularSets.map((set) => (
               <div
-                key={`${card.name}-${card.set}`}
-                className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
+                key={set.name}
+                className="rounded-md border border-border p-3"
               >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{card.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {card.set} · {card.units} sold
-                  </p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="truncate font-medium">{set.name}</p>
+                  <Badge variant="secondary">{set.sold} sold</Badge>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium">{usd(card.revenue)}</p>
+                <div className="mt-2 space-y-1">
                   <p className="text-xs text-muted-foreground">
-                    {usd(card.profit)} profit
+                    {set.count} in stock · {usd(set.value)} value
                   </p>
+                  <p className="text-xs text-muted-foreground">
+                    {set.uniqueCards.size}/{set.totalSetCards} cards ·{" "}
+                    {set.completionPercent.toFixed(1)}% complete
+                  </p>
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${set.completionPercent}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-            ))
-          ) : (
-            inventory.topSold.map((item) => (
-              <Link
-                key={item.id}
-                href={`/inventory/${item.id}`}
-                className="flex items-center gap-3 rounded-md border border-border p-3 hover:bg-muted/50"
-              >
-                <img
-                  src={item.customImage || item.card.images.small}
-                  alt={item.card.name}
-                  className="h-14 w-10 rounded object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{item.card.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {item.card.set.name}
-                  </p>
-                </div>
-                <Badge>{item.quantitySold} sold</Badge>
-              </Link>
-            ))
-          )}
-        </ListCard>
-      </div>
+            ))}
+          </ListCard>
 
-      {/* Search demand */}
-      <div className="mb-6 grid gap-6 lg:grid-cols-3">
-        <ListCard title="Most Searched" icon={Search}>
-          {summary.topSearches.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Search activity appears here after customers use inventory search.
-            </p>
-          ) : (
-            summary.topSearches.slice(0, 8).map((item, index) => (
+          <ListCard title="Value by Rarity" icon={Star}>
+            {inventory.rarity.map((item) => (
               <div
-                key={item.query}
+                key={item.key}
                 className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
               >
-                <p className="min-w-0 truncate font-medium capitalize">
-                  {index + 1}. {item.query}
-                </p>
-                <Badge variant="secondary">{item.searches}</Badge>
-              </div>
-            ))
-          )}
-        </ListCard>
-
-        <ListCard title="Restock Signals" icon={Search} hint="Searched, 0 in stock">
-          {summary.unmetDemand.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No unmet search demand in this window.
-            </p>
-          ) : (
-            summary.unmetDemand.map((item) => (
-              <div
-                key={item.query}
-                className="flex items-center justify-between gap-3 rounded-md border border-amber-300/60 bg-amber-50/50 p-3 dark:border-amber-500/30 dark:bg-amber-900/10"
-              >
-                <p className="min-w-0 truncate font-medium capitalize">
-                  {item.query}
-                </p>
-                <Badge variant="secondary">{item.searches} searches</Badge>
-              </div>
-            ))
-          )}
-        </ListCard>
-
-        <ListCard title="14-Day Search Trend" icon={BarChart3}>
-          {summary.dailySearches.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No search trend data yet.
-            </p>
-          ) : (
-            summary.dailySearches.map((item) => (
-              <div
-                key={item.day}
-                className="grid grid-cols-[56px_1fr_34px] items-center gap-2 text-sm"
-              >
-                <span className="text-muted-foreground">{item.day}</span>
-                <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{
-                      width: `${(item.searches / maxDailySearches) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className="text-right font-medium">{item.searches}</span>
-              </div>
-            ))
-          )}
-        </ListCard>
-      </div>
-
-      {/* Inventory breakdowns */}
-      <div className="mb-6 grid gap-6 lg:grid-cols-3">
-        <ListCard title="Set Performance" icon={Boxes}>
-          {inventory.popularSets.map((set) => (
-            <div key={set.name} className="rounded-md border border-border p-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="truncate font-medium">{set.name}</p>
-                <Badge variant="secondary">{set.sold} sold</Badge>
-              </div>
-              <div className="mt-2 space-y-1">
-                <p className="text-xs text-muted-foreground">
-                  {set.count} in stock · {usd(set.value)} value
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {set.uniqueCards.size}/{set.totalSetCards} cards ·{" "}
-                  {set.completionPercent.toFixed(1)}% complete
-                </p>
-                <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${set.completionPercent}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </ListCard>
-
-        <ListCard title="Value by Rarity" icon={Star}>
-          {inventory.rarity.map((item) => (
-            <div
-              key={item.key}
-              className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
-            >
-              <Badge className={rarityColors[item.key] || ""}>{item.key}</Badge>
-              <div className="text-right text-sm">
-                <p className="font-medium">{usd(item.value)}</p>
-                <p className="text-xs text-muted-foreground">
-                  {item.units} cards
-                </p>
-              </div>
-            </div>
-          ))}
-        </ListCard>
-
-        <ListCard title="Stock by Condition" icon={Boxes}>
-          {inventory.condition.map((item) => (
-            <div
-              key={item.key}
-              className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
-            >
-              <span className="font-medium">{item.key}</span>
-              <div className="text-right text-sm">
-                <p className="font-medium">{item.units} cards</p>
-                <p className="text-xs text-muted-foreground">
-                  {usd(item.value)}
-                </p>
-              </div>
-            </div>
-          ))}
-        </ListCard>
-      </div>
-
-      {/* Positions & dead stock */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ListCard title="Highest-Value Positions" icon={DollarSign}>
-          {inventory.topPositions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No stock yet.</p>
-          ) : (
-            inventory.topPositions.map(({ item, value }) => (
-              <Link
-                key={item.id}
-                href={`/inventory/${item.id}`}
-                className="flex items-center gap-3 rounded-md border border-border p-3 hover:bg-muted/50"
-              >
-                <img
-                  src={item.customImage || item.card.images.small}
-                  alt={item.card.name}
-                  className="h-14 w-10 rounded object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{item.card.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {item.quantity} × {usd(itemMarketValue(item))} ·{" "}
-                    {getCardRarityLabel(item.card)}
+                <Badge className={rarityColors[item.key] || ""}>
+                  {item.key}
+                </Badge>
+                <div className="text-right text-sm">
+                  <p className="font-medium">{usd(item.value)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.units} cards
                   </p>
                 </div>
-                <span className="font-semibold">{usd(value)}</span>
-              </Link>
-            ))
-          )}
-        </ListCard>
+              </div>
+            ))}
+          </ListCard>
 
-        <ListCard
-          title="Aging Stock"
-          icon={Clock}
-          hint="60+ days, never sold"
-        >
-          {inventory.deadStock.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No aging stock — everything is moving.
-            </p>
-          ) : (
-            inventory.deadStock.map(({ item, value, ageDays }) => (
-              <Link
-                key={item.id}
-                href={`/inventory/${item.id}`}
-                className="flex items-center gap-3 rounded-md border border-border p-3 hover:bg-muted/50"
+          <ListCard title="Stock by Condition" icon={Boxes}>
+            {inventory.condition.map((item) => (
+              <div
+                key={item.key}
+                className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
               >
-                <img
-                  src={item.customImage || item.card.images.small}
-                  alt={item.card.name}
-                  className="h-14 w-10 rounded object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{item.card.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {item.quantity} in stock · {usd(value)} tied up
+                <span className="font-medium">{item.key}</span>
+                <div className="text-right text-sm">
+                  <p className="font-medium">{item.units} cards</p>
+                  <p className="text-xs text-muted-foreground">
+                    {usd(item.value)}
                   </p>
                 </div>
-                <Badge variant="outline">{ageDays}d</Badge>
-              </Link>
-            ))
-          )}
-        </ListCard>
-      </div>
-        </>
-      )}
-    </div>
-  )
-}
+              </div>
+            ))}
+          </ListCard>
+        </div>
 
-function AnalyticsLocked() {
-  return (
-    <div className="mb-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-6 py-14 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        <Lock className="h-6 w-6" />
-      </div>
-      <h2 className="text-lg font-semibold text-foreground">
-        Full analytics is a paid feature
-      </h2>
-      <p className="max-w-md text-sm text-muted-foreground">
-        Your free trial shows the headline numbers above. Upgrade to unlock
-        price movers, insights &amp; alerts, sales history, search demand, and
-        the full inventory breakdowns.
-      </p>
-      <Button asChild className="mt-1">
-        <Link href="/settings?tab=billing">Upgrade to unlock analytics</Link>
-      </Button>
+        {/* Positions & dead stock */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ListCard title="Highest-Value Positions" icon={DollarSign}>
+            {inventory.topPositions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No stock yet.</p>
+            ) : (
+              inventory.topPositions.map(({ item, value }) => (
+                <Link
+                  key={item.id}
+                  href={`/inventory/${item.id}`}
+                  className="flex items-center gap-3 rounded-md border border-border p-3 hover:bg-muted/50"
+                >
+                  <img
+                    src={item.customImage || item.card.images.small}
+                    alt={item.card.name}
+                    className="h-14 w-10 rounded object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{item.card.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {item.quantity} × {usd(itemMarketValue(item))} ·{" "}
+                      {getCardRarityLabel(item.card)}
+                    </p>
+                  </div>
+                  <span className="font-semibold">{usd(value)}</span>
+                </Link>
+              ))
+            )}
+          </ListCard>
+
+          <ListCard
+            title="Aging Stock"
+            icon={Clock}
+            hint="60+ days, never sold"
+          >
+            {inventory.deadStock.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No aging stock — everything is moving.
+              </p>
+            ) : (
+              inventory.deadStock.map(({ item, value, ageDays }) => (
+                <Link
+                  key={item.id}
+                  href={`/inventory/${item.id}`}
+                  className="flex items-center gap-3 rounded-md border border-border p-3 hover:bg-muted/50"
+                >
+                  <img
+                    src={item.customImage || item.card.images.small}
+                    alt={item.card.name}
+                    className="h-14 w-10 rounded object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{item.card.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {item.quantity} in stock · {usd(value)} tied up
+                    </p>
+                  </div>
+                  <Badge variant="outline">{ageDays}d</Badge>
+                </Link>
+              ))
+            )}
+          </ListCard>
+        </div>
+      </>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 import { resolveDataScope, scopeFilters } from "@/lib/user-scope"
+import { requireFeature } from "@/lib/subscription-server"
 
 // ---------------------------------------------------------------------------
 // Collection analytics.
@@ -151,8 +152,24 @@ function round(value: number, places = 2) {
 }
 
 export async function GET(request: Request) {
+  // Analytics is a Premium feature.
+  // Enforce this server-side so Basic users cannot bypass
+  // the UI by calling /api/analytics/collection directly.
+const gate = await requireFeature(
+  (e) => e.canUseAnalytics,
+  "Collection analytics",
+  "premium",
+)
+
+if (gate instanceof NextResponse) {
+  return gate
+}
+
   const scope = await resolveDataScope()
-  if (scope instanceof NextResponse) return scope
+
+  if (scope instanceof NextResponse) {
+    return scope
+  }
 
   const url = new URL(request.url)
   // Trend window. Movement math ("this week" / "30-day change") always uses
@@ -230,14 +247,12 @@ export async function GET(request: Request) {
     const s = series.get(key) ?? []
     const hasHistory = s.length > 0
 
-    const current = hasHistory
-      ? s[s.length - 1].price
-      : card.fallbackPrice
+    const current = hasHistory ? s[s.length - 1].price : card.fallbackPrice
     const price7 = hasHistory
-      ? priceAsOf(s, d7) ?? current
+      ? (priceAsOf(s, d7) ?? current)
       : card.fallbackPrice
     const price30 = hasHistory
-      ? priceAsOf(s, d30) ?? current
+      ? (priceAsOf(s, d30) ?? current)
       : card.fallbackPrice
 
     const changeAbs = current - price7
@@ -395,7 +410,10 @@ export async function GET(request: Request) {
     overview: {
       totalValue: round(totalValue),
       change7d: round(change7d),
-      change7dPercent: round(value7Ago > 0 ? (change7d / value7Ago) * 100 : 0, 1),
+      change7dPercent: round(
+        value7Ago > 0 ? (change7d / value7Ago) * 100 : 0,
+        1,
+      ),
       change30d: round(change30d),
       change30dPercent: round(
         value30Ago > 0 ? (change30d / value30Ago) * 100 : 0,

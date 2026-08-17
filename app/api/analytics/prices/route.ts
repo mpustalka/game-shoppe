@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
+import { resolveEntitlements } from "@/lib/subscription-server"
 
 type IncomingSnapshot = {
   cardId?: unknown
@@ -21,7 +22,22 @@ function todayDate() {
  * per day. This is what powers the "price movers" view over time.
  */
 export async function POST(request: Request) {
+  // Price snapshot collection is available to all signed-in users.
+  // Analytics viewing can still remain Premium-only.
+  const { user } = await resolveEntitlements()
+
+  if (!user) {
+    return NextResponse.json(
+      {
+        error: "Not signed in",
+        code: "auth_required",
+      },
+      { status: 401 },
+    )
+  }
+
   const body = await request.json().catch(() => null)
+
   const incoming: IncomingSnapshot[] = Array.isArray(body?.snapshots)
     ? body.snapshots
     : []
@@ -43,7 +59,8 @@ export async function POST(request: Request) {
     const price = Number(snap.marketPrice)
     if (!cardId || !Number.isFinite(price) || price <= 0) continue
 
-    const finish = typeof snap.finish === "string" && snap.finish ? snap.finish : "Normal"
+    const finish =
+      typeof snap.finish === "string" && snap.finish ? snap.finish : "Normal"
     const key = `${cardId}|${finish}`
     const existing = deduped.get(key)
     if (existing && existing.market_price >= price) continue

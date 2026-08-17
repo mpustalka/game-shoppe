@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
-import { resolveDataScope, scopeFilters, type DataScope } from "@/lib/user-scope"
+import {
+  resolveDataScope,
+  scopeFilters,
+  type DataScope,
+} from "@/lib/user-scope"
+import { requireFeature } from "@/lib/subscription-server"
 
 function daysAgoIso(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
@@ -88,8 +93,11 @@ async function buildSearches(
   for (const row of rows) {
     const query = row.normalized_query || ""
     if (!query) continue
-    const entry =
-      grouped.get(query) ?? { query, searches: 0, last_result_count: 0 }
+    const entry = grouped.get(query) ?? {
+      query,
+      searches: 0,
+      last_result_count: 0,
+    }
     entry.searches += 1
     entry.last_result_count = Math.max(
       entry.last_result_count,
@@ -144,7 +152,13 @@ async function buildSales(windowIso: string, scope: DataScope) {
   const daily = new Map<string, { revenue: number; units: number }>()
   const byCard = new Map<
     string,
-    { name: string; set: string; units: number; revenue: number; profit: number }
+    {
+      name: string
+      set: string
+      units: number
+      revenue: number
+      profit: number
+    }
   >()
 
   for (const row of rows) {
@@ -252,7 +266,9 @@ async function buildPriceMovers(windowIso: string) {
         last: entry.last,
         change: Number(change.toFixed(2)),
         changePercent:
-          entry.first > 0 ? Number(((change / entry.first) * 100).toFixed(1)) : 0,
+          entry.first > 0
+            ? Number(((change / entry.first) * 100).toFixed(1))
+            : 0,
       }
     })
     .filter((entry) => entry.change !== 0)
@@ -271,18 +287,33 @@ async function buildPriceMovers(windowIso: string) {
 }
 
 export async function GET(request: Request) {
+  const gate = await requireFeature(
+    (e) => e.canUseAnalytics,
+    "Analytics",
+    "premium",
+  )
+
+  if (gate instanceof NextResponse) {
+    return gate
+  }
+
   const scope = await resolveDataScope()
-  if (scope instanceof NextResponse) return scope
+
+  if (scope instanceof NextResponse) {
+    return scope
+  }
 
   const url = new URL(request.url)
+
   const days = Math.min(
     365,
     Math.max(7, Number(url.searchParams.get("days")) || 30),
   )
+
   const windowIso = daysAgoIso(days)
+
   const fourteenIso = daysAgoIso(14)
 
-  // Price movers come from shared market data, so they stay visible either way.
   const isolated = scope.mode === "isolated"
 
   const [searches, sales, priceMovers] = await Promise.all([
@@ -291,7 +322,11 @@ export async function GET(request: Request) {
       : buildSearches(windowIso, fourteenIso, scope).catch(
           () => EMPTY_SEARCHES,
         ),
-    isolated ? EMPTY_SALES : buildSales(windowIso, scope).catch(() => EMPTY_SALES),
+
+    isolated
+      ? EMPTY_SALES
+      : buildSales(windowIso, scope).catch(() => EMPTY_SALES),
+
     buildPriceMovers(windowIso).catch(() => ({
       trackedCards: 0,
       gainers: [],
@@ -299,5 +334,10 @@ export async function GET(request: Request) {
     })),
   ])
 
-  return NextResponse.json({ days, ...searches, sales, priceMovers })
+  return NextResponse.json({
+    days,
+    ...searches,
+    sales,
+    priceMovers,
+  })
 }

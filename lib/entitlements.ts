@@ -1,176 +1,480 @@
-// Subscription entitlements — the single source of truth for what a given
-// account is allowed to do.
+// Subscription entitlements
 //
-// Business rules (set by the owner):
-//   • NEW accounts get a 14-day free trial with LIMITED access, then must pay
-//     $7.99/month for full access.
-//   • EXISTING accounts — created before the paid program launched — keep FULL
-//     access free, forever (grandfathered).
-//   • The platform admin always has full access.
+// Plans:
 //
-// This module is pure and isomorphic: the same computation runs on the server
-// (from the Supabase auth user + payment rows) and is surfaced to the client
-// through /api/subscription, so the UI and the API never disagree.
+// BASIC — $0.99/month
+// Core collection management:
+// - Browse sets
+// - Inventory
+// - Add / bulk add cards
+// - TCGPlayer pricing
+// - Binders
+//
+// PREMIUM — $3.99/month
+// Everything in Basic, plus:
+// - Full analytics
+// - Showcase
+// - Customer lists
+// - Import
+// - Scan
+// - Square sync / advanced seller tools
+//
+// NEW USERS:
+// - Receive a 7-day Premium trial.
+// - After the trial they must choose Basic or Premium.
+//
+// EXISTING / GRANDFATHERED USERS:
+// - Keep full Premium-equivalent access free forever.
+//
+// ADMIN:
+// - Full unrestricted access.
 
-export const MONTHLY_PRICE_USD = 7.99
-export const TRIAL_DAYS = 14
+export const BASIC_MONTHLY_PRICE_USD = 0.99
+export const PREMIUM_MONTHLY_PRICE_USD = 3.99
 
-// CashApp is how payment is collected. These are shown to the user on the
-// billing screen and stamped onto the landing page.
+export const TRIAL_DAYS = 7
+
 export const CASHAPP_CASHTAG = "$Evileevee1"
 export const CASHAPP_TAG_DISPLAY = "#Evileevee1"
+
 export const BILLING_EMAIL = "Admin@evileevee.com"
 
-// The moment the paid program went live. Accounts whose auth record predates
-// this are grandfathered into free, full access forever. Everyone who signs up
-// from this point on is a "new" account subject to the trial + subscription.
+// Existing accounts created before this point retain
+// grandfathered Premium-equivalent access.
+//
+// Do not change this date unless you intentionally want
+// to redefine which accounts are grandfathered.
 export const PAID_PROGRAM_LAUNCH = "2026-07-18T00:00:00.000Z"
 
-// Inventory rows a trial account can see, binders it can open, etc.
-export const TRIAL_INVENTORY_LIMIT = 50
-export const TRIAL_BINDER_LIMIT = 1
+export type SubscriptionTier = "basic" | "premium"
 
 export type BillingPlan =
-  | "admin" // platform owner — unrestricted
-  | "grandfathered" // pre-launch account, free forever
-  | "trial" // new account inside the 14-day window
-  | "expired" // new account whose trial ended without payment
-  | "paid" // new account with an active paid period
+  | "admin"
+  | "grandfathered"
+  | "trial"
+  | "expired"
+  | "basic"
+  | "premium"
 
 export interface Entitlements {
   plan: BillingPlan
-  /** True when the account can use every feature without limits. */
+
+  /**
+   * Convenience indicator for Premium-equivalent access.
+   *
+   * True for:
+   * - admin
+   * - grandfathered
+   * - trial
+   * - premium
+   *
+   * IMPORTANT:
+   * Feature authorization should use the specific
+   * `can...` permission instead of relying on fullAccess.
+   */
   fullAccess: boolean
-  /** True for accounts created after the paid program launched. */
+
+  /**
+   * Account was created on/after the paid-program launch.
+   */
   isNewAccount: boolean
-  /** Whether the account still needs to pay to keep using the platform. */
+
+  /**
+   * User currently has no active Basic/Premium subscription.
+   *
+   * This is primarily used for expired accounts.
+   */
   mustPay: boolean
-  // Feature gates (a limit of `null` means "unlimited").
+
+  /**
+   * Effective subscription tier.
+   *
+   * Trial behaves like Premium.
+   * Grandfathered/admin also receive Premium-equivalent access.
+   */
+  subscriptionTier: SubscriptionTier | null
+
+  // ------------------------------------------------------------
+  // CORE / BASIC
+  // ------------------------------------------------------------
+
+  canBrowseSets: boolean
+  canManageInventory: boolean
+  canAddCards: boolean
+  canBulkAddCards: boolean
+  canUseBinders: boolean
+  canViewMarketPrices: boolean
+
+  // ------------------------------------------------------------
+  // PREMIUM
+  // ------------------------------------------------------------
+
+  canUseAnalytics: boolean
+  canUseShowcase: boolean
+  canUseCustomerLists: boolean
+  canImport: boolean
+  canScan: boolean
+  canSyncSquare: boolean
+
+  /**
+   * Compatibility limits.
+   *
+   * Basic is intentionally useful and is not artificially
+   * limited by inventory-card or binder counts.
+   */
   maxBinders: number | null
   maxInventoryVisible: number | null
-  canImport: boolean
-  canAddCards: boolean
-  canSyncSquare: boolean
-  limitedAnalytics: boolean
-  // Trial / billing timeline.
+
   trialEndsAt: string | null
   trialDaysLeft: number | null
+
   paidUntil: string | null
+
+  /**
+   * Monthly price corresponding to the effective tier.
+   *
+   * Grandfathered/admin/trial use the Premium price here
+   * because their capability set matches Premium.
+   */
   priceMonthly: number
 }
 
-const FULL: Omit<Entitlements, "plan" | "isNewAccount" | "trialEndsAt" | "trialDaysLeft" | "paidUntil"> = {
-  fullAccess: true,
-  mustPay: false,
+/**
+ * Basic should be a genuinely useful product.
+ *
+ * Do NOT cripple inventory or binders solely to force
+ * users into Premium.
+ */
+const BASIC_ACCESS: Omit<
+  Entitlements,
+  | "plan"
+  | "isNewAccount"
+  | "mustPay"
+  | "subscriptionTier"
+  | "trialEndsAt"
+  | "trialDaysLeft"
+  | "paidUntil"
+> = {
+  fullAccess: false,
+
+  canBrowseSets: true,
+  canManageInventory: true,
+  canAddCards: true,
+  canBulkAddCards: true,
+  canUseBinders: true,
+  canViewMarketPrices: true,
+
+  canUseAnalytics: false,
+  canUseShowcase: false,
+  canUseCustomerLists: false,
+  canImport: false,
+  canScan: false,
+  canSyncSquare: false,
+
   maxBinders: null,
   maxInventoryVisible: null,
-  canImport: true,
-  canAddCards: true,
-  canSyncSquare: true,
-  limitedAnalytics: false,
-  priceMonthly: MONTHLY_PRICE_USD,
+
+  priceMonthly: BASIC_MONTHLY_PRICE_USD,
 }
 
-const LIMITED: Omit<Entitlements, "plan" | "isNewAccount" | "trialEndsAt" | "trialDaysLeft" | "paidUntil" | "mustPay"> = {
-  fullAccess: false,
-  maxBinders: TRIAL_BINDER_LIMIT,
-  maxInventoryVisible: TRIAL_INVENTORY_LIMIT,
-  canImport: false,
-  canAddCards: false,
-  canSyncSquare: false,
-  limitedAnalytics: true,
-  priceMonthly: MONTHLY_PRICE_USD,
+/**
+ * Premium-equivalent access.
+ *
+ * Used by:
+ * - Premium subscribers
+ * - Trial users
+ * - Grandfathered users
+ * - Admins
+ */
+const PREMIUM_ACCESS: Omit<
+  Entitlements,
+  | "plan"
+  | "isNewAccount"
+  | "mustPay"
+  | "subscriptionTier"
+  | "trialEndsAt"
+  | "trialDaysLeft"
+  | "paidUntil"
+> = {
+  fullAccess: true,
+
+  canBrowseSets: true,
+  canManageInventory: true,
+  canAddCards: true,
+  canBulkAddCards: true,
+  canUseBinders: true,
+  canViewMarketPrices: true,
+
+  canUseAnalytics: true,
+  canUseShowcase: true,
+  canUseCustomerLists: true,
+  canImport: true,
+  canScan: true,
+  canSyncSquare: true,
+
+  maxBinders: null,
+  maxInventoryVisible: null,
+
+  priceMonthly: PREMIUM_MONTHLY_PRICE_USD,
 }
 
 export interface EntitlementInput {
   isAdmin: boolean
-  /** auth user's created_at (ISO string). */
+
+  /**
+   * Supabase auth user's created_at.
+   */
   createdAt: string | null | undefined
-  /** trial_started_at from user metadata, if present (ISO string). */
+
+  /**
+   * trial_started_at stored in user metadata.
+   */
   trialStartedAt?: string | null
-  /** Latest paid-period end across confirmed payments (ISO string). */
+
+  /**
+   * Latest confirmed paid-period end.
+   */
   paidUntil?: string | null
-  /** Current time, injected for testability. */
+
+  /**
+   * Tier attached to the currently-active payment.
+   */
+  paidPlan?: SubscriptionTier | null
+
+  /**
+   * Optional timestamp injected during testing.
+   */
   now?: number
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
 function daysBetween(fromMs: number, toMs: number): number {
-  return Math.ceil((toMs - fromMs) / (1000 * 60 * 60 * 24))
+  return Math.ceil((toMs - fromMs) / DAY_MS)
+}
+
+function safeTimestamp(
+  value: string | null | undefined,
+  fallback: number,
+): number {
+  if (!value) {
+    return fallback
+  }
+
+  const parsed = new Date(value).getTime()
+
+  return Number.isFinite(parsed) ? parsed : fallback
 }
 
 export function computeEntitlements(input: EntitlementInput): Entitlements {
   const now = input.now ?? Date.now()
 
-  // Admin: unrestricted.
+  // ------------------------------------------------------------
+  // ADMIN
+  // ------------------------------------------------------------
+
   if (input.isAdmin) {
     return {
-      ...FULL,
+      ...PREMIUM_ACCESS,
+
       plan: "admin",
+
       isNewAccount: false,
+
+      mustPay: false,
+
+      subscriptionTier: "premium",
+
       trialEndsAt: null,
+
       trialDaysLeft: null,
+
       paidUntil: null,
     }
   }
 
-  const createdMs = input.createdAt ? new Date(input.createdAt).getTime() : now
-  const launchMs = new Date(PAID_PROGRAM_LAUNCH).getTime()
+  const createdMs = safeTimestamp(input.createdAt, now)
+
+  const launchMs = safeTimestamp(PAID_PROGRAM_LAUNCH, now)
+
   const isNewAccount = createdMs >= launchMs
 
-  // Grandfathered: existing account, free full access forever.
+  // ------------------------------------------------------------
+  // GRANDFATHERED ACCOUNTS
+  // ------------------------------------------------------------
+
   if (!isNewAccount) {
     return {
-      ...FULL,
+      ...PREMIUM_ACCESS,
+
       plan: "grandfathered",
+
       isNewAccount: false,
+
+      mustPay: false,
+
+      subscriptionTier: "premium",
+
       trialEndsAt: null,
+
       trialDaysLeft: null,
+
       paidUntil: null,
     }
   }
 
-  // New account with an active paid period → full access.
+  // ------------------------------------------------------------
+  // ACTIVE PAID SUBSCRIPTION
+  // ------------------------------------------------------------
+
   const paidUntilMs = input.paidUntil
     ? new Date(input.paidUntil).getTime()
     : null
-  if (paidUntilMs && paidUntilMs > now) {
+
+  const hasActivePayment =
+    paidUntilMs !== null && Number.isFinite(paidUntilMs) && paidUntilMs > now
+
+  if (hasActivePayment) {
+    /**
+     * Legacy active payments without a plan are interpreted
+     * as Premium by subscription-server.ts before reaching here.
+     *
+     * We still default unknown values to Premium to preserve
+     * legacy access if computeEntitlements() is called elsewhere.
+     */
+    const tier: SubscriptionTier =
+      input.paidPlan === "basic" ? "basic" : "premium"
+
+    if (tier === "basic") {
+      return {
+        ...BASIC_ACCESS,
+
+        plan: "basic",
+
+        isNewAccount: true,
+
+        mustPay: false,
+
+        subscriptionTier: "basic",
+
+        trialEndsAt: null,
+
+        trialDaysLeft: null,
+
+        paidUntil: input.paidUntil ?? null,
+      }
+    }
+
     return {
-      ...FULL,
-      plan: "paid",
+      ...PREMIUM_ACCESS,
+
+      plan: "premium",
+
       isNewAccount: true,
+
+      mustPay: false,
+
+      subscriptionTier: "premium",
+
       trialEndsAt: null,
+
       trialDaysLeft: null,
+
       paidUntil: input.paidUntil ?? null,
     }
   }
 
-  // New account, not paid → trial or expired.
-  const trialStartMs = input.trialStartedAt
-    ? new Date(input.trialStartedAt).getTime()
-    : createdMs
-  const trialEndMs = trialStartMs + TRIAL_DAYS * 24 * 60 * 60 * 1000
+  // ------------------------------------------------------------
+  // 7-DAY PREMIUM TRIAL
+  // ------------------------------------------------------------
+
+  const trialStartMs = safeTimestamp(input.trialStartedAt, createdMs)
+
+  const trialEndMs = trialStartMs + TRIAL_DAYS * DAY_MS
+
   const trialEndsAt = new Date(trialEndMs).toISOString()
+
   const withinTrial = now < trialEndMs
 
+  if (withinTrial) {
+    return {
+      ...PREMIUM_ACCESS,
+
+      plan: "trial",
+
+      isNewAccount: true,
+
+      mustPay: false,
+
+      // Trial has the complete Premium feature set.
+      subscriptionTier: "premium",
+
+      trialEndsAt,
+
+      trialDaysLeft: Math.max(0, daysBetween(now, trialEndMs)),
+
+      paidUntil: null,
+    }
+  }
+
+  // ------------------------------------------------------------
+  // TRIAL EXPIRED / NO ACTIVE SUBSCRIPTION
+  // ------------------------------------------------------------
+
   return {
-    ...LIMITED,
-    plan: withinTrial ? "trial" : "expired",
+    ...BASIC_ACCESS,
+
+    plan: "expired",
+
     isNewAccount: true,
+
     mustPay: true,
+
+    subscriptionTier: null,
+
+    /**
+     * Expired accounts retain read access to their existing
+     * collection so inventory never appears deleted.
+     *
+     * They cannot add additional cards until they activate
+     * Basic or Premium.
+     */
+    canAddCards: false,
+
+    canBulkAddCards: false,
+
     trialEndsAt,
-    trialDaysLeft: withinTrial ? Math.max(0, daysBetween(now, trialEndMs)) : 0,
+
+    trialDaysLeft: 0,
+
     paidUntil: input.paidUntil ?? null,
   }
 }
 
-// Default entitlements used before the real ones have loaded (and if the
-// billing API ever fails). Conservatively grants full access so the UI never
-// blocks a legitimate paying/grandfathered user on a transient error.
+/**
+ * Permissive defaults during hydration/API failures.
+ *
+ * This preserves your existing fail-open behavior and prevents
+ * a temporary subscription lookup failure from making an
+ * established user's inventory appear inaccessible.
+ *
+ * Server-side feature routes still perform their own entitlement
+ * checks when billing data is successfully available.
+ */
 export const DEFAULT_ENTITLEMENTS: Entitlements = {
-  ...FULL,
+  ...PREMIUM_ACCESS,
+
   plan: "grandfathered",
+
   isNewAccount: false,
+
+  mustPay: false,
+
+  subscriptionTier: "premium",
+
   trialEndsAt: null,
+
   trialDaysLeft: null,
+
   paidUntil: null,
 }
