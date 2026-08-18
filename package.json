@@ -60,6 +60,7 @@
     "react-hook-form": "^7.54.1",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.0",
+    "resend": "^6.20.0",
     "sonner": "^1.7.1",
     "square": "^44.0.1",
     "supabase": "^2.105.0",
