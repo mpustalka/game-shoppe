@@ -31,7 +31,7 @@ interface InventoryDetailPageProps {
 export default function InventoryDetailPage({ params }: InventoryDetailPageProps) {
   const { id } = use(params)
   const router = useRouter()
-  const { getItemById, deleteItem } = useInventory()
+const { getItemById, deleteItem, isLoaded } = useInventory()
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -50,6 +50,24 @@ export default function InventoryDetailPage({ params }: InventoryDetailPageProps
       generateQRCodeDataURL(qrData, { width: 200 }).then(setQrCodeUrl)
     }
   }, [item])
+
+if (!isLoaded) {
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center">
+        <RefreshCw className="mb-4 h-8 w-8 animate-spin text-muted-foreground" />
+
+        <h2 className="text-lg font-medium">
+          Loading Inventory Item
+        </h2>
+
+        <p className="mt-2 text-sm text-muted-foreground">
+          Loading your collection...
+        </p>
+      </div>
+    </div>
+  )
+}
 
   if (!item) {
     return (

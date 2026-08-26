@@ -25,23 +25,64 @@ const headers: HeadersInit = {
 }
 
 export async function getAllSets(): Promise<PokemonSet[]> {
-  const response = await fetch(`${BASE_URL}/sets?orderBy=-releaseDate`, {
-    headers,
-    next: { revalidate: 3600 }, // Cache for 1 hour
-  })
+  const controller = new AbortController()
 
-  // The upstream API can intermittently return 404; degrade to an empty list
-  // instead of crashing the page that renders these sets.
-  if (response.status === 404) {
+  const timeout = setTimeout(() => {
+    controller.abort()
+  }, 8000)
+
+  try {
+    const response = await fetch(
+      `${BASE_URL}/sets?orderBy=-releaseDate`,
+      {
+        headers,
+        signal: controller.signal,
+        next: {
+          revalidate: 3600,
+        },
+      },
+    )
+
+    if (response.status === 404) {
+      return mergeCustomSets([])
+    }
+
+    if (!response.ok) {
+      console.error(
+        "Pokemon TCG sets request failed:",
+        response.status,
+        response.statusText,
+      )
+
+      return mergeCustomSets([])
+    }
+
+    const data = await response.json()
+
+    const sets = Array.isArray(data?.data)
+      ? (data.data as PokemonSet[])
+      : []
+
+    return mergeCustomSets(sets)
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.name === "AbortError"
+    ) {
+      console.error(
+        "Pokemon TCG sets request timed out after 8 seconds",
+      )
+    } else {
+      console.error(
+        "Pokemon TCG sets request failed:",
+        error,
+      )
+    }
+
     return mergeCustomSets([])
+  } finally {
+    clearTimeout(timeout)
   }
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch sets: ${response.statusText}`)
-  }
-
-  const data = await response.json()
-  return mergeCustomSets(data.data as PokemonSet[])
 }
 
 export async function getSetById(setId: string): Promise<PokemonSet | null> {

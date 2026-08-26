@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 
+// import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import {
@@ -17,6 +18,7 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  User,
   UserPlus,
   Users,
   Wallet,
@@ -71,12 +73,15 @@ type AdminUser = {
   email: string | null
 
   storeName: string | null
+
   companyId: string | null
 
   isAdmin: boolean
+
   confirmed: boolean
 
   createdAt: string
+
   lastSignInAt: string | null
 
   subscriptionPlan: "basic" | "premium" | null
@@ -88,8 +93,11 @@ type AdminUser = {
 
 type Company = {
   id: string
+
   name: string
+
   created_at: string
+
   userCount?: number
 }
 
@@ -133,8 +141,8 @@ export default function AdminPage() {
   /**
    * Client-side convenience gate.
    *
-   * Real security remains enforced by
-   * requireAdmin() in every admin API.
+   * The API routes still use requireAdmin(),
+   * which is the real security boundary.
    */
   useEffect(() => {
     const supabase = createClient()
@@ -256,7 +264,7 @@ function AdminPortal() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Header */}
+      {/* HEADER */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
@@ -287,7 +295,7 @@ function AdminPortal() {
         </Button>
       </div>
 
-      {/* Summary */}
+      {/* SUMMARY */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <SummaryCard label="Users" value={users.length} icon={Users} />
 
@@ -304,14 +312,14 @@ function AdminPortal() {
         <SummaryCard label="Suspended" value={suspendedUsers} icon={Ban} />
       </div>
 
-      {/* Creation */}
+      {/* CREATION TOOLS */}
       <div className="grid gap-6 lg:grid-cols-2">
         <CreateUserCard companies={companies} onCreated={load} />
 
         <CompanyManager companies={companies} onChanged={load} />
       </div>
 
-      {/* Users */}
+      {/* USERS */}
       <Card className="mt-6">
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -366,7 +374,7 @@ function AdminPortal() {
         </CardContent>
       </Card>
 
-      {/* Payments */}
+      {/* PAYMENTS */}
       <div className="mt-6">
         <AdminPaymentsPanel />
       </div>
@@ -380,7 +388,9 @@ function SummaryCard({
   icon: Icon,
 }: {
   label: string
+
   value: number
+
   icon: typeof Users
 }) {
   return (
@@ -405,6 +415,7 @@ function CreateUserCard({
   onCreated,
 }: {
   companies: Company[]
+
   onCreated: () => void
 }) {
   const [email, setEmail] = useState("")
@@ -432,7 +443,9 @@ function CreateUserCard({
 
         body: JSON.stringify({
           email,
+
           password,
+
           storeName,
 
           companyId: companyId === NO_COMPANY ? "" : companyId,
@@ -448,8 +461,11 @@ function CreateUserCard({
       toast.success(`Created ${email}`)
 
       setEmail("")
+
       setPassword("")
+
       setStoreName("")
+
       setCompanyId(NO_COMPANY)
 
       onCreated()
@@ -552,6 +568,7 @@ function CompanyManager({
   onChanged,
 }: {
   companies: Company[]
+
   onChanged: () => void
 }) {
   const [name, setName] = useState("")
@@ -631,6 +648,7 @@ function CompanyManager({
       toast.success("Company renamed")
 
       setEditing(null)
+
       setEditName("")
 
       onChanged()
@@ -802,10 +820,14 @@ function UserRow({
   onChanged,
 }: {
   user: AdminUser
+
   companies: Company[]
+
   companyName: string | null
+
   onChanged: () => void
 }) {
+ 
   const [editOpen, setEditOpen] = useState(false)
 
   const [subscriptionOpen, setSubscriptionOpen] = useState(false)
@@ -836,6 +858,7 @@ function UserRow({
     try {
       const body: Record<string, unknown> = {
         email,
+
         storeName,
 
         companyId: companyId === NO_COMPANY ? "" : companyId,
@@ -864,6 +887,7 @@ function UserRow({
       toast.success("Account updated")
 
       setNewPassword("")
+
       setEditOpen(false)
 
       onChanged()
@@ -945,9 +969,8 @@ function UserRow({
   }
 
   /**
-   * Grant or extend subscription.
-   *
-   * Uses the new per-user subscription API.
+   * Uses the dedicated per-user
+   * subscription endpoint.
    */
   async function grantSubscription() {
     setWorking(true)
@@ -993,10 +1016,6 @@ function UserRow({
     }
   }
 
-  /**
-   * Change an existing paid period
-   * from Basic ↔ Premium.
-   */
   async function changeCurrentPlan(newPlan: SubscriptionTier) {
     setWorking(true)
 
@@ -1018,7 +1037,7 @@ function UserRow({
       const data = await response.json().catch(() => null)
 
       if (!response.ok) {
-        throw new Error(data?.error || "Failed to change subscription plan")
+        throw new Error(data?.error || "Failed to change subscription")
       }
 
       toast.success(
@@ -1041,9 +1060,6 @@ function UserRow({
     }
   }
 
-  /**
-   * Immediately end current paid access.
-   */
   async function expireSubscription() {
     if (!confirm(`Expire ${user.email}'s subscription immediately?`)) {
       return
@@ -1119,6 +1135,7 @@ function UserRow({
   return (
     <>
       <div className="flex flex-col gap-4 py-5 xl:flex-row xl:items-center xl:justify-between">
+        {/* USER INFO */}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -1163,7 +1180,17 @@ function UserRow({
           </p>
         </div>
 
+        {/* USER ACTIONS */}
         <div className="flex flex-wrap gap-2">
+          {/* NEW USER DETAIL PAGE BUTTON */}
+          <a
+            href={`/admin/users/${user.id}`}
+            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
+          >
+            <User className="mr-2 h-4 w-4" />
+            Manage
+          </a>
+
           {!user.confirmed && (
             <Button
               variant="outline"
@@ -1223,7 +1250,7 @@ function UserRow({
         </div>
       </div>
 
-      {/* Edit Account */}
+      {/* EDIT ACCOUNT */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
@@ -1305,7 +1332,7 @@ function UserRow({
         </DialogContent>
       </Dialog>
 
-      {/* Subscription Manager */}
+      {/* SUBSCRIPTION */}
       <Dialog open={subscriptionOpen} onOpenChange={setSubscriptionOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
@@ -1317,7 +1344,7 @@ function UserRow({
           </DialogHeader>
 
           <div className="space-y-5">
-            {/* Current status */}
+            {/* CURRENT STATUS */}
             <div className="rounded-lg border bg-muted/40 p-4 text-sm">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Current plan</span>
@@ -1334,15 +1361,14 @@ function UserRow({
               </div>
             </div>
 
-            {/* Existing subscription actions */}
+            {/* CURRENT SUBSCRIPTION ACTIONS */}
             {user.subscriptionPlan && (
               <div className="space-y-3 rounded-lg border p-4">
                 <div>
                   <p className="font-medium">Current Subscription</p>
 
                   <p className="text-xs text-muted-foreground">
-                    Change the current tier without changing the paid through
-                    date.
+                    Change the current plan or end access immediately.
                   </p>
                 </div>
 
@@ -1384,14 +1410,14 @@ function UserRow({
               </div>
             )}
 
-            {/* Grant/extend */}
+            {/* GRANT / EXTEND */}
             <div className="space-y-4 rounded-lg border p-4">
               <div>
                 <p className="font-medium">Grant / Extend Subscription</p>
 
                 <p className="text-xs text-muted-foreground">
-                  Adds a confirmed subscription period. If already paid ahead,
-                  the new time is added to the end.
+                  If the customer is already paid ahead, the new time is added
+                  to the existing end date.
                 </p>
               </div>
 

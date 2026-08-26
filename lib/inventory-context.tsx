@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from "react"
 
+import { usePathname } from "next/navigation"
+
 import type {
   InventoryItem,
   InventoryFormData,
@@ -31,6 +33,7 @@ import {
 
 interface InventoryContextType {
   items: InventoryItem[]
+  isLoaded: boolean
 
   addItem: (
     card: PokemonCard,
@@ -63,9 +66,10 @@ interface InventoryContextType {
     squareVariationId: string,
   ) => void
 
-  bulkImport: (
-    items: ManualCardData[],
-  ) => Promise<{ success: number; failed: number }>
+  bulkImport: (items: ManualCardData[]) => Promise<{
+    success: number
+    failed: number
+  }>
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(
@@ -76,8 +80,8 @@ const InventoryContext = createContext<InventoryContextType | undefined>(
  * Generate an inventory ID.
  *
  * crypto.randomUUID() is not available in every browser context.
- * In particular, it may be unavailable when developing through a LAN IP
- * over plain HTTP.
+ * In particular, it may be unavailable when developing through
+ * a LAN IP over plain HTTP.
  *
  * Use randomUUID when available and fall back to a UUID-v4 style ID.
  */
@@ -90,17 +94,17 @@ function generateInventoryId(): string {
     return globalThis.crypto.randomUUID()
   }
 
-  // Prefer cryptographically random bytes if getRandomValues is available.
   if (
     typeof globalThis !== "undefined" &&
     globalThis.crypto &&
     typeof globalThis.crypto.getRandomValues === "function"
   ) {
     const bytes = new Uint8Array(16)
+
     globalThis.crypto.getRandomValues(bytes)
 
-    // UUID v4 bits
     bytes[6] = (bytes[6] & 0x0f) | 0x40
+
     bytes[8] = (bytes[8] & 0x3f) | 0x80
 
     const hex = Array.from(bytes, (byte) =>
@@ -116,28 +120,69 @@ function generateInventoryId(): string {
     ].join("-")
   }
 
-  // Last-resort fallback for unusual browser environments.
   return `inv-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
 }
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+
   const [items, setItems] = useState<InventoryItem[]>([])
+
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Load inventory for the currently signed-in account.
+  /**
+   * -------------------------------------------------
+   * ROUTE-AWARE INVENTORY LOADING
+   * -------------------------------------------------
+   *
+   * Normal application pages use /api/inventory.
+   *
+   * Admin pages use their own selected-user endpoints.
+   * Sell pages use /api/sell-binders/[id], which already
+   * loads the inventory needed by the listing manager.
+   *
+   * Do not make the expensive global /api/inventory request
+   * while inside /admin or /sell.
+   */
   useEffect(() => {
-    async function fetchInventory() {
-      try {
-        const response = await fetch("/api/inventory")
+    if (!pathname) {
+      return
+    }
 
-        // InventoryProvider may also wrap pages available while signed out.
+    const shouldSkipGlobalInventory =
+      pathname === "/admin" ||
+      pathname.startsWith("/admin/") ||
+      pathname === "/sell" ||
+      pathname.startsWith("/sell/")
+
+    if (shouldSkipGlobalInventory) {
+      console.log("SKIPPING GLOBAL INVENTORY ON:", pathname)
+      setItems([])
+      setIsLoaded(true)
+      return
+    }
+
+    let cancelled = false
+
+    async function fetchInventory() {
+      console.log("GLOBAL INVENTORY FETCH RUNNING ON:", pathname)
+      setIsLoaded(false)
+
+      try {
+        const response = await fetch("/api/inventory", {
+          cache: "no-store",
+        })
+
         if (response.status === 401) {
-          setItems([])
+          if (!cancelled) {
+            setItems([])
+          }
           return
         }
 
         if (!response.ok) {
           const text = await response.text().catch(() => "")
+
           throw new Error(
             text
               ? `Failed to fetch inventory: ${text}`
@@ -146,16 +191,27 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         }
 
         const data = await response.json()
-        setItems(Array.isArray(data) ? data : [])
+
+        if (!cancelled) {
+          setItems(Array.isArray(data) ? data : [])
+        }
       } catch (error) {
-        console.error("Failed to fetch inventory:", error)
+        if (!cancelled) {
+          console.error("Failed to fetch inventory:", error)
+        }
       } finally {
-        setIsLoaded(true)
+        if (!cancelled) {
+          setIsLoaded(true)
+        }
       }
     }
 
-    fetchInventory()
-  }, [])
+    void fetchInventory()
+
+    return () => {
+      cancelled = true
+    }
+  }, [pathname])
 
   const addItem = useCallback(
     async (
@@ -164,6 +220,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     ): Promise<InventoryItem | null> => {
       try {
         const finish = data.finish ?? getDefaultCardFinish(card)
+
         const variant = data.variant ?? getDefaultCardVariant(card)
 
         const sku = generateSKU(
@@ -174,30 +231,50 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         )
 
         const barcode = generateBarcodeString(sku)
+
         const id = generateInventoryId()
 
         const now = new Date().toISOString()
 
         const newItem: InventoryItem = {
           id,
+
           cardId: card.id,
+
           card,
+
           language: data.language ?? "en",
+
           sku,
+
           barcode,
+
           condition: data.condition,
+
           finish,
+
           variant,
+
           price: data.price,
+
           purchasePrice: data.purchasePrice ?? 0,
+
           marketValue: data.marketValue ?? data.price,
+
           quantity: data.quantity,
+
           quantitySold: data.quantitySold ?? 0,
+
           notes: data.notes,
+
           customImage: data.customImage,
+
           isManualEntry: false,
+
           syncedToSquare: false,
+
           createdAt: now,
+
           updatedAt: now,
         }
 
@@ -205,9 +282,11 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
         const response = await fetch("/api/inventory", {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify(newItem),
         })
 
@@ -215,10 +294,15 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           const text = await response.text().catch(() => "")
 
           console.error("================================")
+
           console.error("POST /api/inventory FAILED")
+
           console.error("Status:", response.status)
+
           console.error("Response:", text)
+
           console.error("Payload:", newItem)
+
           console.error("================================")
 
           return null
@@ -231,6 +315,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         return savedItem as InventoryItem
       } catch (error) {
         console.error("ADD INVENTORY ITEM ERROR:", error)
+
         throw error
       }
     },
@@ -252,21 +337,29 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         )
 
         const barcode = generateBarcodeString(sku)
+
         const id = generateInventoryId()
 
         const now = new Date().toISOString()
 
         const manualCard: PokemonCard = {
           id: `manual-${id}`,
+
           name: data.name,
+
           supertype: "Pokémon",
 
           set: {
             id: data.setId || `manual-set-${timestamp}`,
+
             name: data.setName,
+
             series: "Manual Entry",
+
             printedTotal: 0,
+
             total: 0,
+
             releaseDate: now.split("T")[0],
 
             images: {
@@ -276,42 +369,65 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           },
 
           number: data.number || "N/A",
+
           rarity: data.rarity,
 
           images: {
             small: data.customImage || "/placeholder-card.png",
+
             large: data.customImage || "/placeholder-card.png",
           },
         }
 
         const newItem: InventoryItem = {
           id,
+
           cardId: manualCard.id,
+
           card: manualCard,
+
           language: data.language ?? "en",
+
           sku,
+
           barcode,
+
           condition: data.condition,
+
           finish: data.finish,
+
           variant: data.variant ?? null,
+
           price: data.price,
+
           purchasePrice: data.purchasePrice ?? 0,
+
           marketValue: data.marketValue ?? data.price,
+
           quantity: data.quantity,
+
           quantitySold: data.quantitySold ?? 0,
+
           notes: data.notes,
+
           customImage: data.customImage,
+
           isManualEntry: true,
+
           syncedToSquare: false,
+
           createdAt: now,
+
           updatedAt: now,
         }
 
         const response = await fetch("/api/inventory", {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify(newItem),
         })
 
@@ -319,10 +435,15 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           const text = await response.text().catch(() => "")
 
           console.error("================================")
+
           console.error("POST /api/inventory FAILED")
+
           console.error("Status:", response.status)
+
           console.error("Response:", text)
+
           console.error("Payload:", newItem)
+
           console.error("================================")
 
           return null
@@ -335,6 +456,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         return savedItem as InventoryItem
       } catch (error) {
         console.error("ADD MANUAL INVENTORY ITEM ERROR:", error)
+
         throw error
       }
     },
@@ -348,7 +470,9 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           item.id === id
             ? {
                 ...item,
+
                 ...data,
+
                 updatedAt: new Date().toISOString(),
               }
             : item,
@@ -357,14 +481,17 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
       const response = await fetch(`/api/inventory/${id}`, {
         method: "PATCH",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify(data),
       })
 
       if (!response.ok) {
         const text = await response.text().catch(() => "")
+
         console.error(
           "Failed to update item in inventory",
           response.status,
@@ -384,6 +511,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
     if (!response.ok) {
       const text = await response.text().catch(() => "")
+
       console.error(
         "Failed to delete item from inventory",
         response.status,
@@ -398,10 +526,12 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
       if (!item) {
         console.error("Cannot record sale: inventory item not found", id)
+
         return
       }
 
       const nextQuantity = Math.max(0, item.quantity - qty)
+
       const nextQuantitySold = (item.quantitySold || 0) + qty
 
       setItems((prev) =>
@@ -409,8 +539,11 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           inventoryItem.id === id
             ? {
                 ...inventoryItem,
+
                 quantity: nextQuantity,
+
                 quantitySold: nextQuantitySold,
+
                 updatedAt: new Date().toISOString(),
               }
             : inventoryItem,
@@ -419,17 +552,21 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
       const response = await fetch(`/api/inventory/${id}`, {
         method: "PATCH",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           quantity: nextQuantity,
+
           quantitySold: nextQuantitySold,
         }),
       })
 
       if (!response.ok) {
         const text = await response.text().catch(() => "")
+
         console.error(
           "Failed to record sale in inventory",
           response.status,
@@ -437,22 +574,32 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         )
       }
 
-      // Append realized sale to analytics ledger.
       fetch("/api/analytics/sales", {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           inventoryId: item.id,
+
           cardId: item.cardId,
+
           cardName: item.card.name,
+
           setName: item.card.set.name,
+
           rarity: item.card.rarity,
+
           finish: item.finish,
+
           condition: item.condition,
+
           quantity: qty,
+
           unitPrice: item.price,
+
           purchasePrice: item.purchasePrice || 0,
         }),
       }).catch(() => undefined)
@@ -508,9 +655,13 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           item.id === id
             ? {
                 ...item,
+
                 squareItemId,
+
                 squareVariationId,
+
                 syncedToSquare: true,
+
                 updatedAt: new Date().toISOString(),
               }
             : item,
@@ -523,7 +674,10 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const bulkImport = useCallback(
     async (
       importItems: ManualCardData[],
-    ): Promise<{ success: number; failed: number }> => {
+    ): Promise<{
+      success: number
+      failed: number
+    }> => {
       let success = 0
       let failed = 0
 
@@ -538,6 +692,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           }
         } catch (error) {
           console.error("Bulk import item failed:", error)
+
           failed++
         }
       }
@@ -552,25 +707,39 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   return (
     <InventoryContext.Provider
-      value={{
-        items,
-        addItem,
-        addManualItem,
-        updateItem,
-        deleteItem,
-        recordSale,
-        getItemById,
-        getItemBySku,
-        getItemByBarcode,
-        getItemsByCardId,
-        getItemsByPriceTier,
-        searchItems,
-        updateSquareSync,
-        bulkImport,
-      }}
-    >
-      {children}
-    </InventoryContext.Provider>
+  value={{
+    items,
+    isLoaded,
+
+    addItem,
+
+    addManualItem,
+
+    updateItem,
+
+    deleteItem,
+
+    recordSale,
+
+    getItemById,
+
+    getItemBySku,
+
+    getItemByBarcode,
+
+    getItemsByCardId,
+
+    getItemsByPriceTier,
+
+    searchItems,
+
+    updateSquareSync,
+
+    bulkImport,
+  }}
+>
+  {children}
+</InventoryContext.Provider>
   )
 }
 
