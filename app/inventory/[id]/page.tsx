@@ -53,15 +53,15 @@ const { getItemById, deleteItem, isLoaded } = useInventory()
 
 if (!isLoaded) {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#070708] px-4 py-6 text-white sm:px-6 sm:py-8 lg:px-8">
       <div className="flex min-h-[60vh] flex-col items-center justify-center">
-        <RefreshCw className="mb-4 h-8 w-8 animate-spin text-muted-foreground" />
+        <RefreshCw className="mb-4 h-8 w-8 animate-spin text-white/40" />
 
         <h2 className="text-lg font-medium">
           Loading Inventory Item
         </h2>
 
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-sm text-white/40">
           Loading your collection...
         </p>
       </div>
@@ -71,11 +71,11 @@ if (!isLoaded) {
 
   if (!item) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[#070708] px-4 py-6 text-white sm:px-6 sm:py-8 lg:px-8">
         <div className="flex flex-col items-center justify-center py-16">
-          <Package className="mb-4 h-12 w-12 text-muted-foreground/50" />
+          <Package className="mb-4 h-12 w-12 text-white/40/50" />
           <h2 className="mb-2 text-lg font-medium">Item Not Found</h2>
-          <p className="mb-4 text-sm text-muted-foreground">
+          <p className="mb-4 text-sm text-white/40">
             This inventory item does not exist or has been deleted.
           </p>
           <Button asChild>
@@ -159,7 +159,7 @@ if (!isLoaded) {
   })
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#070708] px-4 py-6 text-white sm:px-6 sm:py-8 lg:px-8">
       {/* Back Button */}
       <Button asChild variant="ghost" size="sm" className="mb-6">
         <Link href="/inventory">
@@ -168,18 +168,18 @@ if (!isLoaded) {
         </Link>
       </Button>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="mx-auto grid max-w-[1400px] gap-5 lg:grid-cols-[minmax(280px,420px)_1fr] lg:gap-7">
         {/* Card Image */}
         <div className="lg:col-span-1">
-          <Card>
+          <Card className="rounded-[26px] border-white/10 bg-white/[0.035] text-white shadow-none">
             <CardContent className="p-4">
               <img
                 src={item.card.images.large}
                 alt={item.card.name}
-                className="w-full rounded-lg"
+                className="mx-auto w-full max-w-[390px] rounded-2xl shadow-2xl shadow-black/30"
               />
               {item.card.tcgplayer?.url && (
-                <Button asChild variant="outline" size="sm" className="mt-4 w-full">
+                <Button asChild variant="outline" size="sm" className="mt-4 w-full border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white">
                   <a href={item.card.tcgplayer.url} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="mr-2 h-4 w-4" />
                     View on TCGPlayer
@@ -193,21 +193,21 @@ if (!isLoaded) {
         {/* Details */}
         <div className="lg:col-span-2 space-y-6">
           {/* Main Info */}
-          <Card>
+          <Card className="rounded-[26px] border-white/10 bg-white/[0.035] text-white shadow-none">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-2xl">{item.card.name}</CardTitle>
+                  <CardTitle className="text-3xl font-black tracking-[-0.03em] text-white sm:text-4xl">{item.card.name}</CardTitle>
                   <CardDescription>
                     {item.card.set.name} - #{item.card.number}
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                  <Button variant="outline" size="sm" onClick={() => setEditOpen(true)} className="border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white">
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
+                  <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)} className="border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white">
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                   </Button>
@@ -218,18 +218,18 @@ if (!isLoaded) {
               {/* Price and Quantity */}
               <div className="flex items-center gap-6">
                 <div>
-                  <p className="text-sm text-muted-foreground">Price</p>
-                  <p className="text-3xl font-bold text-primary">${item.price.toFixed(2)}</p>
+                  <p className="text-sm text-white/40">Price</p>
+                  <p className="text-3xl font-black text-rose-400">${item.price.toFixed(2)}</p>
                 </div>
                 <Separator orientation="vertical" className="h-12" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Quantity</p>
-                  <p className="text-3xl font-bold">{item.quantity}</p>
+                  <p className="text-sm text-white/40">Quantity</p>
+                  <p className="text-3xl font-black text-white">{item.quantity}</p>
                 </div>
                 <Separator orientation="vertical" className="h-12" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Value</p>
-                  <p className="text-3xl font-bold">${(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="text-sm text-white/40">Total Value</p>
+                  <p className="text-3xl font-black text-white">${(item.price * item.quantity).toFixed(2)}</p>
                 </div>
               </div>
 
@@ -238,19 +238,19 @@ if (!isLoaded) {
               {/* Details Grid */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <p className="text-sm text-muted-foreground">Condition</p>
+                  <p className="text-sm text-white/40">Condition</p>
                   <Badge variant="secondary" className="mt-1">{item.condition}</Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Rarity</p>
+                  <p className="text-sm text-white/40">Rarity</p>
                   <p className="mt-1 font-medium">{item.card.rarity || "Unknown"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Set</p>
+                  <p className="text-sm text-white/40">Set</p>
                   <p className="mt-1 font-medium">{item.card.set.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Series</p>
+                  <p className="text-sm text-white/40">Series</p>
                   <p className="mt-1 font-medium">{item.card.set.series}</p>
                 </div>
               </div>
@@ -259,7 +259,7 @@ if (!isLoaded) {
                 <>
                   <Separator />
                   <div>
-                    <p className="text-sm text-muted-foreground">Notes</p>
+                    <p className="text-sm text-white/40">Notes</p>
                     <p className="mt-1">{item.notes}</p>
                   </div>
                 </>
@@ -268,7 +268,7 @@ if (!isLoaded) {
           </Card>
 
           {/* QR Code & SKU */}
-          <Card>
+          <Card className="rounded-[26px] border-white/10 bg-white/[0.035] text-white shadow-none">
             <CardHeader>
               <CardTitle>Barcode & SKU</CardTitle>
               <CardDescription>Use these identifiers for inventory tracking</CardDescription>
@@ -280,11 +280,11 @@ if (!isLoaded) {
                   {qrCodeUrl ? (
                     <img src={qrCodeUrl} alt="QR Code" className="h-32 w-32 rounded-lg border" />
                   ) : (
-                    <div className="flex h-32 w-32 items-center justify-center rounded-lg border bg-muted">
-                      <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <div className="flex h-32 w-32 items-center justify-center rounded-lg border bg-white/[0.04]">
+                      <RefreshCw className="h-6 w-6 animate-spin text-white/40" />
                     </div>
                   )}
-                  <Button variant="outline" size="sm" onClick={handlePrintLabel}>
+                  <Button variant="outline" size="sm" onClick={handlePrintLabel} className="border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white">
                     <Printer className="mr-2 h-4 w-4" />
                     Print Label
                   </Button>
@@ -293,23 +293,23 @@ if (!isLoaded) {
                 {/* SKU and Barcode */}
                 <div className="flex-1 space-y-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">SKU</p>
+                    <p className="text-sm text-white/40">SKU</p>
                     <div className="mt-1 flex items-center gap-2">
-                      <code className="rounded bg-muted px-2 py-1 font-mono text-sm">
+                      <code className="max-w-full overflow-x-auto rounded-lg border border-white/10 bg-white/[0.045] px-2.5 py-1.5 font-mono text-sm text-white/80">
                         {item.sku}
                       </code>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopySku}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-white/55 hover:bg-white/10 hover:text-white" onClick={handleCopySku}>
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Barcode</p>
+                    <p className="text-sm text-white/40">Barcode</p>
                     <div className="mt-1 flex items-center gap-2">
-                      <code className="rounded bg-muted px-2 py-1 font-mono text-sm">
+                      <code className="max-w-full overflow-x-auto rounded-lg border border-white/10 bg-white/[0.045] px-2.5 py-1.5 font-mono text-sm text-white/80">
                         {item.barcode}
                       </code>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopyBarcode}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-white/55 hover:bg-white/10 hover:text-white" onClick={handleCopyBarcode}>
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
@@ -320,7 +320,7 @@ if (!isLoaded) {
           </Card>
 
           {/* Square Sync Status */}
-          <Card>
+          <Card className="rounded-[26px] border-white/10 bg-white/[0.035] text-white shadow-none">
             <CardHeader>
               <CardTitle>Square POS Integration</CardTitle>
               <CardDescription>Sync this item with your Square catalog</CardDescription>
@@ -331,7 +331,7 @@ if (!isLoaded) {
                   <p className="font-medium">
                     {item.syncedToSquare ? "Synced to Square" : "Not synced"}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-white/40">
                     {item.syncedToSquare 
                       ? `Item ID: ${item.squareItemId}` 
                       : "Click sync to add this item to your Square catalog"
@@ -344,7 +344,7 @@ if (!isLoaded) {
           </Card>
 
           {/* Timestamps */}
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-white/40">
             <p>Added: {createdDate}</p>
             <p>Last updated: {updatedDate}</p>
           </div>

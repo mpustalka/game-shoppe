@@ -157,18 +157,18 @@ export default function InventoryPage() {
   const itemToEdit = editItem ? items.find((i) => i.id === editItem) : null
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#070708] px-4 py-6 text-white sm:px-6 sm:py-8 lg:px-8">
       <div className="mb-6">
         <TrialBanner />
       </div>
 
       {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto mb-6 flex max-w-[1500px] flex-col gap-5 rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_0%_0%,rgba(225,29,72,.16),transparent_34%),rgba(255,255,255,.025)] p-5 sm:p-7 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl">
             Inventory
           </h1>
-          <p className="mt-1 text-muted-foreground">
+          <p className="mt-2 text-sm text-white/45 sm:text-base">
             {filteredItems.length} items - {totalQuantity} total cards - $
             {totalValue.toFixed(2)} value
           </p>
@@ -182,7 +182,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-6 flex flex-col gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center">
+      <div className="mx-auto mb-6 grid max-w-[1500px] gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3 sm:grid-cols-2 sm:p-4 lg:grid-cols-[minmax(280px,1fr)_220px_190px_180px_auto] lg:items-center">
         {/* Search */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -190,12 +190,12 @@ export default function InventoryPage() {
             placeholder="Search cards, SKU, or barcode..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="h-11 rounded-xl border-white/10 bg-white/[0.045] pl-9 text-white placeholder:text-white/30"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white"
             >
               <X className="h-4 w-4" />
             </button>
@@ -207,7 +207,7 @@ export default function InventoryPage() {
           sets={availableSets}
           value={filterSet}
           onChange={setFilterSet}
-          className="w-full sm:w-[200px]"
+          className="h-11 w-full !border-white/10 !bg-white/[0.045] !text-white [&_svg]:text-white/35 [&_[data-slot=select-value]]:text-white"
         />
 
         {/* Condition Filter */}
@@ -215,14 +215,18 @@ export default function InventoryPage() {
           value={filterCondition}
           onValueChange={(v) => setFilterCondition(v as CardCondition | "all")}
         >
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger className="h-11 w-full rounded-xl border-white/10 bg-white/[0.045] text-white">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Condition" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Conditions</SelectItem>
+          <SelectContent className="border-white/10 bg-[#111114] text-white">
+            <SelectItem value="all" className="focus:bg-white/10 focus:text-white">All Conditions</SelectItem>
             {CARD_CONDITIONS.map((c) => (
-              <SelectItem key={c} value={c}>
+              <SelectItem
+                key={c}
+                value={c}
+                className="focus:bg-white/10 focus:text-white"
+              >
                 {c}
               </SelectItem>
             ))}
@@ -234,15 +238,15 @@ export default function InventoryPage() {
           value={sortBy}
           onValueChange={(v) => setSortBy(v as SortOption)}
         >
-          <SelectTrigger className="w-full sm:w-[160px]">
+          <SelectTrigger className="h-11 w-full rounded-xl border-white/10 bg-white/[0.045] text-white">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest">Newest First</SelectItem>
-            <SelectItem value="oldest">Oldest First</SelectItem>
-            <SelectItem value="price-high">Price: High to Low</SelectItem>
-            <SelectItem value="price-low">Price: Low to High</SelectItem>
-            <SelectItem value="name">Name A-Z</SelectItem>
+          <SelectContent className="border-white/10 bg-[#111114] text-white">
+            <SelectItem value="newest" className="focus:bg-white/10 focus:text-white">Newest First</SelectItem>
+            <SelectItem value="oldest" className="focus:bg-white/10 focus:text-white">Oldest First</SelectItem>
+            <SelectItem value="price-high" className="focus:bg-white/10 focus:text-white">Price: High to Low</SelectItem>
+            <SelectItem value="price-low" className="focus:bg-white/10 focus:text-white">Price: Low to High</SelectItem>
+            <SelectItem value="name" className="focus:bg-white/10 focus:text-white">Name A-Z</SelectItem>
           </SelectContent>
         </Select>
 
@@ -252,11 +256,17 @@ export default function InventoryPage() {
           onValueChange={(v) => setViewMode(v as ViewMode)}
           className="hidden sm:block"
         >
-          <TabsList>
-            <TabsTrigger value="grid">
+          <TabsList className="h-11 rounded-xl border border-white/10 bg-white/[0.045] p-1">
+            <TabsTrigger
+              value="grid"
+              className="rounded-lg text-white/45 data-[state=active]:bg-white data-[state=active]:text-zinc-950"
+            >
               <Grid3X3 className="h-4 w-4" />
             </TabsTrigger>
-            <TabsTrigger value="list">
+            <TabsTrigger
+              value="list"
+              className="rounded-lg text-white/45 data-[state=active]:bg-white data-[state=active]:text-zinc-950"
+            >
               <List className="h-4 w-4" />
             </TabsTrigger>
           </TabsList>
@@ -267,7 +277,7 @@ export default function InventoryPage() {
       {filteredItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
           <Package className="mb-4 h-12 w-12 text-muted-foreground/50" />
-          <h3 className="mb-2 text-lg font-medium text-foreground">
+          <h3 className="mb-2 text-lg font-medium text-white">
             No inventory items
           </h3>
           <p className="mb-4 text-center text-sm text-muted-foreground">
@@ -282,15 +292,15 @@ export default function InventoryPage() {
           )}
         </div>
       ) : viewMode === "grid" ? (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="mx-auto grid max-w-[1500px] grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {visibleItems.map((item) => (
-            <Card key={item.id} className="group overflow-hidden">
+            <Card key={item.id} className="group overflow-hidden rounded-2xl border-white/10 bg-white/[0.035] text-white shadow-none transition duration-300 hover:-translate-y-1 hover:border-rose-400/25 hover:bg-white/[0.05]">
               <Link href={`/inventory/${item.id}`}>
                 <div className="relative aspect-[2.5/3.5] w-full overflow-hidden bg-muted">
                   <img
                     src={item.card.images.small}
                     alt={item.card.name}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.035]"
                     loading="lazy"
                   />
                   {/* Sync Status */}
@@ -308,11 +318,11 @@ export default function InventoryPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <Link href={`/inventory/${item.id}`}>
-                      <h3 className="truncate font-medium text-foreground hover:text-primary">
+                      <h3 className="truncate font-medium text-white hover:text-rose-300">
                         {item.card.name}
                       </h3>
                     </Link>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <p className="truncate text-xs text-white/40">
                       {item.card.set.name}
                     </p>
                   </div>
@@ -321,7 +331,7 @@ export default function InventoryPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 shrink-0"
+                        className="h-8 w-8 shrink-0 text-white/65 hover:bg-white/10 hover:text-white"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
@@ -342,32 +352,38 @@ export default function InventoryPage() {
                   </DropdownMenu>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge
+                    variant="secondary"
+                    className="border border-white/10 bg-white/90 text-xs font-semibold text-zinc-900"
+                  >
                     {item.condition}
                   </Badge>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge
+                    variant="outline"
+                    className="border-white/20 bg-white/[0.04] text-xs text-white/75"
+                  >
                     {item.finish || "Normal"}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-white/40">
                     Qty: {item.quantity}
                   </span>
                 </div>
                 <p className="mt-2 text-lg font-semibold text-primary">
                   ${item.price.toFixed(2)}
                 </p>
-                <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
+                <p className="text-xs text-white/40">SKU: {item.sku}</p>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="mx-auto max-w-[1500px] space-y-2">
           {visibleItems.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
+              className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-white transition hover:border-rose-400/20 hover:bg-white/[0.05] sm:gap-4 sm:p-4"
             >
-              <Link href={`/inventory/${item.id}`} className="shrink-0">
+              <Link href={`/inventory/${item.id}`} className="shrink-0 text-white/65 hover:bg-white/10 hover:text-white">
                 <img
                   src={item.card.images.small}
                   alt={item.card.name}
@@ -377,24 +393,30 @@ export default function InventoryPage() {
               </Link>
               <div className="flex-1 min-w-0">
                 <Link href={`/inventory/${item.id}`}>
-                  <h3 className="font-medium text-foreground hover:text-primary">
+                  <h3 className="font-medium text-white hover:text-rose-300">
                     {item.card.name}
                   </h3>
                 </Link>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-white/40">
                   {item.card.set.name} - #{item.card.number}
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge
+                    variant="secondary"
+                    className="border border-white/10 bg-white/90 text-xs font-semibold text-zinc-900"
+                  >
                     {item.condition}
                   </Badge>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge
+                    variant="outline"
+                    className="border-white/20 bg-white/[0.04] text-xs text-white/75"
+                  >
                     {item.finish || "Normal"}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-white/40">
                     Qty: {item.quantity}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-white/40">
                     SKU: {item.sku}
                   </span>
                   {!item.syncedToSquare && (
@@ -405,10 +427,10 @@ export default function InventoryPage() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-lg font-semibold text-foreground">
+                <p className="text-lg font-semibold text-white">
                   ${item.price.toFixed(2)}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-white/40">
                   Total: ${(item.price * item.quantity).toFixed(2)}
                 </p>
               </div>
@@ -440,7 +462,7 @@ export default function InventoryPage() {
       {/* Edit Modal */}
       {hiddenCount > 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-6 py-8 text-center">
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-sm font-medium text-white">
             {hiddenCount} more {hiddenCount === 1 ? "card is" : "cards are"} hidden
           </p>
           <p className="max-w-md text-sm text-muted-foreground">

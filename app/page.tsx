@@ -1,369 +1,532 @@
 "use client"
 
 import Link from "next/link"
+
 import { useInventory } from "@/lib/inventory-context"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {
-  Package,
-  DollarSign,
-  Layers,
-  AlertTriangle,
-  ArrowRight,
-  Plus,
-  QrCode,
-  RefreshCw,
-} from "lucide-react"
 
 import { TrialBanner } from "@/components/billing/trial-banner"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+
+import {
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  Boxes,
+  CircleDollarSign,
+  Layers3,
+  Package,
+  Plus,
+  QrCode,
+  Search,
+  ShoppingBag,
+  Sparkles,
+  TrendingUp,
+  WalletCards,
+} from "lucide-react"
+
+function money(value: number) {
+  return value.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+  })
+}
 
 export default function DashboardPage() {
   const { items } = useInventory()
 
-  // Calculate stats
   const totalItems = items.length
-  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0)
-  const totalValue = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+
+  const totalQuantity = items.reduce(
+    (sum, item) =>
+      sum + Number(item.quantity ?? 0),
     0,
   )
-  const lowStockItems = items.filter((item) => item.quantity <= 2)
-  const unsyncedItems = items.filter((item) => !item.syncedToSquare)
-  const uniqueSets = new Set(items.map((item) => item.card.set.id)).size
 
-  // Recent items (last 5)
-  const recentItems = items.slice(0, 5)
+  const totalValue = items.reduce(
+    (sum, item) =>
+      sum +
+      Number(item.price ?? 0) *
+        Number(item.quantity ?? 0),
+    0,
+  )
+
+  const lowStockItems = items.filter(
+    (item) =>
+      Number(item.quantity ?? 0) <= 2,
+  )
+
+  const unsyncedItems = items.filter(
+    (item) => !item.syncedToSquare,
+  )
+
+  const uniqueSets = new Set(
+    items.map((item) => item.card.set.id),
+  ).size
+
+  const recentItems = items.slice(0, 6)
+
+  const topValueItems = [...items]
+    .sort(
+      (a, b) =>
+        Number(b.price ?? 0) *
+          Number(b.quantity ?? 0) -
+        Number(a.price ?? 0) *
+          Number(a.quantity ?? 0),
+    )
+    .slice(0, 5)
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6">
-        <TrialBanner />
-      </div>
+    <main className="min-h-screen overflow-x-hidden bg-[#070708] text-white">
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_10%_0%,rgba(225,29,72,.16),transparent_28%),radial-gradient(circle_at_92%_7%,rgba(127,29,29,.14),transparent_28%)]" />
 
-      {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Dashboard
-          </h1>
-          <p className="mt-1 text-muted-foreground">
-            Manage your Pokemon card inventory
-          </p>
+      <div className="mx-auto max-w-[1500px] px-3 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
+        <div className="mb-5 sm:mb-6">
+          <TrialBanner />
         </div>
-        <div className="flex gap-3">
-          <Button asChild variant="outline">
-            <Link href="/scan">
-              <QrCode className="mr-2 h-4 w-4" />
-              Scan Card
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/add">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Card
-            </Link>
-          </Button>
-        </div>
-      </div>
 
-      {/* Stats Grid */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Items</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalItems}</div>
-            <p className="text-xs text-muted-foreground">
-              {totalQuantity} cards in stock
-            </p>
-          </CardContent>
-        </Card>
+        <section className="relative overflow-hidden rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_82%_18%,rgba(225,29,72,.20),transparent_28%),linear-gradient(135deg,#111114,#09090b)] px-5 py-6 shadow-2xl shadow-black/20 sm:rounded-[32px] sm:px-7 sm:py-8 lg:px-9 lg:py-10">
+          <div className="absolute inset-0 opacity-[0.055] [background-image:linear-gradient(rgba(255,255,255,.3)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.3)_1px,transparent_1px)] [background-size:42px_42px]" />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              $
-              {totalValue.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+          <div className="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <Badge className="mb-4 border border-rose-400/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/10">
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                Collection Command Center
+              </Badge>
+
+              <h1 className="text-3xl font-black tracking-[-0.04em] sm:text-4xl lg:text-5xl">
+                Your collection,
+                <span className="block bg-gradient-to-r from-rose-400 via-red-500 to-orange-400 bg-clip-text text-transparent">
+                  at a glance.
+                </span>
+              </h1>
+
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/50 sm:text-base sm:leading-7">
+                Track your cards, organize binders, follow value, and move cards
+                into the marketplace from one place.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Across {uniqueSets} sets
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{lowStockItems.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Items with 2 or less in stock
-            </p>
-          </CardContent>
-        </Card>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+              >
+                <Link href="/scan">
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Scan
+                </Link>
+              </Button>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Square Sync</CardTitle>
-            <RefreshCw className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {items.length - unsyncedItems.length}/{items.length}
+              <Button
+                asChild
+                className="h-11 bg-rose-600 text-white hover:bg-rose-500"
+              >
+                <Link href="/add">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Card
+                </Link>
+              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {unsyncedItems.length} items pending sync
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </section>
 
-      {/* Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Inventory */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Recent Inventory</CardTitle>
-              <CardDescription>
-                Latest cards added to your inventory
-              </CardDescription>
-            </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/inventory">
-                View all
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {recentItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Layers className="mb-4 h-12 w-12 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground">
-                  No inventory yet
+        <section className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4 xl:grid-cols-4">
+          <MetricCard
+            label="Collection Value"
+            value={money(totalValue)}
+            detail={`${uniqueSets} sets tracked`}
+            icon={CircleDollarSign}
+            accent
+          />
+
+          <MetricCard
+            label="Unique Cards"
+            value={totalItems.toLocaleString()}
+            detail={`${totalQuantity.toLocaleString()} total copies`}
+            icon={WalletCards}
+          />
+
+          <MetricCard
+            label="Low Stock"
+            value={lowStockItems.length.toLocaleString()}
+            detail="2 copies or fewer"
+            icon={AlertTriangle}
+          />
+
+          <MetricCard
+            label="Square Sync"
+            value={`${items.length - unsyncedItems.length}/${items.length}`}
+            detail={`${unsyncedItems.length} pending`}
+            icon={TrendingUp}
+          />
+        </section>
+
+        <section className="mt-4 grid gap-4 lg:mt-5 lg:grid-cols-[1.25fr_.75fr]">
+          <div className="overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.035] sm:rounded-[30px]">
+            <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-5 sm:px-6">
+              <div>
+                <p className="text-lg font-bold sm:text-xl">
+                  Recent Inventory
                 </p>
-                <Button asChild variant="link" className="mt-2">
-                  <Link href="/sets">Browse sets to add cards</Link>
+                <p className="mt-1 text-xs text-white/40 sm:text-sm">
+                  Your latest cards
+                </p>
+              </div>
+
+              <Button
+                asChild
+                size="sm"
+                variant="ghost"
+                className="text-white/65 hover:bg-white/10 hover:text-white"
+              >
+                <Link href="/inventory">
+                  View all
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+
+            {recentItems.length === 0 ? (
+              <div className="flex min-h-64 flex-col items-center justify-center px-5 py-10 text-center">
+                <Layers3 className="h-10 w-10 text-white/25" />
+                <p className="mt-4 font-semibold">
+                  Your inventory is empty
+                </p>
+                <p className="mt-1 text-sm text-white/40">
+                  Browse a set or add your first card.
+                </p>
+                <Button
+                  asChild
+                  className="mt-5 bg-rose-600 hover:bg-rose-500"
+                >
+                  <Link href="/sets">
+                    Browse Sets
+                  </Link>
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid gap-px bg-white/10 sm:grid-cols-2 xl:grid-cols-3">
                 {recentItems.map((item) => (
                   <Link
                     key={item.id}
                     href={`/inventory/${item.id}`}
-                    className="flex items-center gap-4 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50"
+                    className="group min-w-0 bg-[#0b0b0e] p-4 transition hover:bg-[#111116]"
                   >
-                    <img
-                      src={item.card.images.small}
-                      alt={item.card.name}
-                      className="h-16 w-12 rounded object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate font-medium text-foreground">
-                        {item.card.name}
-                      </p>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {item.card.set.name} - #{item.card.number}
-                      </p>
-                      <div className="mt-1 flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {item.condition}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          Qty: {item.quantity}
-                        </span>
+                    <div className="flex gap-3">
+                      <div className="h-24 w-[68px] shrink-0 overflow-hidden rounded-xl bg-white/5">
+                        <img
+                          src={
+                            item.customImage ||
+                            item.card.images.small
+                          }
+                          alt={item.card.name}
+                          className="h-full w-full object-contain transition duration-300 group-hover:scale-105"
+                        />
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-foreground">
-                        ${item.price.toFixed(2)}
-                      </p>
-                      {!item.syncedToSquare && (
-                        <Badge variant="outline" className="mt-1 text-xs">
-                          Not synced
-                        </Badge>
-                      )}
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-bold">
+                          {item.card.name}
+                        </p>
+                        <p className="mt-1 truncate text-xs text-white/40">
+                          {item.card.set.name} · #{item.card.number}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          <Badge
+                            variant="outline"
+                            className="border-white/10 bg-white/5 text-[10px] text-white/65"
+                          >
+                            {item.condition}
+                          </Badge>
+
+                          {item.finish && (
+                            <Badge
+                              variant="outline"
+                              className="border-white/10 bg-white/5 text-[10px] text-white/65"
+                            >
+                              {item.finish}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="mt-3 flex items-end justify-between gap-2">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-white/30">
+                              Value
+                            </p>
+                            <p className="font-bold text-rose-300">
+                              {money(
+                                Number(item.price ?? 0),
+                              )}
+                            </p>
+                          </div>
+
+                          <p className="text-xs text-white/35">
+                            Qty {item.quantity}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </Link>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Common tasks for managing your inventory
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3">
-            <Button
-              asChild
-              variant="outline"
-              className="justify-start h-auto py-4"
-            >
-              <Link href="/sets">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Package className="h-5 w-5 text-primary" />
-                  </div>
-
-                  <div className="text-left">
-                    <p className="font-medium">Browse Pokemon Sets</p>
-                    <p className="text-sm text-muted-foreground">
-                      View all English sets and add cards to inventory
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="justify-start h-auto py-4"
-            >
-              <Link href="/japanese-sets">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Layers className="h-5 w-5 text-primary" />
-                  </div>
-
-                  <div className="text-left">
-                    <p className="font-medium">Browse Japanese Sets</p>
-                    <p className="text-sm text-muted-foreground">
-                      View all Japanese sets and add cards to inventory
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="justify-start h-auto py-4"
-            >
-              <Link href="/add">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Plus className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium">Add Card to Inventory</p>
-                    <p className="text-sm text-muted-foreground">
-                      Search and add a specific card
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="justify-start h-auto py-4"
-            >
-              <Link href="/scan">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <QrCode className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium">Scan QR Code</p>
-                    <p className="text-sm text-muted-foreground">
-                      Look up inventory by scanning barcode
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            </Button>
-
-            <Button
-              asChild
-              variant="outline"
-              className="justify-start h-auto py-4"
-            >
-              <Link href="/search">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Layers className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium">Search Inventory</p>
-                    <p className="text-sm text-muted-foreground">
-                      Find cards by name, SKU, or barcode
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Low Stock Alert */}
-        {lowStockItems.length > 0 && (
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                <CardTitle>Low Stock Alert</CardTitle>
+          <div className="rounded-[26px] border border-white/10 bg-white/[0.035] p-5 sm:rounded-[30px] sm:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-lg font-bold sm:text-xl">
+                  Quick Actions
+                </p>
+                <p className="mt-1 text-xs text-white/40 sm:text-sm">
+                  Jump back into your workflow
+                </p>
               </div>
-              <CardDescription>
-                These items have 2 or fewer in stock
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {lowStockItems.slice(0, 6).map((item) => (
+
+              <ZapMark />
+            </div>
+
+            <div className="mt-5 grid gap-2">
+              <QuickAction
+                href="/inventory"
+                title="Inventory"
+                subtitle="Search and manage every card"
+                icon={Package}
+              />
+              <QuickAction
+                href="/binders"
+                title="Binders"
+                subtitle="Budget, Mid and Premium"
+                icon={BookOpen}
+              />
+              <QuickAction
+                href="/sell"
+                title="Sell Center"
+                subtitle="List cards for sale or trade"
+                icon={ShoppingBag}
+              />
+              <QuickAction
+                href="/analytics"
+                title="Analytics"
+                subtitle="Value, sales and price movement"
+                icon={BarChart3}
+              />
+              <QuickAction
+                href="/sets"
+                title="Browse Sets"
+                subtitle="English and Japanese releases"
+                icon={Boxes}
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-4 grid gap-4 lg:mt-5 lg:grid-cols-2">
+          <div className="rounded-[26px] border border-white/10 bg-white/[0.035] p-5 sm:rounded-[30px] sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-lg font-bold sm:text-xl">
+                  Highest Value Cards
+                </p>
+                <p className="mt-1 text-xs text-white/40 sm:text-sm">
+                  Biggest positions in your collection
+                </p>
+              </div>
+
+              <TrendingUp className="h-5 w-5 text-rose-400" />
+            </div>
+
+            <div className="mt-5 space-y-2">
+              {topValueItems.length === 0 ? (
+                <p className="py-8 text-center text-sm text-white/35">
+                  Add cards to see collection leaders.
+                </p>
+              ) : (
+                topValueItems.map((item, index) => (
                   <Link
                     key={item.id}
                     href={`/inventory/${item.id}`}
-                    className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 transition-colors hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/50 dark:hover:bg-amber-950"
+                    className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/8 bg-black/20 p-3 transition hover:border-white/15 hover:bg-white/5"
                   >
+                    <span className="w-5 shrink-0 text-center text-xs font-black text-white/25">
+                      {index + 1}
+                    </span>
+
                     <img
-                      src={item.card.images.small}
+                      src={
+                        item.customImage ||
+                        item.card.images.small
+                      }
                       alt={item.card.name}
-                      className="h-12 w-9 rounded object-cover"
+                      className="h-14 w-10 shrink-0 rounded-md object-contain"
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-medium">
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
                         {item.card.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Stock: {item.quantity}
+                      <p className="truncate text-xs text-white/35">
+                        {item.card.set.name}
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-bold text-rose-300">
+                        {money(
+                          Number(item.price ?? 0) *
+                            Number(item.quantity ?? 0),
+                        )}
+                      </p>
+                      <p className="text-[10px] text-white/30">
+                        {item.quantity} owned
                       </p>
                     </div>
                   </Link>
-                ))}
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(225,29,72,.16),transparent_36%),rgba(255,255,255,.035)] p-5 sm:rounded-[30px] sm:p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-500/10">
+                <Search className="h-5 w-5 text-rose-400" />
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div>
+                <p className="text-lg font-bold sm:text-xl">
+                  Keep building
+                </p>
+                <p className="text-xs text-white/40 sm:text-sm">
+                  Find the next card for your collection
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-5 text-sm leading-6 text-white/45">
+              Browse sets, add exact finishes and languages, then organize
+              everything into binders without losing track of market value.
+            </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <Button
+                asChild
+                variant="outline"
+                className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+              >
+                <Link href="/sets">
+                  English Sets
+                </Link>
+              </Button>
+
+              <Button
+                asChild
+                variant="outline"
+                className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+              >
+                <Link href="/japanese-sets">
+                  Japanese
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
       </div>
+    </main>
+  )
+}
+
+function MetricCard({
+  label,
+  value,
+  detail,
+  icon: Icon,
+  accent = false,
+}: {
+  label: string
+  value: string | number
+  detail: string
+  icon: typeof Package
+  accent?: boolean
+}) {
+  return (
+    <div
+      className={
+        accent
+          ? "relative overflow-hidden rounded-[22px] border border-rose-500/20 bg-[radial-gradient(circle_at_top_right,rgba(225,29,72,.18),transparent_48%),rgba(255,255,255,.04)] p-4 sm:rounded-[26px] sm:p-5"
+          : "rounded-[22px] border border-white/10 bg-white/[0.035] p-4 sm:rounded-[26px] sm:p-5"
+      }
+    >
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/35 sm:text-xs">
+          {label}
+        </p>
+
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5">
+          <Icon
+            className={
+              accent
+                ? "h-4 w-4 text-rose-400"
+                : "h-4 w-4 text-white/45"
+            }
+          />
+        </div>
+      </div>
+
+      <p className="mt-3 truncate text-xl font-black tracking-[-0.03em] sm:text-2xl xl:text-3xl">
+        {value}
+      </p>
+
+      <p className="mt-1 truncate text-[11px] text-white/35 sm:text-xs">
+        {detail}
+      </p>
+    </div>
+  )
+}
+
+function QuickAction({
+  href,
+  title,
+  subtitle,
+  icon: Icon,
+}: {
+  href: string
+  title: string
+  subtitle: string
+  icon: typeof Package
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-3 rounded-2xl border border-white/8 bg-black/20 p-3 transition hover:border-rose-500/25 hover:bg-white/5"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition group-hover:border-rose-400/20 group-hover:bg-rose-500/10">
+        <Icon className="h-4 w-4 text-white/55 transition group-hover:text-rose-400" />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">
+          {title}
+        </p>
+        <p className="truncate text-xs text-white/35">
+          {subtitle}
+        </p>
+      </div>
+
+      <ArrowRight className="h-4 w-4 shrink-0 text-white/25 transition group-hover:translate-x-0.5 group-hover:text-rose-400" />
+    </Link>
+  )
+}
+
+function ZapMark() {
+  return (
+    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-400/20 bg-rose-500/10 text-xs font-black text-rose-400">
+      TR
     </div>
   )
 }

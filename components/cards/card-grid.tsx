@@ -222,16 +222,16 @@ export function CardGrid({
   return (
     <>
       {/* Search / Filter Bar */}
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-6 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3 sm:grid-cols-2 sm:p-4 lg:grid-cols-[minmax(260px,1fr)_190px_210px_auto_auto] lg:items-center">
         <Input
           placeholder="Search by name or number..."
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          className="max-w-xs"
+          className="h-11 w-full rounded-xl border-white/10 bg-white/[0.045] text-white placeholder:text-white/30"
         />
 
         <Select value={rarity} onValueChange={setRarity}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="h-11 w-full rounded-xl border-white/10 bg-white/[0.045] text-white">
             <SelectValue placeholder="Rarity" />
           </SelectTrigger>
 
@@ -250,7 +250,7 @@ export function CardGrid({
           value={sortBy}
           onValueChange={(value) => setSortBy(value as typeof sortBy)}
         >
-          <SelectTrigger className="w-[190px]">
+          <SelectTrigger className="h-11 w-full rounded-xl border-white/10 bg-white/[0.045] text-white">
             <SelectValue placeholder="Sort" />
           </SelectTrigger>
 
@@ -278,13 +278,13 @@ export function CardGrid({
           Select Visible
         </Button>
 
-        <span className="ml-auto text-sm text-muted-foreground">
+        <span className="text-sm font-medium text-white/40 lg:ml-auto">
           {filtered.length} cards
         </span>
       </div>
 
       {/* Card Grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6">
         {filtered.map((card) => (
           <CardItem
             key={card.id}
@@ -303,7 +303,7 @@ export function CardGrid({
 
       {/* Bulk Action Bar */}
       {selected.size > 0 && (
-        <div className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100vw-2rem)] max-w-5xl -translate-x-1/2 flex-col gap-3 rounded-xl border bg-card px-4 py-3 shadow-xl sm:w-auto sm:flex-row sm:items-center sm:px-6">
+        <div className="fixed bottom-3 left-1/2 z-50 flex max-h-[70dvh] w-[calc(100vw-1rem)] max-w-5xl -translate-x-1/2 flex-col gap-3 overflow-y-auto rounded-2xl border border-white/10 bg-[#111114]/95 px-3 py-3 text-white shadow-2xl shadow-black/50 backdrop-blur-xl sm:bottom-4 sm:w-[calc(100vw-2rem)] sm:flex-row sm:items-center sm:px-5">
           <span className="whitespace-nowrap font-medium">
             {selected.size} selected
           </span>

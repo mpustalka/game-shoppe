@@ -1408,19 +1408,9 @@ export default function BindersPage() {
       sellPrice || 0,
     )
 
-  const platformFee =
-    Math.max(
-      0,
-      sellPriceNumber *
-        0.1,
-    )
+  const platformFee = 0
 
-  const proceeds =
-    Math.max(
-      0,
-      sellPriceNumber -
-        platformFee,
-    )
+  const proceeds = Math.max(0, sellPriceNumber)
 
   const totalCollectionValue =
     binderStats.budget
@@ -1431,9 +1421,9 @@ export default function BindersPage() {
       .totalValue
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_12%_6%,rgba(255,213,79,.34),transparent_28%),radial-gradient(circle_at_92%_2%,rgba(59,130,246,.18),transparent_24%),linear-gradient(180deg,#fffdf4_0%,#f4fbff_48%,#fff9ea_100%)]">
+    <div className="min-h-screen overflow-x-hidden bg-[#070708] text-white">
 
-      <div className="mx-auto max-w-[1500px] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1500px] px-3 py-5 sm:px-5 sm:py-7 lg:px-8 lg:py-8">
 
         <div className="mb-6">
           <TrialBanner />
@@ -1443,22 +1433,20 @@ export default function BindersPage() {
             HEADER
         ================================================= */}
 
-        <div className="mb-8 rounded-2xl border border-yellow-200/70 bg-white/72 p-5 shadow-sm backdrop-blur">
+        <div className="relative mb-7 overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_0%_0%,rgba(225,29,72,.18),transparent_34%),rgba(255,255,255,.03)] p-5 shadow-2xl shadow-black/20 sm:p-7">
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
             <div>
-              <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight text-foreground">
-
-                <span className="flex h-12 w-12 items-center justify-center rounded-full border-4 border-red-500 bg-white shadow-sm">
-                  <BookOpen className="h-6 w-6 text-blue-700" />
+              <h1 className="flex items-center gap-3 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-400/25 bg-rose-500/10 shadow-lg shadow-rose-950/20">
+                  <BookOpen className="h-6 w-6 text-rose-400" />
                 </span>
-
                 Collection Binders
               </h1>
 
-              <p className="mt-2 text-slate-600">
-                Organize your cards by value, browse physical binder pages, and list cards for sale.
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/45 sm:text-base">
+                Organize your collection by value, flip through physical binder spreads, track weekly movement, and move cards into the marketplace.
               </p>
             </div>
 
@@ -1467,6 +1455,7 @@ export default function BindersPage() {
               <Button
                 variant="outline"
                 asChild
+                className="rounded-xl border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white"
               >
                 <Link href="/sell">
                   <ShoppingBag className="mr-2 h-4 w-4" />
@@ -1499,11 +1488,11 @@ export default function BindersPage() {
               )
             }
           >
-            <SelectTrigger className="w-[220px] bg-white">
+            <SelectTrigger className="h-11 w-full rounded-xl border-white/10 bg-white/[0.045] text-white sm:w-[220px]">
               <SelectValue />
             </SelectTrigger>
 
-            <SelectContent>
+            <SelectContent className="border-white/10 bg-[#111114] text-white">
               <SelectItem value="en">
                 English Collection
               </SelectItem>
@@ -1514,7 +1503,7 @@ export default function BindersPage() {
             </SelectContent>
           </Select>
 
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-white/40">
             Collection cards and Sell Binder listings remain separate.
           </div>
 
@@ -1551,9 +1540,9 @@ export default function BindersPage() {
                   key={
                     tier.id
                   }
-                  className={`cursor-pointer border-yellow-200/80 bg-white/82 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md ${
+                  className={`cursor-pointer rounded-[24px] border border-white/10 bg-white/[0.035] text-white shadow-none transition-all duration-300 hover:-translate-y-1 hover:border-rose-400/25 hover:bg-white/[0.05] ${
                     isActive
-                      ? "border-blue-500 ring-2 ring-yellow-300/50"
+                      ? "border-rose-400/40 bg-rose-500/[0.07] ring-1 ring-inset ring-rose-400/20"
                       : ""
                   } ${
                     locked
@@ -1585,7 +1574,7 @@ export default function BindersPage() {
                         {tier.label}
 
                         {locked && (
-                          <Lock className="h-4 w-4 text-muted-foreground" />
+                          <Lock className="h-4 w-4 text-white/40" />
                         )}
 
                       </CardTitle>
@@ -1614,7 +1603,7 @@ export default function BindersPage() {
 
                     <div className="flex items-center justify-between text-sm">
 
-                      <span className="text-muted-foreground">
+                      <span className="text-white/40">
                         {stats.count} unique items
                       </span>
 
@@ -1626,7 +1615,7 @@ export default function BindersPage() {
 
                     </div>
 
-                    <div className="mt-1 text-xs text-muted-foreground">
+                    <div className="mt-1 text-xs text-white/40">
                       {stats.totalQty} total cards
                     </div>
 
@@ -1643,9 +1632,9 @@ export default function BindersPage() {
             ACTIVE BINDER
         ================================================= */}
 
-        <Card className="border-blue-100/80 bg-white/88 shadow-xl shadow-blue-100/40 backdrop-blur">
+        <Card className="overflow-hidden rounded-[28px] border-white/10 bg-white/[0.025] text-white shadow-2xl shadow-black/20">
 
-          <CardHeader className="border-b border-yellow-100 bg-[linear-gradient(90deg,rgba(255,236,153,.55),rgba(219,234,254,.48),rgba(220,252,231,.38))]">
+          <CardHeader className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(225,29,72,.13),transparent_38%),rgba(255,255,255,.025)]">
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
@@ -1670,6 +1659,7 @@ export default function BindersPage() {
               <Button
                 variant="outline"
                 size="sm"
+                className="rounded-xl border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white"
               >
                 <Printer className="mr-2 h-4 w-4" />
 
@@ -1680,10 +1670,10 @@ export default function BindersPage() {
 
             {/* MARKET MOVEMENT */}
 
-            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-blue-100 bg-white/70 px-3 py-2 text-sm shadow-sm">
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 py-3 text-sm">
 
-              <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
+              <span className="flex items-center gap-1.5 font-semibold text-white/70">
+                <TrendingUp className="h-4 w-4 text-rose-400" />
 
                 This week
               </span>
@@ -1702,7 +1692,7 @@ export default function BindersPage() {
 
               <Badge
                 variant="secondary"
-                className="gap-1 text-slate-600"
+                className="gap-1 border border-white/10 bg-white/[0.05] text-white/55"
               >
                 <Minus className="h-3 w-3" />
 
@@ -1743,11 +1733,11 @@ export default function BindersPage() {
                 FILTERS
             ================================================= */}
 
-            <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center">
+            <div className="mb-6 grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(280px,1fr)_170px_190px_210px_190px_auto] xl:items-center">
 
               <div className="relative flex-1">
 
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
 
                 <Input
                   placeholder="Search Pokémon, set or SKU..."
@@ -1762,7 +1752,7 @@ export default function BindersPage() {
                         .value,
                     )
                   }
-                  className="bg-white pl-9"
+                  className="h-11 rounded-xl border-white/10 bg-white/[0.045] pl-9 text-white placeholder:text-white/30"
                 />
 
                 {searchQuery && (
@@ -1773,7 +1763,7 @@ export default function BindersPage() {
                         "",
                       )
                     }
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/35 hover:text-white"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -1795,13 +1785,13 @@ export default function BindersPage() {
                   )
                 }
               >
-                <SelectTrigger className="w-full bg-white xl:w-[170px]">
+                <SelectTrigger className="h-11 w-full rounded-xl border-white/10 bg-white/[0.045] text-white xl:w-[170px]">
                   <Filter className="mr-2 h-4 w-4" />
 
                   <SelectValue />
                 </SelectTrigger>
 
-                <SelectContent>
+                <SelectContent className="border-white/10 bg-[#111114] text-white">
 
                   <SelectItem value="all">
                     All Conditions
@@ -1837,11 +1827,11 @@ export default function BindersPage() {
                   setFilterRarity
                 }
               >
-                <SelectTrigger className="w-full bg-white xl:w-[190px]">
+                <SelectTrigger className="h-11 w-full rounded-xl border-white/10 bg-white/[0.045] text-white xl:w-[190px]">
                   <SelectValue placeholder="Rarity" />
                 </SelectTrigger>
 
-                <SelectContent>
+                <SelectContent className="border-white/10 bg-[#111114] text-white">
 
                   <SelectItem value="all">
                     All Rarities
@@ -1879,7 +1869,7 @@ export default function BindersPage() {
                 onChange={
                   setFilterSet
                 }
-                className="w-full xl:w-[210px]"
+                className="h-11 w-full !border-white/10 !bg-white/[0.045] !text-white xl:w-[210px]"
               />
 
               <Select
@@ -1894,11 +1884,11 @@ export default function BindersPage() {
                   )
                 }
               >
-                <SelectTrigger className="w-full bg-white xl:w-[190px]">
+                <SelectTrigger className="h-11 w-full rounded-xl border-white/10 bg-white/[0.045] text-white xl:w-[190px]">
                   <SelectValue />
                 </SelectTrigger>
 
-                <SelectContent>
+                <SelectContent className="border-white/10 bg-[#111114] text-white">
 
                   <SelectItem value="price-low">
                     Price: Low to High
@@ -1939,13 +1929,13 @@ export default function BindersPage() {
                   )
                 }
               >
-                <TabsList>
+                <TabsList className="h-11 rounded-xl border border-white/10 bg-white/[0.045] p-1">
 
-                  <TabsTrigger value="grid">
+                  <TabsTrigger value="grid" className="rounded-lg text-white/45 data-[state=active]:bg-white data-[state=active]:text-zinc-950">
                     <Grid3X3 className="h-4 w-4" />
                   </TabsTrigger>
 
-                  <TabsTrigger value="list">
+                  <TabsTrigger value="list" className="rounded-lg text-white/45 data-[state=active]:bg-white data-[state=active]:text-zinc-950">
                     <List className="h-4 w-4" />
                   </TabsTrigger>
 
@@ -1974,13 +1964,13 @@ export default function BindersPage() {
               0 ? (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16">
 
-                <Package className="mb-4 h-12 w-12 text-muted-foreground/50" />
+                <Package className="mb-4 h-12 w-12 text-white/40/50" />
 
                 <h3 className="text-lg font-medium">
                   No cards found
                 </h3>
 
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-2 text-sm text-white/40">
                   No cards match this binder and filter combination.
                 </p>
 
@@ -1993,7 +1983,7 @@ export default function BindersPage() {
                     PHYSICAL TWO-PAGE BINDER SPREAD
                 ============================================= */}
 
-                <div className="rounded-[28px] border border-blue-200/80 bg-[linear-gradient(135deg,#fef3c7,#dbeafe_42%,#dcfce7)] p-3 shadow-xl shadow-blue-100/60 sm:p-5">
+                <div className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_50%_0%,rgba(225,29,72,.08),transparent_35%),#0b0b0e] p-3 shadow-2xl shadow-black/30 sm:p-5">
 
                   <div className="grid gap-5 xl:grid-cols-2">
 
@@ -2059,10 +2049,11 @@ export default function BindersPage() {
                     PAGINATION
                 ============================================= */}
 
-                <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-xl border bg-white/80 p-4 sm:flex-row">
+                <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:flex-row">
 
                   <Button
                     variant="outline"
+                    className="rounded-xl border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white disabled:opacity-30"
                     disabled={
                       safePage <= 1
                     }
@@ -2092,7 +2083,7 @@ export default function BindersPage() {
                       {totalPages}
                     </p>
 
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-white/40">
                       {
                         filteredItems.length
                       }{" "}
@@ -2103,6 +2094,7 @@ export default function BindersPage() {
 
                   <Button
                     variant="outline"
+                    className="rounded-xl border-white/10 bg-white/[0.04] text-white hover:bg-white/10 hover:text-white disabled:opacity-30"
                     disabled={
                       safePage >=
                       totalPages
@@ -2232,7 +2224,7 @@ export default function BindersPage() {
             ADD CARD TO COLLECTION BINDER
         ================================================= */}
 
-        <Card className="mt-8">
+        <Card className="mt-8 rounded-[28px] border-white/10 bg-white/[0.035] text-white shadow-none">
 
           <CardHeader>
 
@@ -2263,7 +2255,7 @@ export default function BindersPage() {
                       .value,
                   )
                 }
-                className="min-h-10 flex-1 rounded-md border bg-background px-3"
+                className="min-h-11 flex-1 rounded-xl border border-white/10 bg-[#111114] px-3 text-white"
                 disabled={
                   adding
                 }
@@ -2306,6 +2298,7 @@ export default function BindersPage() {
               </select>
 
               <Button
+                className="rounded-xl bg-rose-600 text-white hover:bg-rose-500"
                 onClick={() =>
                   void handleAddCard()
                 }
@@ -2392,7 +2385,7 @@ export default function BindersPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-2xl overflow-y-auto overscroll-contain border-white/10 bg-[#111114] p-4 text-white sm:w-full sm:p-6">
 
           <DialogHeader>
 
@@ -2409,9 +2402,9 @@ export default function BindersPage() {
           {selectedSellItem && (
             <div className="space-y-5">
 
-              <div className="flex gap-4 rounded-xl border bg-muted/20 p-4">
+              <div className="flex min-w-0 flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3 sm:flex-row sm:gap-4 sm:p-4">
 
-                <div className="h-32 w-24 shrink-0 overflow-hidden rounded-lg border bg-muted">
+                <div className="mx-auto h-32 w-24 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.035] sm:mx-0">
 
                   {getCardImage(
                     selectedSellItem,
@@ -2431,7 +2424,7 @@ export default function BindersPage() {
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <ImageOff className="h-6 w-6 text-muted-foreground" />
+                      <ImageOff className="h-6 w-6 text-white/40" />
                     </div>
                   )}
 
@@ -2447,7 +2440,7 @@ export default function BindersPage() {
                     }
                   </h3>
 
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-white/40">
                     {
                       selectedSellItem
                         .card
@@ -2494,9 +2487,9 @@ export default function BindersPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
 
-                <div className="rounded-xl border bg-muted/30 p-4">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
 
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  <p className="text-xs uppercase tracking-wide text-white/40">
                     Market Value
                   </p>
 
@@ -2508,7 +2501,7 @@ export default function BindersPage() {
                     )}
                   </p>
 
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-white/40">
                     Reference only
                   </p>
 
@@ -2535,10 +2528,10 @@ export default function BindersPage() {
                           .value,
                       )
                     }
-                    className="text-lg font-semibold"
+                    className="h-11 rounded-xl border-white/10 bg-white/[0.045] text-lg font-semibold text-white"
                   />
 
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-white/40">
                     This does not change the card's collection value.
                   </p>
 
@@ -2555,7 +2548,7 @@ export default function BindersPage() {
                 </Label>
 
                 {sellBindersLoading ? (
-                  <div className="flex h-10 items-center rounded-md border px-3 text-sm text-muted-foreground">
+                  <div className="flex h-10 items-center rounded-md border px-3 text-sm text-white/40">
 
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
 
@@ -2570,7 +2563,7 @@ export default function BindersPage() {
                       You don't have a Sell Binder yet.
                     </p>
 
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 text-xs text-white/40">
                       Create one in the Sell Center before listing cards.
                     </p>
 
@@ -2596,11 +2589,11 @@ export default function BindersPage() {
                       setSelectedSellBinderId
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl border-white/10 bg-white/[0.045] text-white">
                       <SelectValue placeholder="Choose a Sell Binder" />
                     </SelectTrigger>
 
-                    <SelectContent>
+                    <SelectContent className="border-white/10 bg-[#111114] text-white">
 
                       {sellBinders.map(
                         (
@@ -2656,7 +2649,7 @@ export default function BindersPage() {
                     }
                   />
 
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-white/40">
                     {
                       selectedSellItem.quantity
                     }{" "}
@@ -2683,11 +2676,11 @@ export default function BindersPage() {
                       )
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl border-white/10 bg-white/[0.045] text-white">
                       <SelectValue />
                     </SelectTrigger>
 
-                    <SelectContent>
+                    <SelectContent className="border-white/10 bg-[#111114] text-white">
 
                       <SelectItem value="envelope">
                         USPS Envelope
@@ -2706,7 +2699,7 @@ export default function BindersPage() {
 
               {/* FEE BREAKDOWN */}
 
-              <div className="rounded-xl border bg-muted/30 p-4">
+              <div className="rounded-xl border bg-white/[0.04]/30 p-4">
 
                 <div className="flex items-center justify-between text-sm">
 
@@ -2725,7 +2718,7 @@ export default function BindersPage() {
                 <div className="mt-2 flex items-center justify-between text-sm">
 
                   <span>
-                    Platform fee (10%)
+                    Platform fee (0%)
                   </span>
 
                   <strong>
@@ -2753,7 +2746,7 @@ export default function BindersPage() {
 
                   </div>
 
-                  <p className="mt-2 text-xs text-muted-foreground">
+                  <p className="mt-2 text-xs text-white/40">
                     Buyer pays USPS shipping separately.
                   </p>
 
@@ -2764,7 +2757,7 @@ export default function BindersPage() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 -mx-4 mt-2 border-t border-white/10 bg-[#111114]/95 px-4 pb-1 pt-4 backdrop-blur sm:-mx-6 sm:px-6">
 
             <Button
               variant="outline"
@@ -2850,7 +2843,7 @@ function BinderPage({
   ) => void
 }) {
   return (
-    <div className="relative rounded-[22px] border border-white/80 bg-[linear-gradient(90deg,#e0f2fe_0%,#fff_7%,#fff_100%)] p-4 pl-10 shadow-inner sm:p-5 sm:pl-12">
+    <div className="relative rounded-[24px] border border-white/10 bg-[linear-gradient(90deg,#17171b_0%,#101013_7%,#0c0c0f_100%)] p-3 pl-9 shadow-inner shadow-black/40 sm:p-5 sm:pl-12">
 
       {/* RINGS */}
 
@@ -2867,7 +2860,7 @@ function BinderPage({
               key={
                 index
               }
-              className="h-4 w-4 rounded-full border border-blue-300 bg-white shadow-inner"
+              className="h-3.5 w-3.5 rounded-full border border-white/20 bg-[#050506] shadow-inner shadow-black sm:h-4 sm:w-4"
             />
           ),
         )}
@@ -2894,7 +2887,7 @@ function BinderPage({
                   key={
                     index
                   }
-                  className="aspect-[2.5/4.5] rounded-xl border-2 border-dashed border-blue-100 bg-white/30"
+                  className="aspect-[2.5/4.5] rounded-xl border border-dashed border-white/10 bg-white/[0.018]"
                 />
               )
             }
@@ -2981,11 +2974,11 @@ function BinderPocket({
     )
 
   return (
-    <div className="group overflow-hidden rounded-xl border border-blue-100 bg-white/90 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+    <div className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.035] text-white shadow-sm shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-rose-400/25 hover:bg-white/[0.05] hover:shadow-xl">
 
       {/* CARD IMAGE */}
 
-      <div className="relative aspect-[2.5/3.5] overflow-hidden bg-slate-100">
+      <div className="relative aspect-[2.5/3.5] overflow-hidden bg-black/20">
 
         <Link
           href={`/inventory/${item.id}`}
@@ -3003,7 +2996,7 @@ function BinderPocket({
             />
           ) : (
             <div className="flex h-full items-center justify-center">
-              <ImageOff className="h-7 w-7 text-muted-foreground" />
+              <ImageOff className="h-7 w-7 text-white/40" />
             </div>
           )}
 
@@ -3038,7 +3031,7 @@ function BinderPocket({
           {item.card.name}
         </p>
 
-        <p className="truncate text-[10px] text-muted-foreground">
+        <p className="truncate text-[10px] text-white/40">
           {
             item.card.set
               .name
@@ -3049,7 +3042,7 @@ function BinderPocket({
 
           <Badge
             variant="secondary"
-            className="text-[9px]"
+            className="border border-white/10 bg-white/90 text-[9px] font-semibold text-zinc-900"
           >
             {
               item.condition
@@ -3061,7 +3054,7 @@ function BinderPocket({
             "Normal" && (
             <Badge
               variant="outline"
-              className="text-[9px]"
+              className="border-white/15 bg-white/[0.04] text-[9px] text-white/70"
             >
               <Sparkles className="mr-1 h-2.5 w-2.5" />
 
@@ -3077,9 +3070,9 @@ function BinderPocket({
 
         <div className="mt-2 grid grid-cols-2 gap-1">
 
-          <div className="rounded bg-muted/40 p-1">
+          <div className="rounded-lg border border-white/8 bg-black/20 p-1.5">
 
-            <p className="text-[8px] uppercase text-muted-foreground">
+            <p className="text-[8px] uppercase text-white/40">
               Market
             </p>
 
@@ -3091,9 +3084,9 @@ function BinderPocket({
 
           </div>
 
-          <div className="rounded bg-muted/40 p-1">
+          <div className="rounded-lg border border-white/8 bg-black/20 p-1.5">
 
-            <p className="text-[8px] uppercase text-muted-foreground">
+            <p className="text-[8px] uppercase text-white/40">
               Owned
             </p>
 
@@ -3111,7 +3104,7 @@ function BinderPocket({
 
         <Button
           size="sm"
-          className="mt-2 h-7 w-full px-1 text-[10px] sm:text-xs"
+          className="mt-2 h-8 w-full rounded-lg bg-rose-600 px-1 text-[10px] text-white hover:bg-rose-500 sm:text-xs"
           onClick={
             onSell
           }
@@ -3126,7 +3119,7 @@ function BinderPocket({
         <Button
           size="sm"
           variant="ghost"
-          className="mt-1 h-6 w-full text-[9px] text-muted-foreground hover:text-destructive"
+          className="mt-1 h-7 w-full rounded-lg text-[9px] text-white/35 hover:bg-red-500/10 hover:text-red-300"
           disabled={
             removing
           }
@@ -3180,7 +3173,7 @@ function BinderListRow({
     )
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-white p-4 shadow-sm sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-white shadow-none transition hover:border-rose-400/20 hover:bg-white/[0.05] sm:flex-row sm:items-center">
 
       <Link
         href={`/inventory/${item.id}`}
@@ -3197,7 +3190,7 @@ function BinderListRow({
             loading="lazy"
           />
         ) : (
-          <div className="flex h-24 w-16 items-center justify-center rounded-md bg-muted">
+          <div className="flex h-24 w-16 items-center justify-center rounded-md bg-white/[0.04]">
             <ImageOff className="h-5 w-5" />
           </div>
         )}
@@ -3209,7 +3202,7 @@ function BinderListRow({
         <Link
           href={`/inventory/${item.id}`}
         >
-          <h3 className="font-semibold hover:text-primary">
+          <h3 className="font-semibold hover:text-rose-300">
             {
               item.card
                 .name
@@ -3217,7 +3210,7 @@ function BinderListRow({
           </h3>
         </Link>
 
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-white/40">
           {
             item.card.set
               .name
@@ -3272,7 +3265,7 @@ function BinderListRow({
 
       <div className="min-w-[130px]">
 
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-white/40">
           Market Value
         </p>
 
@@ -3282,7 +3275,7 @@ function BinderListRow({
           )}
         </p>
 
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-xs text-white/40">
           Owned:{" "}
           {
             item.quantity
@@ -3307,6 +3300,7 @@ function BinderListRow({
         <Button
           size="sm"
           variant="outline"
+          className="border-white/10 bg-white/[0.04] text-white hover:bg-red-500/10 hover:text-red-300"
           disabled={
             removing
           }
@@ -3342,17 +3336,17 @@ function StatCard({
     | string
 }) {
   return (
-    <Card>
+    <Card className="rounded-2xl border-white/10 bg-white/[0.035] text-white shadow-none">
 
       <CardContent className="flex items-center gap-4 py-4">
 
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-          <DollarSign className="h-5 w-5 text-primary" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-rose-400/20 bg-rose-500/10">
+          <DollarSign className="h-5 w-5 text-rose-400" />
         </div>
 
         <div>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-white/40">
             {title}
           </p>
 

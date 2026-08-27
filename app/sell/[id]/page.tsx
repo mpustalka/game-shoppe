@@ -12,6 +12,11 @@ import { useParams } from "next/navigation"
 
 import {
   ArrowLeft,
+  BadgeDollarSign,
+  CircleDollarSign,
+  Handshake,
+  ShieldCheck,
+  Sparkles,
   BookOpen,
   ChevronLeft,
   ChevronRight,
@@ -1327,7 +1332,7 @@ export default function SellBinderManagerPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[65vh] items-center justify-center">
+      <div className="flex min-h-[65vh] items-center justify-center bg-[#09090b] text-zinc-200">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
 
         Loading Sell Binder…
@@ -1337,10 +1342,10 @@ export default function SellBinderManagerPage() {
 
   if (!data) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-10">
+      <div className="min-h-screen bg-[#09090b] px-4 py-10 text-zinc-100">
         <Card>
           <CardContent className="p-10 text-center">
-            <ShoppingBag className="mx-auto h-10 w-10 text-muted-foreground" />
+            <ShoppingBag className="mx-auto h-10 w-10 text-zinc-400" />
 
             <h2 className="mt-4 text-xl font-semibold">
               Sell Binder unavailable
@@ -1361,13 +1366,14 @@ export default function SellBinderManagerPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#09090b] text-zinc-100">
+      <div className="mx-auto max-w-[1600px] px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
 
       {/* ===================================================
           HEADER
       =================================================== */}
 
-      <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="relative mb-7 flex flex-col gap-5 overflow-hidden rounded-[28px] border border-rose-500/20 bg-gradient-to-br from-zinc-950 via-zinc-950 to-rose-950/30 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:flex-row lg:items-end lg:justify-between lg:p-8">
 
         <div>
           <Button
@@ -1384,11 +1390,11 @@ export default function SellBinderManagerPage() {
 
           <div className="flex flex-wrap items-center gap-3">
 
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
               {data.binder.name}
             </h1>
 
-            <Badge>
+            <Badge className="border border-rose-500/30 bg-rose-500/15 text-rose-300 hover:bg-rose-500/15">
               Sell Binder
             </Badge>
 
@@ -1400,7 +1406,7 @@ export default function SellBinderManagerPage() {
 
           </div>
 
-          <p className="mt-2 text-muted-foreground">
+          <p className="mt-2 text-zinc-400">
             {data.binder.description ||
               "Choose cards from your collection binders and make them available to other collectors. Payments and shipping are arranged peer-to-peer."}
           </p>
@@ -1426,7 +1432,7 @@ export default function SellBinderManagerPage() {
           SUMMARY
       =================================================== */}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 
         <SummaryCard
           title="Active Listings"
@@ -1458,7 +1464,7 @@ export default function SellBinderManagerPage() {
 
       </div>
 
-      <div className="mt-4 rounded-xl border bg-muted/30 px-4 py-3 text-sm">
+      <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-sm text-zinc-300">
         <strong>0% selling fees.</strong>{" "}
         Buyers and sellers arrange payment and shipping directly with each other.
         This marketplace does not collect, hold, or release transaction funds.
@@ -1468,14 +1474,14 @@ export default function SellBinderManagerPage() {
           ACTIVE LISTINGS
       =================================================== */}
 
-      <Card className="mt-6">
+      <Card className="mt-6 border-white/10 bg-zinc-950/70 shadow-xl shadow-black/20">
 
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="text-zinc-100">
             Marketplace Listings
           </CardTitle>
 
-          <CardDescription>
+          <CardDescription className="text-zinc-400">
             These cards are available for sale, trade, or both. Collectors arrange payment, shipping, and trades directly.
           </CardDescription>
         </CardHeader>
@@ -1485,13 +1491,13 @@ export default function SellBinderManagerPage() {
           {data.listings.length === 0 ? (
             <div className="rounded-xl border border-dashed px-6 py-10 text-center">
 
-              <ShoppingBag className="mx-auto h-10 w-10 text-muted-foreground" />
+              <ShoppingBag className="mx-auto h-10 w-10 text-zinc-400" />
 
               <p className="mt-3 font-medium">
                 Nothing listed yet
               </p>
 
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-zinc-400">
                 Choose a card from one of your collection binders below.
               </p>
 
@@ -1532,7 +1538,7 @@ export default function SellBinderManagerPage() {
           COLLECTION BINDER
       =================================================== */}
 
-      <Card className="mt-6">
+      <Card className="mt-6 border-white/10 bg-zinc-950/70 shadow-xl shadow-black/20">
 
         <CardHeader>
 
@@ -1542,7 +1548,7 @@ export default function SellBinderManagerPage() {
             Choose From My Collection
           </CardTitle>
 
-          <CardDescription>
+          <CardDescription className="text-zinc-400">
             Browse your collection binders and list cards for sale, trade, or both with 0% marketplace selling fees.
           </CardDescription>
 
@@ -1559,12 +1565,10 @@ export default function SellBinderManagerPage() {
                 <Button
                   key={binder.id}
                   type="button"
-                  variant={
-                    selectedTier ===
-                    binder.id
-                      ? "default"
-                      : "outline"
-                  }
+                  variant="outline"
+                  className={selectedTier === binder.id
+                    ? "border-rose-500/50 bg-rose-600 text-white hover:bg-rose-500 hover:text-white"
+                    : "border-white/10 bg-zinc-900/70 text-zinc-300 hover:border-rose-500/30 hover:bg-zinc-800 hover:text-white"}
                   onClick={() =>
                     changeTier(
                       binder.id,
@@ -1591,7 +1595,7 @@ export default function SellBinderManagerPage() {
 
             <div className="relative">
 
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
 
               <Input
                 value={searchInput}
@@ -1600,7 +1604,7 @@ export default function SellBinderManagerPage() {
                     event.target.value,
                   )
                 }
-                className="pl-9"
+                className="border-white/10 bg-zinc-900 pl-9 text-white placeholder:text-zinc-600"
                 placeholder="Search Pokémon, set, number, condition, finish..."
               />
 
@@ -1613,11 +1617,11 @@ export default function SellBinderManagerPage() {
                 setPage(1)
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="border-white/10 bg-zinc-900 text-zinc-100">
                 <SelectValue />
               </SelectTrigger>
 
-              <SelectContent>
+              <SelectContent className="border-white/10 bg-zinc-950 text-zinc-100">
                 <SelectItem value="all">
                   All Languages
                 </SelectItem>
@@ -1636,7 +1640,7 @@ export default function SellBinderManagerPage() {
 
           {/* PHYSICAL BINDER */}
 
-          <div className="mt-6 rounded-2xl border bg-muted/20 p-4 sm:p-6">
+          <div className="mt-6 overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-b from-zinc-900/70 to-black/50 p-3 shadow-inner sm:p-6">
 
             {cardsLoading ? (
               <div className="flex min-h-[500px] items-center justify-center">
@@ -1651,13 +1655,13 @@ export default function SellBinderManagerPage() {
             ) : binderCards.items.length === 0 ? (
               <div className="py-16 text-center">
 
-                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground" />
+                <BookOpen className="mx-auto h-12 w-12 text-zinc-400" />
 
                 <p className="mt-4 font-semibold">
                   No cards found
                 </p>
 
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-sm text-zinc-400">
                   This binder page has no matching cards.
                 </p>
 
@@ -1774,7 +1778,7 @@ export default function SellBinderManagerPage() {
                       }
                     </p>
 
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-zinc-400">
                       {
                         binderCards.pagination
                           .totalItems
@@ -1821,7 +1825,7 @@ export default function SellBinderManagerPage() {
         open={addOpen}
         onOpenChange={setAddOpen}
       >
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-2xl overflow-y-auto overscroll-contain border-white/10 bg-zinc-950 p-4 text-zinc-100 shadow-2xl sm:w-full sm:p-6">
 
           <DialogHeader>
             <DialogTitle>
@@ -1841,7 +1845,7 @@ export default function SellBinderManagerPage() {
               />
 
               <div className="space-y-2">
-                <Label>Listing Type</Label>
+                <Label className="text-zinc-200">Listing Type</Label>
 
                 <Select
                   value={listingType}
@@ -1851,11 +1855,11 @@ export default function SellBinderManagerPage() {
                     )
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-white/10 bg-zinc-900 text-zinc-100">
                     <SelectValue />
                   </SelectTrigger>
 
-                  <SelectContent>
+                  <SelectContent className="border-white/10 bg-zinc-950 text-zinc-100">
                     <SelectItem value="sale">
                       For Sale
                     </SelectItem>
@@ -1872,7 +1876,7 @@ export default function SellBinderManagerPage() {
               <div className="grid gap-4 sm:grid-cols-2">
 
                 <div className="space-y-2">
-                  <Label>
+                  <Label className="text-zinc-200">
                     Quantity
                   </Label>
 
@@ -1890,7 +1894,7 @@ export default function SellBinderManagerPage() {
                     }
                   />
 
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-zinc-400">
                     {
                       selectedItem.available
                     }{" "}
@@ -1899,7 +1903,7 @@ export default function SellBinderManagerPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>
+                  <Label className="text-zinc-200">
                     {listingType === "trade"
                       ? "Asking Price (not required)"
                       : "Your Sell Price"}
@@ -1929,7 +1933,7 @@ export default function SellBinderManagerPage() {
 
               <div className="space-y-2">
 
-                <Label>
+                <Label className="text-zinc-200">
                   USPS Shipping
                 </Label>
 
@@ -1941,11 +1945,11 @@ export default function SellBinderManagerPage() {
                     )
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-white/10 bg-zinc-900 text-zinc-100">
                     <SelectValue />
                   </SelectTrigger>
 
-                  <SelectContent>
+                  <SelectContent className="border-white/10 bg-zinc-950 text-zinc-100">
 
                     <SelectItem value="envelope">
                       USPS Envelope
@@ -1963,7 +1967,7 @@ export default function SellBinderManagerPage() {
               {(listingType === "trade" ||
                 listingType === "both") && (
                 <div className="space-y-2">
-                  <Label>Trade Preferences</Label>
+                  <Label className="text-zinc-200">Trade Preferences</Label>
                   <textarea
                     value={tradeNotes}
                     onChange={(event) =>
@@ -1971,14 +1975,14 @@ export default function SellBinderManagerPage() {
                         event.target.value,
                       )
                     }
-                    className="min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    className="min-h-20 w-full max-w-full resize-y rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-rose-500/50"
                     placeholder="What cards, sets, Pokémon, rarities, or values are you looking for?"
                   />
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label>Accepted Payment Methods</Label>
+                <Label className="text-zinc-200">Accepted Payment Methods</Label>
                 <textarea
                   value={paymentNotes}
                   onChange={(event) =>
@@ -1986,13 +1990,13 @@ export default function SellBinderManagerPage() {
                       event.target.value,
                     )
                   }
-                  className="min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className="min-h-20 w-full max-w-full resize-y rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-rose-500/50"
                   placeholder="Example: PayPal, Venmo, Cash App. Buyer and seller arrange payment directly."
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Shipping Details</Label>
+                <Label className="text-zinc-200">Shipping Details</Label>
                 <textarea
                   value={shippingNotes}
                   onChange={(event) =>
@@ -2000,12 +2004,12 @@ export default function SellBinderManagerPage() {
                       event.target.value,
                     )
                   }
-                  className="min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className="min-h-20 w-full max-w-full resize-y rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-rose-500/50"
                   placeholder="Example: PWE available for 1–3 cards; tracked shipping available on request."
                 />
               </div>
 
-              <div className="rounded-xl border bg-muted/40 p-4">
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                 <div className="flex justify-between text-sm">
                   <span>
                     {listingType === "trade"
@@ -2026,7 +2030,7 @@ export default function SellBinderManagerPage() {
 
                 <div className="mt-3 border-t pt-3">
                   <p className="font-medium">Peer-to-peer transaction</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-zinc-400">
                     Payment and shipping are arranged directly between buyer and seller.
                     The platform does not collect or hold transaction funds.
                   </p>
@@ -2036,7 +2040,7 @@ export default function SellBinderManagerPage() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 -mx-4 mt-2 border-t bg-zinc-950/95 px-4 pb-1 pt-4 backdrop-blur sm:-mx-6 sm:px-6">
 
             <Button
               variant="outline"
@@ -2067,7 +2071,11 @@ export default function SellBinderManagerPage() {
                 <Plus className="mr-2 h-4 w-4" />
               )}
 
-              List For Sale
+              {listingType === "trade"
+                ? "List For Trade"
+                : listingType === "both"
+                  ? "List Sale / Trade"
+                  : "List For Sale"}
             </Button>
 
           </DialogFooter>
@@ -2087,7 +2095,7 @@ export default function SellBinderManagerPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-2xl overflow-y-auto overscroll-contain border-white/10 bg-zinc-950 p-4 text-zinc-100 shadow-2xl sm:w-full sm:p-6">
 
           <DialogHeader>
             <DialogTitle>
@@ -2102,7 +2110,7 @@ export default function SellBinderManagerPage() {
           <div className="space-y-4">
 
             <div className="space-y-2">
-              <Label>Listing Type</Label>
+              <Label className="text-zinc-200">Listing Type</Label>
               <Select
                 value={editListingType}
                 onValueChange={(value) =>
@@ -2111,10 +2119,10 @@ export default function SellBinderManagerPage() {
                   )
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-white/10 bg-zinc-900 text-zinc-100">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-white/10 bg-zinc-950 text-zinc-100">
                   <SelectItem value="sale">For Sale</SelectItem>
                   <SelectItem value="trade">For Trade</SelectItem>
                   <SelectItem value="both">Sale or Trade</SelectItem>
@@ -2125,7 +2133,7 @@ export default function SellBinderManagerPage() {
             <div className="grid gap-4 sm:grid-cols-2">
 
               <div className="space-y-2">
-                <Label>
+                <Label className="text-zinc-200">
                   Quantity
                 </Label>
 
@@ -2142,7 +2150,7 @@ export default function SellBinderManagerPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>
+                <Label className="text-zinc-200">
                   Asking Price
                 </Label>
 
@@ -2170,7 +2178,7 @@ export default function SellBinderManagerPage() {
 
             <div className="space-y-2">
 
-              <Label>
+              <Label className="text-zinc-200">
                 USPS Shipping
               </Label>
 
@@ -2182,11 +2190,11 @@ export default function SellBinderManagerPage() {
                   )
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-white/10 bg-zinc-900 text-zinc-100">
                   <SelectValue />
                 </SelectTrigger>
 
-                <SelectContent>
+                <SelectContent className="border-white/10 bg-zinc-950 text-zinc-100">
 
                   <SelectItem value="envelope">
                     USPS Envelope
@@ -2204,7 +2212,7 @@ export default function SellBinderManagerPage() {
             {(editListingType === "trade" ||
               editListingType === "both") && (
               <div className="space-y-2">
-                <Label>Trade Preferences</Label>
+                <Label className="text-zinc-200">Trade Preferences</Label>
                 <textarea
                   value={editTradeNotes}
                   onChange={(event) =>
@@ -2212,13 +2220,13 @@ export default function SellBinderManagerPage() {
                       event.target.value,
                     )
                   }
-                  className="min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className="min-h-20 w-full max-w-full resize-y rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-rose-500/50"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label>Accepted Payment Methods</Label>
+              <Label className="text-zinc-200">Accepted Payment Methods</Label>
               <textarea
                 value={editPaymentNotes}
                 onChange={(event) =>
@@ -2226,12 +2234,12 @@ export default function SellBinderManagerPage() {
                     event.target.value,
                   )
                 }
-                className="min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className="min-h-20 w-full max-w-full resize-y rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-rose-500/50"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Shipping Details</Label>
+              <Label className="text-zinc-200">Shipping Details</Label>
               <textarea
                 value={editShippingNotes}
                 onChange={(event) =>
@@ -2239,15 +2247,15 @@ export default function SellBinderManagerPage() {
                     event.target.value,
                   )
                 }
-                className="min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className="min-h-20 w-full max-w-full resize-y rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-rose-500/50"
               />
             </div>
 
-            <div className="rounded-lg border bg-muted/40 p-4">
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-medium">0% marketplace selling fee</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-zinc-400">
                     Payment is handled directly between collectors.
                   </p>
                 </div>
@@ -2257,7 +2265,7 @@ export default function SellBinderManagerPage() {
 
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 -mx-4 mt-2 border-t bg-zinc-950/95 px-4 pb-1 pt-4 backdrop-blur sm:-mx-6 sm:px-6">
 
             <Button
               variant="outline"
@@ -2287,6 +2295,7 @@ export default function SellBinderManagerPage() {
         </DialogContent>
       </Dialog>
 
+      </div>
     </div>
   )
 }
@@ -2327,9 +2336,9 @@ function BinderPage({
   ) => void
 }) {
   return (
-    <div className="rounded-2xl border bg-background p-4 shadow-sm">
+    <div className="rounded-[22px] border border-white/10 bg-zinc-950/90 p-2 shadow-2xl shadow-black/30 sm:p-4">
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
 
         {Array.from({
           length: 9,
@@ -2341,7 +2350,7 @@ function BinderPage({
             return (
               <div
                 key={index}
-                className="aspect-[2.5/4.8] rounded-xl border-2 border-dashed bg-muted/20"
+                className="aspect-[2.5/4.8] rounded-xl border border-dashed border-white/10 bg-white/[0.02]"
               />
             )
           }
@@ -2418,9 +2427,9 @@ function BinderSlot({
     Number(sellPrice) > 0
 
   return (
-    <div className="group overflow-hidden rounded-xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <div className="group overflow-hidden rounded-xl border border-white/10 bg-zinc-900/90 shadow-lg shadow-black/20 transition duration-300 hover:-translate-y-1 hover:border-rose-500/30 hover:shadow-rose-950/20">
 
-      <div className="relative aspect-[2.5/3.5] overflow-hidden bg-muted">
+      <div className="relative aspect-[2.5/3.5] overflow-hidden bg-zinc-950">
 
         {image ? (
           <img
@@ -2431,12 +2440,12 @@ function BinderSlot({
           />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <ImageOff className="h-8 w-8 text-muted-foreground" />
+            <ImageOff className="h-8 w-8 text-zinc-400" />
           </div>
         )}
 
         {row.available <= 0 && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/75">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/75">
             <Badge variant="secondary">
               Fully Listed
             </Badge>
@@ -2451,12 +2460,12 @@ function BinderSlot({
           {cardName(row)}
         </p>
 
-        <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
+        <p className="truncate text-[10px] text-zinc-400 sm:text-xs">
           {cardSet(row)}
         </p>
 
         {cardNumber(row) && (
-          <p className="mt-0.5 text-[10px] text-muted-foreground">
+          <p className="mt-0.5 text-[10px] text-zinc-400">
             #{cardNumber(row)}
           </p>
         )}
@@ -2485,9 +2494,9 @@ function BinderSlot({
 
         {/* MARKET VALUE */}
 
-        <div className="mt-3 rounded-md bg-muted/50 p-2">
+        <div className="mt-3 rounded-lg border border-white/5 bg-black/30 p-2">
 
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          <p className="text-[10px] uppercase tracking-wide text-zinc-400">
             Market Value
           </p>
 
@@ -2501,8 +2510,8 @@ function BinderSlot({
 
         <div className="mt-2 grid grid-cols-3 gap-1 text-center">
 
-          <div className="rounded bg-muted/40 p-1">
-            <p className="text-[9px] text-muted-foreground">
+          <div className="rounded-md border border-white/5 bg-black/25 p-1">
+            <p className="text-[9px] text-zinc-400">
               Owned
             </p>
 
@@ -2511,8 +2520,8 @@ function BinderSlot({
             </p>
           </div>
 
-          <div className="rounded bg-muted/40 p-1">
-            <p className="text-[9px] text-muted-foreground">
+          <div className="rounded-md border border-white/5 bg-black/25 p-1">
+            <p className="text-[9px] text-zinc-400">
               Listed
             </p>
 
@@ -2521,8 +2530,8 @@ function BinderSlot({
             </p>
           </div>
 
-          <div className="rounded bg-muted/40 p-1">
-            <p className="text-[9px] text-muted-foreground">
+          <div className="rounded-md border border-white/5 bg-black/25 p-1">
+            <p className="text-[9px] text-zinc-400">
               Available
             </p>
 
@@ -2537,13 +2546,13 @@ function BinderSlot({
 
         <div className="mt-3">
 
-          <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <Label className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
             Your Sell Price
           </Label>
 
           <div className="relative mt-1">
 
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
               $
             </span>
 
@@ -2560,7 +2569,7 @@ function BinderSlot({
                   event.target.value,
                 )
               }
-              className="h-8 pl-5 text-xs font-semibold"
+              className="h-8 border-white/10 bg-zinc-950 pl-5 text-xs font-semibold text-white placeholder:text-zinc-600"
               placeholder="0.00"
             />
 
@@ -2572,7 +2581,7 @@ function BinderSlot({
 
         <Button
           size="sm"
-          className="mt-2 w-full"
+          className="mt-2 w-full bg-rose-600 font-bold text-white hover:bg-rose-500"
           disabled={
             working ||
             row.available <= 0 ||
@@ -2621,9 +2630,9 @@ function SelectedBinderCard({
     cardImage(row)
 
   return (
-    <div className="flex gap-4 rounded-xl border p-4">
+    <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-white/10 bg-zinc-900/60 p-3 sm:flex-row sm:gap-4 sm:p-4">
 
-      <div className="h-32 w-24 shrink-0 overflow-hidden rounded-md border bg-muted">
+      <div className="mx-auto h-32 w-24 shrink-0 overflow-hidden rounded-md border border-white/10 bg-zinc-950 sm:mx-0">
 
         {image ? (
           <img
@@ -2645,12 +2654,12 @@ function SelectedBinderCard({
           {cardName(row)}
         </p>
 
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-zinc-400">
           {cardSet(row)}
         </p>
 
         {cardNumber(row) && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-zinc-400">
             #{cardNumber(row)}
           </p>
         )}
@@ -2710,14 +2719,14 @@ function ListingCard({
   onDelete: () => void
 }) {
   return (
-    <Card>
+    <Card className="border-white/10 bg-zinc-900/70 transition hover:border-rose-500/25">
 
       <CardContent className="p-4">
 
         <div className="flex items-start justify-between gap-3">
 
           <div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-zinc-400">
               Inventory Item
             </p>
 
@@ -2750,7 +2759,7 @@ function ListingCard({
 
         </div>
 
-        <div className="mt-4 rounded-lg bg-muted/40 p-3">
+        <div className="mt-4 rounded-xl border border-white/5 bg-black/25 p-3">
 
           <div className="flex justify-between">
 
@@ -2784,7 +2793,7 @@ function ListingCard({
 
         </div>
 
-        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
 
           {listing.shipping_method ===
           "envelope" ? (
@@ -2803,7 +2812,7 @@ function ListingCard({
         {(listing.trade_notes ||
           listing.payment_notes ||
           listing.shipping_notes) && (
-          <div className="mt-3 space-y-2 rounded-lg border p-3 text-xs">
+          <div className="mt-3 space-y-2 rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-zinc-300">
             {listing.trade_notes && (
               <div>
                 <strong>Trade:</strong>{" "}
@@ -2894,11 +2903,11 @@ function SummaryCard({
   value: string | number
 }) {
   return (
-    <Card>
+    <Card className="border-white/10 bg-zinc-950/80 shadow-lg shadow-black/20">
 
       <CardContent className="p-5">
 
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-zinc-400">
           {title}
         </p>
 
