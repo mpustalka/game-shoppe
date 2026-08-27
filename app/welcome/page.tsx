@@ -1,374 +1,213 @@
+"use client"
+
 import Link from "next/link"
 import {
-  Package,
-  LogIn,
-  Search,
-  BookOpen,
-  BarChart3,
   ArrowRight,
+  BadgeCheck,
+  BarChart3,
+  Boxes,
+  Layers3,
+  ShoppingBag,
   Sparkles,
-  Camera,
-  Tag,
-  ShieldCheck,
-  Check,
-  Crown,
-  BadgeDollarSign,
-  ScanLine,
-  Users,
-  Upload,
+  Tags,
+  TrendingUp,
+  WalletCards,
+  Zap,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
-import {
-  BASIC_MONTHLY_PRICE_USD,
-  PREMIUM_MONTHLY_PRICE_USD,
-  TRIAL_DAYS,
-} from "@/lib/entitlements"
+type ShowcaseCard = {
+  name: string
+  set: string
+  finish: string
+  price: string
+  image: string
+}
 
-const ADMIN_EMAIL = "admin@evileevee.com"
+type ShowcaseSet = {
+  name: string
+  meta: string
+  image: string
+  href: string
+}
+
+const cards: ShowcaseCard[] = [
+  { name: "Umbreon VMAX", set: "Evolving Skies", finish: "Secret Rare", price: "$1,249.99", image: "https://images.pokemontcg.io/swsh7/215_hires.png" },
+  { name: "Charizard ex", set: "151", finish: "Special Illustration Rare", price: "$179.42", image: "https://images.pokemontcg.io/sv3pt5/199_hires.png" },
+  { name: "Pikachu ex", set: "Surging Sparks", finish: "Special Illustration Rare", price: "$238.16", image: "https://images.pokemontcg.io/sv8/238_hires.png" },
+  { name: "Gardevoir ex", set: "Paldean Fates", finish: "Special Illustration Rare", price: "$54.22", image: "https://images.pokemontcg.io/sv4pt5/233_hires.png" },
+  { name: "Mew ex", set: "Paldean Fates", finish: "Special Illustration Rare", price: "$112.80", image: "https://images.pokemontcg.io/sv4pt5/232_hires.png" },
+  { name: "Greninja ex", set: "Twilight Masquerade", finish: "Special Illustration Rare", price: "$289.34", image: "https://images.pokemontcg.io/sv6/214_hires.png" },
+  { name: "Magikarp", set: "Paldea Evolved", finish: "Illustration Rare", price: "$215.07", image: "https://images.pokemontcg.io/sv2/203_hires.png" },
+  { name: "Eevee", set: "Twilight Masquerade", finish: "Illustration Rare", price: "$89.71", image: "https://images.pokemontcg.io/sv6/188_hires.png" },
+  { name: "Lugia V", set: "Silver Tempest", finish: "Alternate Full Art", price: "$236.44", image: "https://images.pokemontcg.io/swsh12/186_hires.png" },
+  { name: "Giratina V", set: "Lost Origin", finish: "Alternate Full Art", price: "$478.19", image: "https://images.pokemontcg.io/swsh11/186_hires.png" },
+]
+
+const englishSets: ShowcaseSet[] = [
+  { name: "Prismatic Evolutions", meta: "English · Scarlet & Violet", image: "https://images.pokemontcg.io/sv8pt5/logo.png", href: "/sets" },
+  { name: "Destined Rivals", meta: "English · Scarlet & Violet", image: "https://images.pokemontcg.io/sv10/logo.png", href: "/sets" },
+  { name: "Journey Together", meta: "English · Scarlet & Violet", image: "https://images.pokemontcg.io/sv9/logo.png", href: "/sets" },
+  { name: "Surging Sparks", meta: "English · Scarlet & Violet", image: "https://images.pokemontcg.io/sv8/logo.png", href: "/sets" },
+  { name: "Twilight Masquerade", meta: "English · Scarlet & Violet", image: "https://images.pokemontcg.io/sv6/logo.png", href: "/sets" },
+  { name: "Temporal Forces", meta: "English · Scarlet & Violet", image: "https://images.pokemontcg.io/sv5/logo.png", href: "/sets" },
+]
+
+const japaneseSets: ShowcaseSet[] = [
+  { name: "Japanese Collection", meta: "Japanese sets · newest first", image: "https://images.pokemontcg.io/sv8pt5/logo.png", href: "/japanese-sets" },
+  { name: "Premium Japanese Sets", meta: "Japanese releases", image: "https://images.pokemontcg.io/sv7/logo.png", href: "/japanese-sets" },
+  { name: "Special Expansions", meta: "Japanese releases", image: "https://images.pokemontcg.io/sv4pt5/logo.png", href: "/japanese-sets" },
+  { name: "Modern Japanese Sets", meta: "Japanese releases", image: "https://images.pokemontcg.io/sv6/logo.png", href: "/japanese-sets" },
+  { name: "Collector Favorites", meta: "Japanese releases", image: "https://images.pokemontcg.io/sv3pt5/logo.png", href: "/japanese-sets" },
+  { name: "Browse Every Set", meta: "Japanese releases", image: "https://images.pokemontcg.io/sv9/logo.png", href: "/japanese-sets" },
+]
+
+const features = [
+  { icon: WalletCards, title: "Smart collection tracking", body: "Know exactly what you own by card, finish, language, condition, quantity, set, and binder." },
+  { icon: TrendingUp, title: "Market-aware pricing", body: "Keep collection values close to the market and spot the cards driving your portfolio." },
+  { icon: Boxes, title: "Real binder organization", body: "Budget, Mid, Premium, custom inventory workflows, and set completion live in one system." },
+  { icon: ShoppingBag, title: "0% marketplace selling fees", body: "List cards for sale, trade, or both. Collectors arrange payment and shipping peer-to-peer." },
+  { icon: BarChart3, title: "Collection analytics", body: "Track value, sold cards, movers, search demand, inventory age, and collection performance." },
+  { icon: Layers3, title: "English + Japanese sets", body: "Browse modern English releases and Japanese expansions without splitting your collection across apps." },
+]
+
+function InfiniteCardRow({ reverse = false }: { reverse?: boolean }) {
+  const row = reverse ? [...cards].reverse() : cards
+  return (
+    <div className="rocket-marquee-mask overflow-hidden">
+      <div className={reverse ? "rocket-marquee rocket-marquee-reverse" : "rocket-marquee"}>
+        {[...row, ...row].map((card, index) => (
+          <div key={`${card.name}-${index}`} className="group w-[150px] shrink-0 sm:w-[175px] lg:w-[195px]">
+            <div className="relative transition duration-300 group-hover:-translate-y-2 group-hover:scale-[1.025]">
+              <img src={card.image} alt={card.name} loading="lazy" className="aspect-[2.5/3.5] w-full object-contain drop-shadow-[0_20px_28px_rgba(0,0,0,.28)]" />
+            </div>
+            <div className="mt-3 px-1">
+              <p className="truncate text-sm font-bold text-white">{card.name}</p>
+              <p className="truncate text-xs text-white/50">{card.set}</p>
+              <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
+                <span className="truncate text-white/40">{card.finish}</span>
+                <span className="font-semibold text-rose-300">{card.price}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SetRow({ sets, reverse = false }: { sets: ShowcaseSet[]; reverse?: boolean }) {
+  const row = reverse ? [...sets].reverse() : sets
+  return (
+    <div className="rocket-marquee-mask overflow-hidden">
+      <div className={reverse ? "rocket-set-marquee rocket-marquee-reverse" : "rocket-set-marquee"}>
+        {[...row, ...row].map((set, index) => (
+          <Link key={`${set.name}-${index}`} href={set.href} className="group w-[260px] shrink-0 sm:w-[300px]">
+            <div className="flex h-[140px] items-center justify-center overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(225,29,72,.22),transparent_44%),linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.025))] p-8 shadow-2xl shadow-black/20 transition duration-300 group-hover:-translate-y-1 group-hover:border-rose-400/40">
+              <img src={set.image} alt={set.name} loading="lazy" className="max-h-20 max-w-[85%] object-contain drop-shadow-xl transition duration-300 group-hover:scale-105" />
+            </div>
+            <div className="mt-3 px-2">
+              <p className="font-semibold text-white">{set.name}</p>
+              <p className="text-xs text-white/45">{set.meta}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function WelcomePage() {
-  const features = [
-    {
-      icon: Search,
-      title: "Find any single, fast",
-      body: "Search English and Japanese cards by name and number with live TCGPlayer pricing.",
-    },
-    {
-      icon: BookOpen,
-      title: "Organize your collection",
-      body: "Track inventory in binders by set, rarity, condition, finish, and language.",
-    },
-    {
-      icon: Camera,
-      title: "Add cards from any device",
-      body: "Manage your collection from desktop, tablet, or phone with photos and card details.",
-    },
-    {
-      icon: Tag,
-      title: "Price cards quickly",
-      body: "Pull TCGPlayer market pricing while adding cards individually or in bulk.",
-    },
-    {
-      icon: BarChart3,
-      title: "Understand your collection",
-      body: "Premium analytics help you track collection value, trends, sales, and performance.",
-    },
-    {
-      icon: ShieldCheck,
-      title: "One clean inventory",
-      body: "Keep condition, finish, quantity, pricing, and sales records together in one place.",
-    },
-  ]
-
-  const basicFeatures = [
-    "Browse English & Japanese sets",
-    "Inventory management",
-    "Add cards individually",
-    "Bulk add cards from sets",
-    "TCGPlayer market pricing",
-    "Binder organization",
-  ]
-
-  const premiumFeatures = [
-    "Everything in Basic",
-    "Full collection analytics",
-    "Public Showcase",
-    "Customer Lists",
-    "Collection import",
-    "Card scanning",
-    "Advanced seller tools",
-  ]
-
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background via-background to-muted/40">
-      {/* Header */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Package className="h-5 w-5" />
+    <main className="overflow-x-hidden bg-[#070708] text-white">
+      <style jsx global>{`
+        @keyframes rocket-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .rocket-marquee { display:flex; width:max-content; gap:18px; animation:rocket-marquee 52s linear infinite; will-change:transform; }
+        .rocket-set-marquee { display:flex; width:max-content; gap:18px; animation:rocket-marquee 62s linear infinite; will-change:transform; }
+        .rocket-marquee-reverse { animation-direction:reverse; }
+        .rocket-marquee:hover, .rocket-set-marquee:hover { animation-play-state:paused; }
+        .rocket-marquee-mask { mask-image:linear-gradient(to right,transparent,black 7%,black 93%,transparent); -webkit-mask-image:linear-gradient(to right,transparent,black 7%,black 93%,transparent); }
+        @media (prefers-reduced-motion: reduce) { .rocket-marquee, .rocket-set-marquee { animation-play-state:paused; } }
+      `}</style>
+
+      <section className="relative isolate min-h-[760px] overflow-hidden border-b border-white/10">
+        <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_18%_15%,rgba(225,29,72,.28),transparent_32%),radial-gradient(circle_at_82%_8%,rgba(127,29,29,.25),transparent_28%),linear-gradient(to_bottom,#09090b,#070708)]" />
+        <div className="absolute inset-0 -z-10 opacity-[0.09] [background-image:linear-gradient(rgba(255,255,255,.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.2)_1px,transparent_1px)] [background-size:56px_56px]" />
+
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-6 sm:px-8 lg:px-10">
+          <Link href="/welcome" className="group flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-rose-400/30 bg-rose-500/10 shadow-lg shadow-rose-950/30"><span className="text-lg font-black tracking-[-0.12em] text-rose-400">TR</span></div>
+            <div><p className="text-sm font-black uppercase tracking-[0.18em]">Team Rocket</p><p className="-mt-0.5 text-xs text-white/45">Markets</p></div>
+          </Link>
+          <div className="flex gap-2">
+            <Button asChild variant="ghost" className="text-white hover:bg-white/10 hover:text-white"><Link href="/login">Sign in</Link></Button>
+            <Button asChild className="bg-rose-600 text-white hover:bg-rose-500"><Link href="/login">Get started</Link></Button>
+          </div>
+        </nav>
+
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 pb-24 pt-20 sm:px-8 md:pt-28 lg:grid-cols-[1.05fr_.95fr] lg:px-10">
+          <div className="relative z-10">
+            <Badge className="mb-6 border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-rose-200 hover:bg-rose-500/10"><Sparkles className="mr-1.5 h-3.5 w-3.5" />Built for serious Pokémon TCG collectors</Badge>
+            <h1 className="max-w-4xl text-5xl font-black leading-[.92] tracking-[-0.055em] sm:text-6xl md:text-7xl xl:text-[86px]">Your collection.<span className="block bg-gradient-to-r from-rose-400 via-red-500 to-orange-400 bg-clip-text text-transparent">Your market.</span></h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-white/58 sm:text-xl">Track every card. Know what it&apos;s worth. Organize every binder. Discover every variant. Then buy, sell, and trade directly with other collectors — with 0% selling fees.</p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Button size="lg" asChild className="h-12 rounded-xl bg-rose-600 px-6 text-white hover:bg-rose-500"><Link href="/login">Start your collection<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+              <Button size="lg" asChild variant="outline" className="h-12 rounded-xl border-white/15 bg-white/5 px-6 text-white hover:bg-white/10 hover:text-white"><Link href="/sets">Explore sets</Link></Button>
+            </div>
+            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/48">
+              {['English + Japanese','Variant-level tracking','Smart binders','0% selling fees'].map((label) => <span key={label} className="flex items-center gap-2"><BadgeCheck className="h-4 w-4 text-rose-400" />{label}</span>)}
+            </div>
           </div>
 
-          <span className="text-lg font-semibold tracking-tight">
-            Card Vault
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button asChild size="sm" variant="ghost">
-            <Link href="/login">
-              <LogIn className="mr-2 h-4 w-4" />
-              Sign in
-            </Link>
-          </Button>
-
-          <Button asChild size="sm">
-            <Link href="/login?mode=signup">Start free trial</Link>
-          </Button>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:py-20">
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            <Sparkles className="h-3.5 w-3.5" />
-            {TRIAL_DAYS}-day Premium trial · No card required
-          </span>
-
-          <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
-            Manage your Pokémon collection without the spreadsheet chaos.
-          </h1>
-
-          <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-            Card Vault helps collectors and sellers browse sets, bulk-add cards,
-            pull TCGPlayer market pricing, organize binders, and track a growing
-            collection from desktop, tablet, or phone.
-          </p>
-
-          <p className="mt-4 max-w-xl text-base text-muted-foreground">
-            Start with full Premium access free for {TRIAL_DAYS} days. After
-            that, keep the essentials with Basic for just{" "}
-            <span className="font-semibold text-foreground">
-              ${BASIC_MONTHLY_PRICE_USD.toFixed(2)}/month
-            </span>{" "}
-            or unlock everything with Premium for{" "}
-            <span className="font-semibold text-foreground">
-              ${PREMIUM_MONTHLY_PRICE_USD.toFixed(2)}/month
-            </span>
-            .
-          </p>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg">
-              <Link href="/login?mode=signup">
-                Start {TRIAL_DAYS}-day Premium trial
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-
-            <Button asChild size="lg" variant="outline">
-              <Link href="/login">
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign in
-              </Link>
-            </Button>
-          </div>
-
-          <p className="mt-4 text-sm text-muted-foreground">
-            No credit card required for the trial. Questions? Email{" "}
-            <a
-              href={`mailto:${ADMIN_EMAIL}`}
-              className="font-medium text-foreground underline underline-offset-4"
-            >
-              {ADMIN_EMAIL}
-            </a>
-            .
-          </p>
-        </div>
-
-        {/* Images */}
-        <div className="relative">
-          <div className="grid grid-cols-2 gap-4">
-            <img
-              src="/charmander-front.gif"
-              alt="Charmander card"
-              className="aspect-[3/4] w-full rounded-2xl border bg-card object-contain p-4 shadow-lg"
-            />
-
-            <img
-              src="/houndoom-front.gif"
-              alt="Houndoom card"
-              className="mt-8 aspect-[3/4] w-full rounded-2xl border bg-card object-contain p-4 shadow-lg"
-            />
+          <div className="relative min-h-[470px]">
+            <div className="absolute left-[5%] top-12 w-[42%] -rotate-6 transition hover:z-20 hover:rotate-0 hover:scale-105"><img src="https://images.pokemontcg.io/sv4pt5/232_hires.png" alt="Mew ex card" className="w-full drop-shadow-[0_35px_55px_rgba(0,0,0,.55)]" /></div>
+            <div className="absolute right-[3%] top-0 z-10 w-[46%] rotate-6 transition hover:z-20 hover:rotate-0 hover:scale-105"><img src="https://images.pokemontcg.io/sv8/238_hires.png" alt="Pikachu ex card" className="w-full drop-shadow-[0_35px_55px_rgba(0,0,0,.55)]" /></div>
+            <div className="absolute bottom-0 left-[31%] z-10 w-[42%] rotate-1 transition hover:z-20 hover:rotate-0 hover:scale-105"><img src="https://images.pokemontcg.io/sv6/214_hires.png" alt="Greninja ex card" className="w-full drop-shadow-[0_35px_55px_rgba(0,0,0,.55)]" /></div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="rounded-2xl border bg-card p-6 shadow-sm"
-            >
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <feature.icon className="h-5 w-5" />
-              </div>
+      <section className="border-b border-white/10 bg-[#0a0a0c] py-5">
+        <div className="rocket-marquee-mask overflow-hidden"><div className="rocket-marquee !gap-10 text-xs font-bold uppercase tracking-[0.2em] text-white/35">{['Live market values','Every finish','Smart binders','English sets','Japanese sets','Collection analytics','Sell or trade','0% selling fees','Live market values','Every finish','Smart binders','English sets','Japanese sets','Collection analytics','Sell or trade','0% selling fees'].map((label,index)=><span key={`${label}-${index}`} className="flex shrink-0 items-center gap-3"><Zap className="h-3.5 w-3.5 text-rose-500" />{label}</span>)}</div></div>
+      </section>
 
-              <h3 className="font-semibold">{feature.title}</h3>
+      <section className="relative py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><div className="max-w-3xl"><p className="mb-4 text-sm font-bold uppercase tracking-[0.22em] text-rose-400">Exact collection tracking</p><h2 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl lg:text-6xl">Every card. Every finish.<span className="block text-white/38">Every variant.</span></h2><p className="mt-5 max-w-2xl text-lg leading-8 text-white/50">Reverse Holo, Poké Ball, Master Ball, stamped promos, Full Arts and more. Track the exact version you own — not just the card number — with its own condition, language, quantity, and market value.</p></div></div>
+        <div className="mt-14 space-y-12"><InfiniteCardRow /><InfiniteCardRow reverse /></div>
+      </section>
 
-              <p className="mt-1 text-sm text-muted-foreground">
-                {feature.body}
-              </p>
-            </div>
-          ))}
+      <section className="border-y border-white/10 bg-white text-zinc-950">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-24 sm:px-8 sm:py-32 lg:grid-cols-[.9fr_1.1fr] lg:px-10">
+          <div>
+            <p className="mb-4 text-sm font-black uppercase tracking-[0.2em] text-rose-600">Collection → marketplace</p>
+            <h2 className="text-4xl font-black tracking-[-0.045em] sm:text-5xl">Your collection is already your marketplace.</h2>
+            <p className="mt-6 text-lg leading-8 text-zinc-600">No rebuilding listings from scratch. Choose a card from your binders, set your price or mark it for trade, and make it available to other collectors.</p>
+            <div className="mt-8 flex flex-wrap gap-2"><Badge className="bg-zinc-950 px-3 py-1.5 text-white">For Sale</Badge><Badge className="bg-zinc-950 px-3 py-1.5 text-white">For Trade</Badge><Badge className="bg-zinc-950 px-3 py-1.5 text-white">Sale or Trade</Badge></div>
+            <div className="mt-10 rounded-3xl bg-zinc-950 p-6 text-white"><p className="text-4xl font-black tracking-[-0.05em] text-rose-400">0%</p><p className="mt-1 text-lg font-bold">marketplace selling fees</p><p className="mt-2 text-sm leading-6 text-white/50">Collectors arrange payment, shipping, and trades directly. Your subscription powers the platform — we don&apos;t take a cut of the card.</p></div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">{features.slice(0,4).map((feature)=>{const Icon=feature.icon;return <div key={feature.title} className="rounded-3xl border border-zinc-200 bg-zinc-50 p-6"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-100"><Icon className="h-5 w-5 text-rose-700" /></div><h3 className="mt-5 text-xl font-bold">{feature.title}</h3><p className="mt-2 text-sm leading-6 text-zinc-600">{feature.body}</p></div>})}</div>
         </div>
       </section>
 
-      {/* Trial CTA */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <div className="flex flex-col items-center gap-3 rounded-2xl border bg-card px-6 py-10 text-center shadow-sm">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Crown className="h-6 w-6" />
-          </div>
-
-          <h2 className="text-2xl font-semibold">
-            Try every Premium feature first
-          </h2>
-
-          <p className="max-w-xl text-muted-foreground">
-            New accounts get {TRIAL_DAYS} days of full Premium access, including
-            analytics, Showcase, Customer Lists, import, scanning, and advanced
-            tools.
-          </p>
-
-          <div className="mt-2 flex flex-wrap justify-center gap-3">
-            <Button asChild>
-              <Link href="/login?mode=signup">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Start free trial
-              </Link>
-            </Button>
-
-            <Button asChild variant="outline">
-              <Link href="/login">
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign in
-              </Link>
-            </Button>
-          </div>
+      <section className="py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end"><div className="max-w-3xl"><p className="mb-4 text-sm font-bold uppercase tracking-[0.22em] text-rose-400">English + Japanese</p><h2 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl lg:text-6xl">Collect across<span className="block text-white/38">every era.</span></h2><p className="mt-5 max-w-2xl text-lg leading-8 text-white/50">Browse modern English expansions and Japanese releases in one collection. Track set completion and add cards without rebuilding your inventory in another app.</p></div><div className="flex gap-2"><Button asChild variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"><Link href="/sets">English sets<ArrowRight className="ml-2 h-4 w-4" /></Link></Button><Button asChild variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"><Link href="/japanese-sets">Japanese sets<ArrowRight className="ml-2 h-4 w-4" /></Link></Button></div></div>
         </div>
+        <div className="mt-14 space-y-10"><SetRow sets={englishSets} /><SetRow sets={japaneseSets} reverse /></div>
       </section>
 
-      {/* Pricing */}
-      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
-        <div className="mb-10 text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            <BadgeDollarSign className="h-3.5 w-3.5" />
-            Early-access pricing
-          </span>
-
-          <h2 className="mt-4 text-3xl font-bold tracking-tight">
-            Simple pricing for collectors and sellers
-          </h2>
-
-          <p className="mx-auto mt-2 max-w-2xl text-muted-foreground">
-            Start with a {TRIAL_DAYS}-day Premium trial, then choose the plan
-            that fits how you use Card Vault.
-          </p>
-        </div>
-
-        <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
-          {/* Basic */}
-          <div className="rounded-3xl border bg-card p-8 shadow-sm">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-
-              <h3 className="text-2xl font-semibold">Basic</h3>
-            </div>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              Core collection management at an ultra-low monthly price.
-            </p>
-
-            <div className="mt-5 flex items-end gap-1">
-              <span className="text-5xl font-bold tracking-tight">
-                ${BASIC_MONTHLY_PRICE_USD.toFixed(2)}
-              </span>
-
-              <span className="mb-2 text-muted-foreground">/month</span>
-            </div>
-
-            <ul className="mt-6 space-y-3 text-sm">
-              {basicFeatures.map((line) => (
-                <li key={line} className="flex items-start gap-2">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
-
-            <Button asChild size="lg" variant="outline" className="mt-8 w-full">
-              <Link href="/login?mode=signup">Start with Premium trial</Link>
-            </Button>
-          </div>
-
-          {/* Premium */}
-          <div className="relative rounded-3xl border-2 border-primary/50 bg-card p-8 shadow-lg">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-                <Crown className="h-3.5 w-3.5" />
-                Full access
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-
-              <h3 className="text-2xl font-semibold">Premium</h3>
-            </div>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              Everything unlocked for serious collectors and sellers.
-            </p>
-
-            <div className="mt-5 flex items-end gap-1">
-              <span className="text-5xl font-bold tracking-tight">
-                ${PREMIUM_MONTHLY_PRICE_USD.toFixed(2)}
-              </span>
-
-              <span className="mb-2 text-muted-foreground">/month</span>
-            </div>
-
-            <ul className="mt-6 space-y-3 text-sm">
-              {premiumFeatures.map((line) => (
-                <li key={line} className="flex items-start gap-2">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
-
-            <Button asChild size="lg" className="mt-8 w-full">
-              <Link href="/login?mode=signup">
-                Start {TRIAL_DAYS}-day Premium trial
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        <div className="mx-auto mt-6 max-w-3xl rounded-xl border bg-muted/30 p-4">
-          <div className="grid gap-4 text-sm sm:grid-cols-3">
-            <div className="flex items-center gap-2">
-              <ScanLine className="h-4 w-4 text-primary" />
-              <span>Scanning included in Premium</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Upload className="h-4 w-4 text-primary" />
-              <span>Import included in Premium</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
-              <span>Customer Lists included in Premium</span>
-            </div>
-          </div>
-        </div>
-
-        <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-          <ShieldCheck className="h-3.5 w-3.5" />
-          Existing grandfathered members keep Premium access free, forever.
-        </p>
+      <section className="border-y border-white/10 bg-[#0c0c0f] py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><div className="mx-auto max-w-3xl text-center"><p className="mb-4 text-sm font-bold uppercase tracking-[0.22em] text-rose-400">More than a spreadsheet</p><h2 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl">Built around how collectors actually collect.</h2></div><div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{features.map((feature)=>{const Icon=feature.icon;return <div key={feature.title} className="rounded-[28px] border border-white/10 bg-white/[0.035] p-7 transition hover:-translate-y-1 hover:border-rose-500/30 hover:bg-white/[0.05]"><div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-500/10"><Icon className="h-5 w-5 text-rose-400" /></div><h3 className="mt-5 text-xl font-bold">{feature.title}</h3><p className="mt-2 text-sm leading-6 text-white/48">{feature.body}</p></div>})}</div></div>
       </section>
 
-      <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-        Card Vault · Pokémon card inventory management
-      </footer>
+      <section className="relative overflow-hidden py-28">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(225,29,72,.16),transparent_42%)]" />
+        <div className="relative mx-auto max-w-4xl px-5 text-center sm:px-8"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-rose-400/30 bg-rose-500/10"><Tags className="h-6 w-6 text-rose-400" /></div><h2 className="mt-7 text-4xl font-black tracking-[-0.045em] sm:text-6xl">Your cards deserve<span className="block text-rose-400">a better command center.</span></h2><p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/50">Build your collection, organize every binder, follow market values, and connect with collectors from one place.</p><div className="mt-9 flex flex-wrap justify-center gap-3"><Button size="lg" asChild className="h-12 rounded-xl bg-rose-600 px-6 hover:bg-rose-500"><Link href="/login">Get started<ArrowRight className="ml-2 h-4 w-4" /></Link></Button><Button size="lg" asChild variant="outline" className="h-12 rounded-xl border-white/15 bg-white/5 px-6 text-white hover:bg-white/10 hover:text-white"><Link href="/login">Sign in</Link></Button></div></div>
+      </section>
+
+      <footer className="border-t border-white/10"><div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-8 text-sm text-white/35 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10"><div className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-400/20 bg-rose-500/10 text-xs font-black text-rose-400">TR</div><span>Team Rocket Markets</span></div><div className="flex flex-wrap gap-5"><Link className="hover:text-white" href="/sets">Sets</Link><Link className="hover:text-white" href="/sell">Marketplace</Link><Link className="hover:text-white" href="/login">Sign in</Link></div></div></footer>
     </main>
   )
 }

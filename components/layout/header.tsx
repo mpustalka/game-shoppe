@@ -21,23 +21,20 @@ import {
   Share2,
   ShoppingBag,
   Upload,
+  X,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet"
-
 import { AuthNav } from "@/components/layout/auth-nav"
 import { useEntitlements } from "@/hooks/use-entitlements"
-
 import type { Entitlements } from "@/lib/entitlements"
 
 type NavItem = {
@@ -49,26 +46,10 @@ type NavItem = {
 }
 
 const primaryNavigation: NavItem[] = [
-  {
-    name: "Dashboard",
-    href: "/",
-    icon: LayoutGrid,
-  },
-  {
-    name: "Inventory",
-    href: "/inventory",
-    icon: Package,
-  },
-  {
-    name: "Binders",
-    href: "/binders",
-    icon: BookOpen,
-  },
-  {
-    name: "Sell",
-    href: "/sell",
-    icon: ShoppingBag,
-  },
+  { name: "Dashboard", href: "/", icon: LayoutGrid },
+  { name: "Inventory", href: "/inventory", icon: Package },
+  { name: "Binders", href: "/binders", icon: BookOpen },
+  { name: "Sell", href: "/sell", icon: ShoppingBag },
   {
     name: "Analytics",
     href: "/analytics",
@@ -79,16 +60,8 @@ const primaryNavigation: NavItem[] = [
 ]
 
 const browseNavigation: NavItem[] = [
-  {
-    name: "English Sets",
-    href: "/sets",
-    icon: Package,
-  },
-  {
-    name: "Japanese Sets",
-    href: "/japanese-sets",
-    icon: Package,
-  },
+  { name: "English Sets", href: "/sets", icon: Package },
+  { name: "Japanese Sets", href: "/japanese-sets", icon: Package },
 ]
 
 const moreNavigation: NavItem[] = [
@@ -126,14 +99,10 @@ const moreNavigation: NavItem[] = [
     premium: true,
     gate: (e) => e.canScan,
   },
-  {
-    name: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
+  { name: "Settings", href: "/settings", icon: Settings },
 ]
 
-const mobileNavigation: NavItem[] = [
+const mobileNavigation = [
   ...primaryNavigation,
   ...browseNavigation,
   ...moreNavigation,
@@ -141,13 +110,8 @@ const mobileNavigation: NavItem[] = [
 
 export function Header() {
   const pathname = usePathname()
-
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-  const {
-    entitlements,
-    loading: entitlementsLoading,
-  } = useEntitlements()
+  const { entitlements, loading: entitlementsLoading } = useEntitlements()
 
   const publicRoutes = [
     "/welcome",
@@ -163,9 +127,7 @@ export function Header() {
       pathname.startsWith(`${route}/`),
   )
 
-  if (isPublicRoute) {
-    return null
-  }
+  if (isPublicRoute) return null
 
   const hasPremiumAccess =
     entitlements.canUseAnalytics &&
@@ -175,98 +137,71 @@ export function Header() {
     entitlements.canScan
 
   function getNavigationHref(item: NavItem) {
-    if (entitlementsLoading) {
-      return item.href
-    }
-
-    const locked = item.gate
-      ? !item.gate(entitlements)
-      : false
-
-    return locked
-      ? "/settings?tab=billing"
-      : item.href
+    if (entitlementsLoading) return item.href
+    const locked = item.gate ? !item.gate(entitlements) : false
+    return locked ? "/settings?tab=billing" : item.href
   }
 
   function isLocked(item: NavItem) {
-    if (entitlementsLoading) {
-      return false
-    }
-
-    return item.gate
-      ? !item.gate(entitlements)
-      : false
+    if (entitlementsLoading) return false
+    return item.gate ? !item.gate(entitlements) : false
   }
 
   function isActive(item: NavItem) {
     return (
       pathname === item.href ||
-      (
-        item.href !== "/" &&
-        pathname.startsWith(`${item.href}/`)
-      )
+      (item.href !== "/" &&
+        pathname.startsWith(`${item.href}/`))
     )
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-
-      <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-6 lg:px-8">
-
-        {/* LOGO */}
-
-        <Link
-          href="/"
-          className="flex shrink-0 items-center gap-2"
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Package className="h-5 w-5" />
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#070708]/90 text-white shadow-[0_12px_40px_rgba(0,0,0,.22)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#070708]/75">
+      <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-2 px-3 sm:px-5 lg:px-7">
+        <Link href="/" className="group flex shrink-0 items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-400/25 bg-rose-500/10 shadow-lg shadow-rose-950/20 transition group-hover:border-rose-400/45 group-hover:bg-rose-500/15">
+            <span className="text-xs font-black tracking-[-0.08em] text-rose-400">
+              TR
+            </span>
           </div>
-
-          <span className="hidden text-lg font-semibold tracking-tight xl:inline-block">
-            Card Vault
-          </span>
+          <div className="hidden xl:block">
+            <p className="text-xs font-black uppercase tracking-[0.15em] text-white">
+              Team Rocket
+            </p>
+            <p className="-mt-0.5 text-[10px] text-white/40">
+              Markets
+            </p>
+          </div>
         </Link>
 
-
-        {/* DESKTOP NAV */}
-
-        <nav className="hidden shrink-0 items-center gap-1 lg:flex">
-
+        <nav className="hidden shrink-0 items-center gap-0.5 lg:flex">
           {primaryNavigation.map((item) => {
             const locked = isLocked(item)
             const active = isActive(item)
+            const Icon = item.icon
 
             return (
               <Link
                 key={item.name}
                 href={getNavigationHref(item)}
-                title={
-                  locked
-                    ? `${item.name} requires Premium`
-                    : undefined
-                }
+                title={locked ? `${item.name} requires Premium` : undefined}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+                  "flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-sm font-semibold transition",
                   active && !locked
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  locked && "opacity-75",
+                    ? "bg-rose-500/12 text-rose-300 ring-1 ring-inset ring-rose-400/15"
+                    : "text-white/50 hover:bg-white/[0.06] hover:text-white",
+                  locked && "opacity-65",
                 )}
               >
                 {locked ? (
-                  <Lock className="h-4 w-4" />
+                  <Lock className="h-3.5 w-3.5" />
                 ) : (
-                  <item.icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5" />
                 )}
-
                 <span>{item.name}</span>
               </Link>
             )
           })}
-
-
-          {/* BROWSE */}
 
           <NavDropdown
             label="Browse"
@@ -279,9 +214,6 @@ export function Header() {
             isLocked={isLocked}
           />
 
-
-          {/* MORE */}
-
           <NavDropdown
             label="More"
             active={moreNavigation.some(isActive)}
@@ -289,35 +221,21 @@ export function Header() {
             getNavigationHref={getNavigationHref}
             isLocked={isLocked}
           />
-
         </nav>
 
-
-        {/* SEARCH */}
-
         <div className="ml-auto hidden min-w-0 flex-1 justify-end md:flex">
-
-          <form
-            action="/search"
-            className="relative w-full max-w-[280px]"
-          >
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
+          <form action="/search" className="relative w-full max-w-[260px]">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
             <Input
               type="search"
               name="q"
               placeholder="Search cards..."
-              className="w-full pl-9"
+              className="h-9 rounded-xl border-white/10 bg-white/[0.045] pl-9 text-white placeholder:text-white/30 focus-visible:ring-rose-500/40"
             />
           </form>
-
         </div>
 
-
-        {/* ACCOUNT */}
-
-        <div className="flex shrink-0 items-center gap-2">
-
+        <div className="flex shrink-0 items-center gap-1.5">
           {!entitlementsLoading &&
             !hasPremiumAccess &&
             entitlements.plan === "basic" && (
@@ -325,7 +243,7 @@ export function Header() {
                 asChild
                 size="sm"
                 variant="outline"
-                className="hidden gap-1.5 2xl:flex"
+                className="hidden h-9 gap-1.5 rounded-xl border-rose-400/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/15 hover:text-white 2xl:flex"
               >
                 <Link href="/settings?tab=billing">
                   <Crown className="h-4 w-4" />
@@ -336,47 +254,53 @@ export function Header() {
 
           <AuthNav />
 
-
-          {/* MOBILE */}
-
-          <Sheet
-            open={mobileMenuOpen}
-            onOpenChange={setMobileMenuOpen}
-          >
-            <SheetTrigger
-              asChild
-              className="lg:hidden"
-            >
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild className="lg:hidden">
               <Button
                 variant="ghost"
                 size="icon"
+                className="rounded-xl text-white/70 hover:bg-white/10 hover:text-white"
               >
                 <Menu className="h-5 w-5" />
-
-                <span className="sr-only">
-                  Open menu
-                </span>
+                <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
 
             <SheetContent
               side="right"
-              className="w-[310px] sm:w-[360px]"
+              className="w-[min(92vw,380px)] overflow-y-auto border-white/10 bg-[#09090b] p-0 text-white"
             >
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#09090b]/95 px-5 py-4 backdrop-blur">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-400/25 bg-rose-500/10 text-xs font-black text-rose-400">
+                    TR
+                  </div>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.14em]">
+                      Team Rocket
+                    </p>
+                    <p className="text-[10px] text-white/40">Markets</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-xl text-white/60 hover:bg-white/10 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
 
-              <div className="flex flex-col gap-5 py-4">
-
+              <div className="flex flex-col gap-5 px-4 py-5">
                 {!entitlementsLoading && (
-                  <div className="rounded-xl border bg-muted/30 p-3">
-
-                    <div className="flex items-center justify-between">
-
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[11px] uppercase tracking-[0.15em] text-white/30">
                           Current plan
                         </p>
-
-                        <p className="font-semibold capitalize">
+                        <p className="mt-1 font-bold capitalize">
                           {entitlements.plan === "trial"
                             ? "Premium Trial"
                             : entitlements.plan === "grandfathered"
@@ -391,65 +315,56 @@ export function Header() {
                         <Button
                           asChild
                           size="sm"
+                          className="rounded-xl bg-rose-600 hover:bg-rose-500"
                         >
                           <Link
                             href="/settings?tab=billing"
-                            onClick={() =>
-                              setMobileMenuOpen(false)
-                            }
+                            onClick={() => setMobileMenuOpen(false)}
                           >
                             Upgrade
                           </Link>
                         </Button>
                       )}
-
                     </div>
-
                   </div>
                 )}
 
-
-                <form
-                  action="/search"
-                  className="relative"
-                >
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
+                <form action="/search" className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
                   <Input
                     type="search"
                     name="q"
                     placeholder="Search cards..."
-                    className="pl-9"
+                    className="h-11 rounded-xl border-white/10 bg-white/[0.045] pl-9 text-white placeholder:text-white/30"
                   />
                 </form>
 
-
                 <nav className="flex flex-col gap-1">
-
                   {mobileNavigation.map((item) => {
                     const locked = isLocked(item)
                     const active = isActive(item)
+                    const Icon = item.icon
 
                     return (
                       <Link
                         key={`${item.name}-${item.href}`}
                         href={getNavigationHref(item)}
-                        onClick={() =>
-                          setMobileMenuOpen(false)
-                        }
+                        onClick={() => setMobileMenuOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-3 text-base font-medium transition-colors",
+                          "flex min-h-12 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold transition",
                           active && !locked
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                          locked && "opacity-75",
+                            ? "bg-rose-500/12 text-rose-300 ring-1 ring-inset ring-rose-400/15"
+                            : "text-white/55 hover:bg-white/[0.06] hover:text-white",
+                          locked && "opacity-65",
                         )}
                       >
-                        {locked ? (
-                          <Lock className="h-5 w-5" />
-                        ) : (
-                          <item.icon className="h-5 w-5" />
-                        )}
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.045]">
+                          {locked ? (
+                            <Lock className="h-4 w-4" />
+                          ) : (
+                            <Icon className="h-4 w-4" />
+                          )}
+                        </div>
 
                         <span>{item.name}</span>
 
@@ -461,22 +376,15 @@ export function Header() {
                       </Link>
                     )
                   })}
-
                 </nav>
-
               </div>
-
             </SheetContent>
           </Sheet>
-
         </div>
-
       </div>
-
     </header>
   )
 }
-
 
 function NavDropdown({
   label,
@@ -493,44 +401,40 @@ function NavDropdown({
 }) {
   return (
     <div className="group relative">
-
       <button
         type="button"
         className={cn(
-          "flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+          "flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-sm font-semibold transition",
           active
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            ? "bg-rose-500/12 text-rose-300"
+            : "text-white/50 hover:bg-white/[0.06] hover:text-white",
         )}
       >
         {label}
-
-        <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" />
+        <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
       </button>
 
-
-      <div className="invisible absolute left-0 top-full z-50 min-w-[230px] pt-1 opacity-0 transition group-hover:visible group-hover:opacity-100">
-
-        <div className="rounded-lg border bg-background p-1 shadow-xl">
-
+      <div className="invisible absolute left-0 top-full z-50 min-w-[245px] pt-2 opacity-0 transition group-hover:visible group-hover:opacity-100">
+        <div className="rounded-2xl border border-white/10 bg-[#101013]/98 p-1.5 shadow-2xl shadow-black/40 backdrop-blur-xl">
           {items.map((item) => {
             const locked = isLocked(item)
+            const Icon = item.icon
 
             return (
               <Link
                 key={item.name}
                 href={getNavigationHref(item)}
-                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm hover:bg-muted"
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/60 transition hover:bg-white/[0.06] hover:text-white"
               >
-                {locked ? (
-                  <Lock className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <item.icon className="h-4 w-4 text-muted-foreground" />
-                )}
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.045]">
+                  {locked ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <Icon className="h-4 w-4" />
+                  )}
+                </div>
 
-                <span className="font-medium">
-                  {item.name}
-                </span>
+                <span className="font-semibold">{item.name}</span>
 
                 {item.premium && (
                   <div className="ml-auto">
@@ -540,32 +444,19 @@ function NavDropdown({
               </Link>
             )
           })}
-
         </div>
-
       </div>
-
     </div>
   )
 }
 
-
-function PremiumBadge({
-  locked,
-}: {
-  locked: boolean
-}) {
+function PremiumBadge({ locked }: { locked: boolean }) {
   return (
     <Badge
-      variant={
-        locked
-          ? "outline"
-          : "secondary"
-      }
+      variant="outline"
       className={cn(
-        "h-5 gap-1 px-1.5 text-[10px] font-medium",
-        locked &&
-          "border-primary/30 text-primary",
+        "h-5 gap-1 border-white/10 bg-white/[0.04] px-1.5 text-[9px] font-bold text-white/40",
+        locked && "border-rose-400/20 text-rose-300",
       )}
     >
       <Crown className="h-3 w-3" />
