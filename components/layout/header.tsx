@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import {
   BarChart3,
@@ -13,6 +13,9 @@ import {
   LayoutGrid,
   Lock,
   Menu,
+  MessageCircle,
+  CircleHelp,
+  LifeBuoy,
   Package,
   PlusCircle,
   QrCode,
@@ -20,6 +23,7 @@ import {
   Settings,
   Share2,
   ShoppingBag,
+  Store,
   Upload,
   X,
 } from "lucide-react"
@@ -49,6 +53,7 @@ const primaryNavigation: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutGrid },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Binders", href: "/binders", icon: BookOpen },
+  { name: "Marketplace", href: "/marketplace", icon: Store },
   { name: "Sell", href: "/sell", icon: ShoppingBag },
   {
     name: "Analytics",
@@ -80,6 +85,11 @@ const moreNavigation: NavItem[] = [
     gate: (e) => e.canUseCustomerLists,
   },
   {
+    name: "Messages",
+    href: "/messages",
+    icon: MessageCircle,
+  },
+  {
     name: "Add Card",
     href: "/add",
     icon: PlusCircle,
@@ -99,6 +109,8 @@ const moreNavigation: NavItem[] = [
     premium: true,
     gate: (e) => e.canScan,
   },
+  { name: "FAQ", href: "/faq", icon: CircleHelp },
+  { name: "Support", href: "/support", icon: LifeBuoy },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
@@ -111,7 +123,50 @@ const mobileNavigation = [
 export function Header() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [unreadMessages, setUnreadMessages] = useState(0)
   const { entitlements, loading: entitlementsLoading } = useEntitlements()
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadUnreadMessages() {
+      try {
+        const response = await fetch("/api/messages", {
+          cache: "no-store",
+        })
+
+        if (!response.ok) return
+
+        const result = await response.json().catch(() => null)
+        const conversations = Array.isArray(result?.conversations)
+          ? result.conversations
+          : []
+
+        const count = conversations.filter(
+          (conversation: { unread?: boolean }) =>
+            conversation?.unread === true,
+        ).length
+
+        if (!cancelled) {
+          setUnreadMessages(count)
+        }
+      } catch {
+        // Header should never fail because unread-count loading failed.
+      }
+    }
+
+    void loadUnreadMessages()
+
+    const interval = window.setInterval(
+      () => void loadUnreadMessages(),
+      30000,
+    )
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [pathname])
 
   const publicRoutes = [
     "/welcome",
@@ -252,6 +307,22 @@ export function Header() {
               </Button>
             )}
 
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="relative rounded-xl text-white/65 hover:bg-white/10 hover:text-white"
+          >
+            <Link href="/messages" aria-label="Messages">
+              <MessageCircle className="h-5 w-5" />
+              {unreadMessages > 0 && (
+                <span className="absolute -right-1 -top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-black leading-none text-white">
+                  {unreadMessages > 99 ? "99+" : unreadMessages}
+                </span>
+              )}
+            </Link>
+          </Button>
+
           <AuthNav />
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -367,6 +438,13 @@ export function Header() {
                         </div>
 
                         <span>{item.name}</span>
+
+                        {item.href === "/messages" &&
+                          unreadMessages > 0 && (
+                          <span className="ml-auto flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[10px] font-black text-white">
+                            {unreadMessages > 99 ? "99+" : unreadMessages}
+                          </span>
+                        )}
 
                         {item.premium && (
                           <div className="ml-auto">
