@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-// import Link from "next/link"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import {
@@ -12,6 +12,7 @@ import {
   Crown,
   Edit,
   Loader2,
+  LifeBuoy,
   Mail,
   Plus,
   RefreshCw,
@@ -283,6 +284,14 @@ function AdminPortal() {
           </div>
         </div>
 
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/support">
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              Support Queue
+            </Link>
+          </Button>
+
         <Button
           variant="outline"
           onClick={() => void load()}
@@ -293,6 +302,7 @@ function AdminPortal() {
           />
           Refresh
         </Button>
+        </div>
       </div>
 
       {/* SUMMARY */}
