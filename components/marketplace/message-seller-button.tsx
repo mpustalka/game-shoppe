@@ -8,8 +8,25 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
+export type ListingMessageSnapshot = {
+  name: string
+  number?: string
+  setName?: string
+  image?: string
+  condition?: string
+  finish?: string
+  askingPrice?: number | string | null
+  listingType?: "sale" | "trade" | "both" | null
+  shippingMethod?: string | null
+  sellerDisplayName?: string
+  paymentMethods?: string[]
+  paymentNote?: string | null
+}
+
 type MessageSellerButtonProps = {
   sellerId: string
+  listingId: string
+  listingSnapshot: ListingMessageSnapshot
   currentUserId?: string | null
   className?: string
   size?: "default" | "sm" | "lg" | "icon"
@@ -18,6 +35,8 @@ type MessageSellerButtonProps = {
 
 export function MessageSellerButton({
   sellerId,
+  listingId,
+  listingSnapshot,
   currentUserId,
   className,
   size = "default",
@@ -30,27 +49,21 @@ export function MessageSellerButton({
     Boolean(currentUserId) && currentUserId === sellerId
 
   async function startConversation() {
-    if (!sellerId || isOwnListing || loading) return
+    if (!sellerId || !listingId || isOwnListing || loading) return
 
     setLoading(true)
 
     try {
       const response = await fetch("/api/messages", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: sellerId,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: sellerId }),
       })
 
       const result = await response.json().catch(() => null)
 
       if (!response.ok) {
-        throw new Error(
-          result?.error || "Unable to start conversation",
-        )
+        throw new Error(result?.error || "Unable to start conversation")
       }
 
       const conversationId =
@@ -62,12 +75,29 @@ export function MessageSellerButton({
         throw new Error("Conversation was not created")
       }
 
+      const contextResponse = await fetch(`/api/messages/${conversationId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          body: "I'm interested in this card.",
+          messageKind: "listing",
+          sellListingId: listingId,
+          listingSnapshot,
+        }),
+      })
+
+      const contextResult = await contextResponse.json().catch(() => null)
+
+      if (!contextResponse.ok) {
+        throw new Error(
+          contextResult?.error || "Unable to attach listing to conversation",
+        )
+      }
+
       router.push(`/messages/${conversationId}`)
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Unable to message seller",
+        error instanceof Error ? error.message : "Unable to message seller",
       )
     } finally {
       setLoading(false)

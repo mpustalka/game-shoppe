@@ -108,6 +108,7 @@ export async function GET() {
     const [
       { data: binderRows, error: binderError },
       { data: itemRows, error: itemError },
+      { data: profileRows, error: profileError },
       usersResult,
     ] = await Promise.all([
       binderIds.length
@@ -126,6 +127,17 @@ export async function GET() {
             .from("inventory_items")
             .select("*")
             .in("id", itemIds)
+        : Promise.resolve({
+            data: [],
+            error: null,
+          }),
+      sellerIds.length
+        ? admin
+            .from("seller_profiles")
+            .select(
+              "user_id,display_name,bio,payment_methods,payment_note,shipping_methods,shipping_note,ships_us_only,local_pickup",
+            )
+            .in("user_id", sellerIds)
         : Promise.resolve({
             data: [],
             error: null,
@@ -149,6 +161,20 @@ export async function GET() {
         { status: 500 },
       )
     }
+
+    if (profileError) {
+      return NextResponse.json(
+        { error: profileError.message },
+        { status: 500 },
+      )
+    }
+
+    const profiles = new Map(
+      (profileRows ?? []).map((profile) => [
+        profile.user_id,
+        profile,
+      ]),
+    )
 
     const publicBinders = new Map(
       (binderRows ?? [])
@@ -198,11 +224,13 @@ export async function GET() {
           item:
             items.get(listing.inventory_item_id) ??
             null,
-          seller:
-            sellers.get(listing.seller_id) ?? {
+          seller: {
+            ...(sellers.get(listing.seller_id) ?? {
               id: listing.seller_id,
               displayName: "Collector",
-            },
+            }),
+            profile: profiles.get(listing.seller_id) ?? null,
+          },
         }
       })
       .filter(Boolean)
