@@ -51,6 +51,17 @@ type MarketplaceListing = {
   seller: {
     id: string
     displayName: string
+    profile?: {
+      user_id: string
+      display_name: string | null
+      bio: string | null
+      payment_methods: string[]
+      payment_note: string | null
+      shipping_methods: string[]
+      shipping_note: string | null
+      ships_us_only: boolean
+      local_pickup: boolean
+    } | null
   }
   item: JsonObject | null
 }
@@ -152,6 +163,20 @@ function listingTypeLabel(
   if (value === "trade") return "Trade"
   if (value === "both") return "Sale / Trade"
   return "For Sale"
+}
+
+function paymentLabel(value: string) {
+  const labels: Record<string, string> = {
+    paypal: "PayPal",
+    venmo: "Venmo",
+    cash_app: "Cash App",
+    zelle: "Zelle",
+    stripe_link: "Stripe / Link",
+    cash_local: "Cash / Local",
+    trade_only: "Trade Only",
+  }
+
+  return labels[value] ?? value.replaceAll("_", " ")
 }
 
 function shippingLabel(value?: string | null) {
@@ -288,6 +313,17 @@ export default function MarketplacePage() {
                 variant="outline"
                 className="border-white/10 bg-white/5 text-zinc-200 hover:bg-white/10 hover:text-white"
               >
+                <Link href="/sell/profile">
+                  <Store className="mr-2 h-4 w-4" />
+                  Seller Settings
+                </Link>
+              </Button>
+
+              <Button
+                asChild
+                variant="outline"
+                className="border-white/10 bg-white/5 text-zinc-200 hover:bg-white/10 hover:text-white"
+              >
                 <Link href="/messages">
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Messages
@@ -385,6 +421,8 @@ export default function MarketplacePage() {
               const card = getSnapshot(listing)
               const isTradeOnly =
                 listing.listing_type === "trade"
+              const paymentMethods =
+                listing.seller.profile?.payment_methods ?? []
 
               return (
                 <article
@@ -476,6 +514,17 @@ export default function MarketplacePage() {
                       )}
                     </div>
 
+                    <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2.5">
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-zinc-600">
+                        Accepted Payment
+                      </p>
+                      <p className="mt-1 text-xs text-zinc-300">
+                        {paymentMethods.length > 0
+                          ? paymentMethods.map(paymentLabel).join(" • ")
+                          : "Ask seller in chat"}
+                      </p>
+                    </div>
+
                     {listing.trade_notes && (
                       <p className="mt-3 line-clamp-3 text-xs leading-5 text-zinc-500">
                         Trade: {listing.trade_notes}
@@ -484,6 +533,21 @@ export default function MarketplacePage() {
 
                     <MessageSellerButton
                       sellerId={listing.seller_id}
+                      listingId={listing.id}
+                      listingSnapshot={{
+                        name: card.name,
+                        number: card.number,
+                        setName: card.setName,
+                        image: card.image,
+                        condition: card.condition,
+                        finish: card.finish,
+                        askingPrice: listing.asking_price,
+                        listingType: listing.listing_type,
+                        shippingMethod: listing.shipping_method,
+                        sellerDisplayName: listing.seller.displayName,
+                        paymentMethods,
+                        paymentNote: listing.seller.profile?.payment_note ?? null,
+                      }}
                       currentUserId={
                         data.currentUserId
                       }
