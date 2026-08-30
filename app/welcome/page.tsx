@@ -8,6 +8,7 @@ import {
   Boxes,
   Layers3,
   ShoppingBag,
+  ScanLine,
   Sparkles,
   Tags,
   TrendingUp,
@@ -71,6 +72,7 @@ const features = [
   { icon: ShoppingBag, title: "0% marketplace selling fees", body: "List cards for sale, trade, or both. Collectors arrange payment and shipping peer-to-peer." },
   { icon: BarChart3, title: "Collection analytics", body: "Track value, sold cards, movers, search demand, inventory age, and collection performance." },
   { icon: Layers3, title: "English + Japanese sets", body: "Browse modern English releases and Japanese expansions without splitting your collection across apps." },
+  { icon: ScanLine, title: "Smart Scanner · Premium Beta", body: "Use your phone camera to recognize supported English Pokémon cards, confirm the exact match, and add them straight to inventory." },
 ]
 
 function InfiniteCardRow({ reverse = false }: { reverse?: boolean }) {
@@ -119,7 +121,7 @@ function SetRow({ sets, reverse = false }: { sets: ShowcaseSet[]; reverse?: bool
   )
 }
 
-export default function WelcomePage() {
+export default function HomePage() {
   return (
     <main className="overflow-x-hidden bg-[#070708] text-white">
       <style jsx global>{`
@@ -137,27 +139,33 @@ export default function WelcomePage() {
         <div className="absolute inset-0 -z-10 opacity-[0.09] [background-image:linear-gradient(rgba(255,255,255,.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.2)_1px,transparent_1px)] [background-size:56px_56px]" />
 
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-6 sm:px-8 lg:px-10">
-          <Link href="/welcome" className="group flex items-center gap-3">
+          <Link href="/" className="group flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-rose-400/30 bg-rose-500/10 shadow-lg shadow-rose-950/30"><span className="text-lg font-black tracking-[-0.12em] text-rose-400">TR</span></div>
             <div><p className="text-sm font-black uppercase tracking-[0.18em]">Team Rocket</p><p className="-mt-0.5 text-xs text-white/45">Markets</p></div>
           </Link>
+          <div className="hidden items-center gap-8 text-sm text-white/60 md:flex">
+            <Link className="transition hover:text-white" href="/sets">Sets</Link>
+            <Link className="transition hover:text-white" href="/japanese-sets">Japanese</Link>
+            <Link className="transition hover:text-white" href="/sell">Marketplace</Link>
+            <Link className="transition hover:text-white" href="/analytics">Analytics</Link>
+          </div>
           <div className="flex gap-2">
             <Button asChild variant="ghost" className="text-white hover:bg-white/10 hover:text-white"><Link href="/login">Sign in</Link></Button>
-            <Button asChild className="bg-rose-600 text-white hover:bg-rose-500"><Link href="/login">Get started</Link></Button>
+            <Button asChild className="bg-rose-600 text-white hover:bg-rose-500"><Link href="/welcome">Get started</Link></Button>
           </div>
         </nav>
 
         <div className="mx-auto grid max-w-7xl gap-12 px-5 pb-24 pt-20 sm:px-8 md:pt-28 lg:grid-cols-[1.05fr_.95fr] lg:px-10">
           <div className="relative z-10">
-            <Badge className="mb-6 border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-rose-200 hover:bg-rose-500/10"><Sparkles className="mr-1.5 h-3.5 w-3.5" />Built for serious Pokémon TCG collectors</Badge>
+            <Badge className="mb-6 border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-rose-200 hover:bg-rose-500/10"><Sparkles className="mr-1.5 h-3.5 w-3.5" />Now featuring Smart Scanner Beta</Badge>
             <h1 className="max-w-4xl text-5xl font-black leading-[.92] tracking-[-0.055em] sm:text-6xl md:text-7xl xl:text-[86px]">Your collection.<span className="block bg-gradient-to-r from-rose-400 via-red-500 to-orange-400 bg-clip-text text-transparent">Your market.</span></h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-white/58 sm:text-xl">Track every card. Know what it&apos;s worth. Organize every binder. Discover every variant. Then buy, sell, and trade directly with other collectors — with 0% selling fees.</p>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-white/58 sm:text-xl">Track every card. Know what it&apos;s worth. Organize every binder. And with Premium Smart Scanner Beta, point your phone at a supported English card, identify it, confirm the exact match, and send it straight into your inventory.</p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Button size="lg" asChild className="h-12 rounded-xl bg-rose-600 px-6 text-white hover:bg-rose-500"><Link href="/login">Start your collection<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+              <Button size="lg" asChild className="h-12 rounded-xl bg-rose-600 px-6 text-white hover:bg-rose-500"><Link href="/welcome">Start your collection<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
               <Button size="lg" asChild variant="outline" className="h-12 rounded-xl border-white/15 bg-white/5 px-6 text-white hover:bg-white/10 hover:text-white"><Link href="/sets">Explore sets</Link></Button>
             </div>
             <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/48">
-              {['English + Japanese','Variant-level tracking','Smart binders','0% selling fees'].map((label) => <span key={label} className="flex items-center gap-2"><BadgeCheck className="h-4 w-4 text-rose-400" />{label}</span>)}
+              {['Premium Smart Scanner','English + Japanese collection','Variant-level tracking','0% selling fees'].map((label) => <span key={label} className="flex items-center gap-2"><BadgeCheck className="h-4 w-4 text-rose-400" />{label}</span>)}
             </div>
           </div>
 
@@ -170,12 +178,114 @@ export default function WelcomePage() {
       </section>
 
       <section className="border-b border-white/10 bg-[#0a0a0c] py-5">
-        <div className="rocket-marquee-mask overflow-hidden"><div className="rocket-marquee !gap-10 text-xs font-bold uppercase tracking-[0.2em] text-white/35">{['Live market values','Every finish','Smart binders','English sets','Japanese sets','Collection analytics','Sell or trade','0% selling fees','Live market values','Every finish','Smart binders','English sets','Japanese sets','Collection analytics','Sell or trade','0% selling fees'].map((label,index)=><span key={`${label}-${index}`} className="flex shrink-0 items-center gap-3"><Zap className="h-3.5 w-3.5 text-rose-500" />{label}</span>)}</div></div>
+        <div className="rocket-marquee-mask overflow-hidden"><div className="rocket-marquee !gap-10 text-xs font-bold uppercase tracking-[0.2em] text-white/35">{['Premium Smart Scanner','Live market values','Every finish','Smart binders','English sets','Japanese sets','Collection analytics','0% selling fees','Premium Smart Scanner','Live market values','Every finish','Smart binders','English sets','Japanese sets','Collection analytics','0% selling fees'].map((label,index)=><span key={`${label}-${index}`} className="flex shrink-0 items-center gap-3"><Zap className="h-3.5 w-3.5 text-rose-500" />{label}</span>)}</div></div>
       </section>
 
       <section className="relative py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><div className="max-w-3xl"><p className="mb-4 text-sm font-bold uppercase tracking-[0.22em] text-rose-400">Exact collection tracking</p><h2 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl lg:text-6xl">Every card. Every finish.<span className="block text-white/38">Every variant.</span></h2><p className="mt-5 max-w-2xl text-lg leading-8 text-white/50">Reverse Holo, Poké Ball, Master Ball, stamped promos, Full Arts and more. Track the exact version you own — not just the card number — with its own condition, language, quantity, and market value.</p></div></div>
         <div className="mt-14 space-y-12"><InfiniteCardRow /><InfiniteCardRow reverse /></div>
+      </section>
+
+      <section className="relative overflow-hidden border-y border-rose-500/20 bg-[#0b080b] py-24 sm:py-32">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_30%,rgba(225,29,72,.22),transparent_32%),radial-gradient(circle_at_78%_65%,rgba(251,146,60,.10),transparent_30%)]" />
+        <div className="relative mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[1fr_.9fr] lg:items-center lg:px-10">
+          <div>
+            <div className="flex flex-wrap gap-2">
+              <Badge className="border border-rose-400/25 bg-rose-500/10 px-3 py-1 text-rose-200 hover:bg-rose-500/10">
+                <ScanLine className="mr-1.5 h-3.5 w-3.5" />
+                Premium Feature
+              </Badge>
+              <Badge className="border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100 hover:bg-amber-300/10">
+                Beta Edition
+              </Badge>
+              <Badge className="border border-white/10 bg-white/[0.05] px-3 py-1 text-white/70 hover:bg-white/[0.05]">
+                English Cards Only
+              </Badge>
+            </div>
+
+            <p className="mt-7 text-sm font-black uppercase tracking-[0.22em] text-rose-400">
+              Your camera becomes an inventory tool
+            </p>
+            <h2 className="mt-3 max-w-3xl text-4xl font-black tracking-[-0.045em] sm:text-5xl lg:text-6xl">
+              Don&apos;t type the card.
+              <span className="block bg-gradient-to-r from-rose-400 via-red-400 to-orange-300 bg-clip-text text-transparent">
+                Scan it.
+              </span>
+            </h2>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-white/55">
+              Smart Scanner turns your phone camera into a Pokémon inventory
+              workflow. Photograph a supported English card, review likely
+              matches, choose the exact print, set condition and finish, then
+              add it directly to inventory or a binder.
+            </p>
+
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              {[
+                ["01", "Scan", "Photograph the card"],
+                ["02", "Confirm", "Choose the exact match"],
+                ["03", "Add", "Inventory or binder"],
+              ].map(([number, title, body]) => (
+                <div key={number} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <span className="text-xs font-black text-rose-400">{number}</span>
+                  <p className="mt-2 font-black text-white">{title}</p>
+                  <p className="mt-1 text-xs text-white/40">{body}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-7 rounded-2xl border border-amber-300/15 bg-amber-300/[0.055] p-4">
+              <p className="text-sm font-bold text-amber-100">
+                Beta coverage: Destined Rivals, Journey Together, and older
+                English Pokémon TCG releases.
+              </p>
+              <p className="mt-1 text-xs leading-5 text-amber-100/55">
+                Recognition database updates are in progress. Newer English
+                releases may not be recognized yet.
+              </p>
+            </div>
+
+            <Button size="lg" asChild className="mt-8 h-12 rounded-xl bg-rose-600 px-6 text-white hover:bg-rose-500">
+              <Link href="/welcome">
+                Unlock Smart Scanner with Premium
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-[430px]">
+            <div className="absolute -inset-8 rounded-full bg-rose-600/10 blur-3xl" />
+            <div className="relative rounded-[36px] border border-white/15 bg-black/70 p-4 shadow-2xl shadow-rose-950/30">
+              <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-zinc-950 p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-300">Smart Scanner</p>
+                    <p className="mt-1 text-sm font-bold text-white">Camera recognition</p>
+                  </div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500/10">
+                    <ScanLine className="h-5 w-5 text-rose-400" />
+                  </div>
+                </div>
+
+                <div className="relative mx-auto mt-6 aspect-[63/88] w-[70%] rounded-2xl border-2 border-rose-400/70 bg-[radial-gradient(circle_at_center,rgba(225,29,72,.12),transparent_60%)] shadow-[0_0_35px_rgba(225,29,72,.16)]">
+                  <div className="absolute inset-x-4 top-1/2 h-px bg-rose-400 shadow-[0_0_14px_rgba(244,63,94,.9)]" />
+                  <div className="absolute left-3 top-3 h-7 w-7 border-l-2 border-t-2 border-white/80" />
+                  <div className="absolute right-3 top-3 h-7 w-7 border-r-2 border-t-2 border-white/80" />
+                  <div className="absolute bottom-3 left-3 h-7 w-7 border-b-2 border-l-2 border-white/80" />
+                  <div className="absolute bottom-3 right-3 h-7 w-7 border-b-2 border-r-2 border-white/80" />
+                </div>
+
+                <div className="mt-6 grid grid-cols-3 gap-2 text-center">
+                  {["Card read", "Match found", "Ready to add"].map((label) => (
+                    <div key={label} className="rounded-xl border border-white/10 bg-white/[0.04] px-2 py-3">
+                      <BadgeCheck className="mx-auto h-4 w-4 text-emerald-400" />
+                      <p className="mt-1 text-[10px] font-bold text-white/60">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="border-y border-white/10 bg-white text-zinc-950">
@@ -204,7 +314,7 @@ export default function WelcomePage() {
 
       <section className="relative overflow-hidden py-28">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(225,29,72,.16),transparent_42%)]" />
-        <div className="relative mx-auto max-w-4xl px-5 text-center sm:px-8"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-rose-400/30 bg-rose-500/10"><Tags className="h-6 w-6 text-rose-400" /></div><h2 className="mt-7 text-4xl font-black tracking-[-0.045em] sm:text-6xl">Your cards deserve<span className="block text-rose-400">a better command center.</span></h2><p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/50">Build your collection, organize every binder, follow market values, and connect with collectors from one place.</p><div className="mt-9 flex flex-wrap justify-center gap-3"><Button size="lg" asChild className="h-12 rounded-xl bg-rose-600 px-6 hover:bg-rose-500"><Link href="/login">Get started<ArrowRight className="ml-2 h-4 w-4" /></Link></Button><Button size="lg" asChild variant="outline" className="h-12 rounded-xl border-white/15 bg-white/5 px-6 text-white hover:bg-white/10 hover:text-white"><Link href="/login">Sign in</Link></Button></div></div>
+        <div className="relative mx-auto max-w-4xl px-5 text-center sm:px-8"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-rose-400/30 bg-rose-500/10"><Tags className="h-6 w-6 text-rose-400" /></div><h2 className="mt-7 text-4xl font-black tracking-[-0.045em] sm:text-6xl">Your cards deserve<span className="block text-rose-400">a better command center.</span></h2><p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/50">Build your collection, organize every binder, follow market values, and connect with collectors from one place.</p><div className="mt-9 flex flex-wrap justify-center gap-3"><Button size="lg" asChild className="h-12 rounded-xl bg-rose-600 px-6 hover:bg-rose-500"><Link href="/welcome">Get started<ArrowRight className="ml-2 h-4 w-4" /></Link></Button><Button size="lg" asChild variant="outline" className="h-12 rounded-xl border-white/15 bg-white/5 px-6 text-white hover:bg-white/10 hover:text-white"><Link href="/login">Sign in</Link></Button></div></div>
       </section>
 
       <footer className="border-t border-white/10"><div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-8 text-sm text-white/35 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10"><div className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-400/20 bg-rose-500/10 text-xs font-black text-rose-400">TR</div><span>Team Rocket Markets</span></div><div className="flex flex-wrap gap-5"><Link className="hover:text-white" href="/sets">Sets</Link><Link className="hover:text-white" href="/sell">Marketplace</Link><Link className="hover:text-white" href="/login">Sign in</Link></div></div></footer>
