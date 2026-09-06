@@ -67,6 +67,7 @@ const primaryNavigation: NavItem[] = [
 const browseNavigation: NavItem[] = [
   { name: "English Sets", href: "/sets", icon: Package },
   { name: "Japanese Sets", href: "/japanese-sets", icon: Package },
+  { name: "Chinese Sets", href: "/chinese-sets", icon: Package },
 ]
 
 const moreNavigation: NavItem[] = [

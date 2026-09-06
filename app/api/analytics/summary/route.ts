@@ -64,14 +64,15 @@ const EMPTY_SALES = {
   roi: 0,
   margin: 0,
   avgSalePrice: 0,
-  daily: [] as Array<{ day: string; revenue: number; units: number }>,
-  topByRevenue: [] as Array<{
-    name: string
-    set: string
-    units: number
-    revenue: number
-    profit: number
-  }>,
+  daily: [] as Array<{
+  day: string
+  revenue: number
+  cost: number
+  profit: number
+  units: number
+  margin: number
+  roi: number
+}>,
 }
 
 async function buildSearches(
@@ -149,7 +150,15 @@ async function buildSales(windowIso: string, scope: DataScope) {
   let revenue = 0
   let cost = 0
   let units = 0
-  const daily = new Map<string, { revenue: number; units: number }>()
+const daily = new Map<
+  string,
+  {
+    revenue: number
+    cost: number
+    profit: number
+    units: number
+  }
+>()
   const byCard = new Map<
     string,
     {
@@ -169,11 +178,21 @@ async function buildSales(windowIso: string, scope: DataScope) {
     cost += lineCost
     units += qty
 
-    const day = dayLabel(row.sold_at)
-    const dayEntry = daily.get(day) ?? { revenue: 0, units: 0 }
-    dayEntry.revenue += lineRevenue
-    dayEntry.units += qty
-    daily.set(day, dayEntry)
+   const day = dayLabel(row.sold_at)
+
+const dayEntry = daily.get(day) ?? {
+  revenue: 0,
+  cost: 0,
+  profit: 0,
+  units: 0,
+}
+
+dayEntry.revenue += lineRevenue
+dayEntry.cost += lineCost
+dayEntry.profit += lineRevenue - lineCost
+dayEntry.units += qty
+
+daily.set(day, dayEntry)
 
     const card = byCard.get(row.card_id) ?? {
       name: row.card_name || row.card_id,
@@ -200,9 +219,17 @@ async function buildSales(windowIso: string, scope: DataScope) {
     margin: revenue > 0 ? (profit / revenue) * 100 : 0,
     avgSalePrice: units > 0 ? revenue / units : 0,
     daily: Array.from(daily.entries()).map(([day, value]) => ({
-      day,
-      ...value,
-    })),
+  day,
+  ...value,
+  margin:
+    value.revenue > 0
+      ? (value.profit / value.revenue) * 100
+      : 0,
+  roi:
+    value.cost > 0
+      ? (value.profit / value.cost) * 100
+      : 0,
+})),
     topByRevenue: Array.from(byCard.values())
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 8),
@@ -316,7 +343,7 @@ export async function GET(request: Request) {
 
   const isolated = scope.mode === "isolated"
 
-  const [searches, sales, priceMovers] = await Promise.all([
+    const [searches, sales, priceMovers] = await Promise.all([
     isolated
       ? EMPTY_SEARCHES
       : buildSearches(windowIso, fourteenIso, scope).catch(
@@ -333,11 +360,27 @@ export async function GET(request: Request) {
       losers: [],
     })),
   ])
+  
+
+  const todayKey = dayLabel(new Date().toISOString())
+
+const todaySales =
+  sales.daily.find((entry) => entry.day === todayKey) ?? null
+
+const today = {
+  cardsSold: todaySales?.units ?? 0,
+  revenue: todaySales?.revenue ?? 0,
+  cost: todaySales?.cost ?? 0,
+  profit: todaySales?.profit ?? 0,
+  margin: todaySales?.margin ?? 0,
+  roi: todaySales?.roi ?? 0,
+}
 
   return NextResponse.json({
-    days,
-    ...searches,
-    sales,
-    priceMovers,
-  })
+  days,
+  ...searches,
+  sales,
+  priceMovers,
+  today,
+})
 }

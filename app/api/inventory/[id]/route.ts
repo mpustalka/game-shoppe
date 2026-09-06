@@ -7,6 +7,68 @@ interface RouteContext {
   params: Promise<{ id: string }>
 }
 
+export async function GET(_request: Request, { params }: RouteContext) {
+  const scope = await resolveDataScope()
+  if (scope instanceof NextResponse) return scope
+
+  const { id } = await params
+
+  if (scope.mode === "isolated") {
+    return NextResponse.json(
+      { error: "Inventory item not found" },
+      { status: 404 },
+    )
+  }
+
+  try {
+    const rows = await supabaseTable("inventory_items", {
+      select: "item",
+      filters: [`id=eq.${id}`, ...scopeFilters(scope)],
+      limit: 1,
+    })
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return NextResponse.json(
+        { error: "Inventory item not found" },
+        { status: 404 },
+      )
+    }
+
+    const item = rows[0]?.item as Record<string, unknown> | undefined
+
+    if (!item) {
+      return NextResponse.json(
+        { error: "Inventory item not found" },
+        { status: 404 },
+      )
+    }
+
+    return NextResponse.json({
+      ...item,
+      finish:
+        typeof item.finish === "string" && item.finish
+          ? item.finish
+          : "Normal",
+      quantitySold:
+        typeof item.quantitySold === "number"
+          ? item.quantitySold
+          : 0,
+    })
+  } catch (error) {
+    console.error("Inventory GET by id failed", error)
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown inventory error",
+      },
+      { status: 500 },
+    )
+  }
+}
+
 export async function PATCH(request: Request, { params }: RouteContext) {
   const scope = await resolveDataScope()
   if (scope instanceof NextResponse) return scope

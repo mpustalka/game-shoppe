@@ -401,31 +401,55 @@ if (gate instanceof NextResponse) {
     }
   })
 
-  const movedSets = sets.filter((s) => s.weeklyChange !== 0)
-  const change7d = totalValue - value7Ago
-  const change30d = totalValue - value30Ago
+ const movedSets = sets.filter((s) => s.weeklyChange !== 0)
+const change7d = totalValue - value7Ago
+const change30d = totalValue - value30Ago
 
-  return NextResponse.json({
-    trendDays,
-    overview: {
-      totalValue: round(totalValue),
-      change7d: round(change7d),
-      change7dPercent: round(
-        value7Ago > 0 ? (change7d / value7Ago) * 100 : 0,
-        1,
-      ),
-      change30d: round(change30d),
-      change30dPercent: round(
-        value30Ago > 0 ? (change30d / value30Ago) * 100 : 0,
-        1,
-      ),
-      cardsTracked: measurable.length,
-      totalUnits: rows.reduce((a, r) => a + r.quantity, 0),
-      cardsMovedThisWeek: moved.length,
-      biggestGainer,
-      biggestLoser,
-      costBasis,
-    },
+const totalUnits = rows.reduce((sum, row) => sum + row.quantity, 0)
+const positions = rows.length
+
+const unrealizedGain = totalValue - costBasis
+
+const unrealizedGainPercent =
+  costBasis > 0 ? (unrealizedGain / costBasis) * 100 : 0
+
+return NextResponse.json({
+  trendDays,
+  overview: {
+    totalValue: round(totalValue),
+
+    costBasis,
+
+    unrealizedGain: round(unrealizedGain),
+
+    unrealizedGainPercent: round(unrealizedGainPercent, 1),
+
+    totalUnits,
+
+    positions,
+
+    change7d: round(change7d),
+
+    change7dPercent: round(
+      value7Ago > 0 ? (change7d / value7Ago) * 100 : 0,
+      1,
+    ),
+
+    change30d: round(change30d),
+
+    change30dPercent: round(
+      value30Ago > 0 ? (change30d / value30Ago) * 100 : 0,
+      1,
+    ),
+
+    cardsTracked: measurable.length,
+
+    cardsMovedThisWeek: moved.length,
+
+    biggestGainer,
+
+    biggestLoser,
+  },
     trend,
     movers: { gainers, losers },
     contribution: { gainers: gainContrib, losers: lossContrib },

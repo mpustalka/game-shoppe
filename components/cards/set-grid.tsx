@@ -1,9 +1,8 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import type { PokemonSet } from "@/lib/types"
-import { useInventory } from "@/lib/inventory-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, CheckCircle2, Layers } from "lucide-react"
@@ -13,21 +12,118 @@ interface SetGridProps {
   basePath?: string
 }
 
-export function SetGrid({ sets, basePath = "/sets" }: SetGridProps) {
-  const { items } = useInventory()
+type OwnershipResponse = {
+  bySet?: Record<string, number>
+}
 
-  // Count unique owned cards per set, matching the analytics "Popular Sets" logic.
-  const ownedBySet = useMemo(() => {
-    const map = new Map<string, Set<string>>()
-    for (const item of items) {
-      const setId = item.card.set.id
-      if (!setId) continue
-      const owned = map.get(setId) ?? new Set<string>()
-      owned.add(item.card.id)
-      map.set(setId, owned)
+type OwnershipCacheEntry = {
+  data: Record<string, number>
+  expiresAt: number
+}
+
+const OWNERSHIP_CACHE_TTL_MS = 15_000
+
+const ownershipCache = new Map<string, OwnershipCacheEntry>()
+const ownershipRequests = new Map<
+  string,
+  Promise<Record<string, number>>
+>()
+
+function languageForBasePath(basePath: string) {
+  if (basePath.startsWith("/japanese-sets")) return "ja"
+  if (basePath.startsWith("/chinese-sets")) return "zh"
+  return "en"
+}
+
+async function fetchOwnership(
+  language: string,
+): Promise<Record<string, number>> {
+  const now = Date.now()
+  const cached = ownershipCache.get(language)
+
+  if (cached && cached.expiresAt > now) {
+    return cached.data
+  }
+
+  const existingRequest = ownershipRequests.get(language)
+  if (existingRequest) {
+    return existingRequest
+  }
+
+  const request = (async () => {
+    const params = new URLSearchParams({ language })
+
+    const response = await fetch(
+      `/api/inventory/ownership?${params.toString()}`,
+      {
+        cache: "no-store",
+      },
+    )
+
+    if (response.status === 401) {
+      return {}
     }
-    return map
-  }, [items])
+
+    if (!response.ok) {
+      throw new Error(
+        `Ownership request failed with ${response.status}`,
+      )
+    }
+
+    const data = (await response.json()) as OwnershipResponse
+    const bySet =
+      data.bySet && typeof data.bySet === "object"
+        ? data.bySet
+        : {}
+
+    ownershipCache.set(language, {
+      data: bySet,
+      expiresAt: Date.now() + OWNERSHIP_CACHE_TTL_MS,
+    })
+
+    return bySet
+  })()
+
+  ownershipRequests.set(language, request)
+
+  try {
+    return await request
+  } finally {
+    ownershipRequests.delete(language)
+  }
+}
+
+export function SetGrid({ sets, basePath = "/sets" }: SetGridProps) {
+  const [ownedBySet, setOwnedBySet] = useState<Record<string, number>>({})
+
+  const language = useMemo(
+    () => languageForBasePath(basePath),
+    [basePath],
+  )
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadOwnership() {
+      try {
+        const bySet = await fetchOwnership(language)
+
+        if (!cancelled) {
+          setOwnedBySet(bySet)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load set ownership:", error)
+        }
+      }
+    }
+
+    void loadOwnership()
+
+    return () => {
+      cancelled = true
+    }
+  }, [language])
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -36,7 +132,7 @@ export function SetGrid({ sets, basePath = "/sets" }: SetGridProps) {
           key={set.id}
           set={set}
           basePath={basePath}
-          ownedCount={ownedBySet.get(set.id)?.size ?? 0}
+          ownedCount={ownedBySet[set.id] ?? 0}
         />
       ))}
     </div>
@@ -116,7 +212,8 @@ function SetCard({
               <div className="mb-1 flex items-center justify-center gap-1.5 text-xs font-medium text-primary">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 <span>
-                  {ownedCount}/{set.total} owned · {completionPercent.toFixed(0)}%
+                  {ownedCount}/{set.total} owned ·{" "}
+                  {completionPercent.toFixed(0)}%
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-muted">

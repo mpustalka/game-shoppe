@@ -142,7 +142,8 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
    * loads the inventory needed by the listing manager.
    *
    * Do not make the expensive global /api/inventory request
-   * while inside /admin or /sell.
+   * while inside admin, sell, or set-browsing routes. Set pages load
+   * catalog/card data and do not need the user's full inventory payload.
    */
   useEffect(() => {
     if (!pathname) {
@@ -153,7 +154,13 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       pathname === "/admin" ||
       pathname.startsWith("/admin/") ||
       pathname === "/sell" ||
-      pathname.startsWith("/sell/")
+      pathname.startsWith("/sell/") ||
+      pathname === "/sets" ||
+      pathname.startsWith("/sets/") ||
+      pathname === "/japanese-sets" ||
+      pathname.startsWith("/japanese-sets/") ||
+      pathname === "/chinese-sets" ||
+      pathname.startsWith("/chinese-sets/")
 
     if (shouldSkipGlobalInventory) {
       console.log("SKIPPING GLOBAL INVENTORY ON:", pathname)
