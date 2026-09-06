@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import type { PokemonCard, CardCondition, PriceTier } from "@/lib/types"
 
@@ -47,10 +47,76 @@ interface CardGridProps {
 
 export function CardGrid({
   cards,
+  setId,
   onSelectCards,
   language = "en",
 }: CardGridProps) {
   const { addItem, items } = useInventory()
+
+  const [routeInventoryItems, setRouteInventoryItems] = useState<
+    typeof items
+  >([])
+
+  useEffect(() => {
+  if (!setId) {
+    setRouteInventoryItems([])
+    return
+  }
+
+  const currentSetId = setId
+  const controller = new AbortController()
+
+  async function loadSetOwnership() {
+    try {
+      const params = new URLSearchParams({
+        setId: currentSetId,
+        language,
+      })
+
+        const response = await fetch(
+          `/api/inventory/ownership?${params.toString()}`,
+          {
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        )
+
+        if (response.status === 401) {
+          setRouteInventoryItems([])
+          return
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            `Set ownership request failed with ${response.status}`,
+          )
+        }
+
+        const data = (await response.json()) as {
+          items?: typeof items
+        }
+
+        if (!controller.signal.aborted) {
+          setRouteInventoryItems(
+            Array.isArray(data.items) ? data.items : [],
+          )
+        }
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.name === "AbortError"
+        ) {
+          return
+        }
+
+        console.error("Failed to load set inventory ownership:", error)
+      }
+    }
+
+    void loadSetOwnership()
+
+    return () => controller.abort()
+  }, [setId, language])
 
   const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null)
 
@@ -136,17 +202,31 @@ export function CardGrid({
 
   const inventoryMap = useMemo(() => {
     const map = new Map<string, typeof items>()
+    const seenIds = new Set<string>()
 
-    items.forEach((item) => {
+    // Existing ownership loaded specifically for this set.
+    for (const item of routeInventoryItems) {
+      if (seenIds.has(item.id)) continue
+      seenIds.add(item.id)
+
       const existing = map.get(item.cardId) || []
-
       existing.push(item)
-
       map.set(item.cardId, existing)
-    })
+    }
+
+    // Items added during this visit are immediately placed into the normal
+    // InventoryContext by addItem(), so merge them without duplicates.
+    for (const item of items) {
+      if (seenIds.has(item.id)) continue
+      seenIds.add(item.id)
+
+      const existing = map.get(item.cardId) || []
+      existing.push(item)
+      map.set(item.cardId, existing)
+    }
 
     return map
-  }, [items])
+  }, [items, routeInventoryItems])
 
   const selectedCards = useMemo(
     () => cards.filter((card) => selected.has(card.id)),

@@ -44,10 +44,11 @@ console.log("Inventory filters:", filters)
 
 
   const rows = await supabaseTable("inventory_items", {
-    select: "item",
-    filters: scopeFilters(scope),
-    order: "created_at.desc",
-  })
+  select: "item",
+  filters: scopeFilters(scope),
+  order: "created_at.desc",
+  limit: 10000,
+})
  console.log("Inventory rows:", rows.length)
 
   return NextResponse.json(

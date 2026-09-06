@@ -106,21 +106,38 @@ type Insights = {
   trackedCards: number
   daysTracked: number
   weeksTracked: number
-  threshold: number
-  bigGainers: Mover[]
-  bigDrops: Mover[]
-  gainStreaks: StreakInsight[]
+  thresholdPercent: number
+thresholdAmount: number
+bigGainers: Mover[]
+bigDrops: Mover[]
+gainStreaks: StreakInsight[]
   unusual: UnusualInsight[]
+}
+
+type CollectionAnalytics = {
+  overview: {
+    totalValue: number
+    costBasis: number
+    unrealizedGain: number
+    unrealizedGainPercent: number
+    totalUnits: number
+    positions: number
+    change7d: number
+    change7dPercent: number
+    change30d: number
+    change30dPercent: number
+  }
 }
 
 const EMPTY_INSIGHTS: Insights = {
   trackedCards: 0,
   daysTracked: 0,
   weeksTracked: 0,
-  threshold: 10,
-  bigGainers: [],
-  bigDrops: [],
-  gainStreaks: [],
+thresholdPercent: 7,
+thresholdAmount: 1,
+bigGainers: [],
+bigDrops: [],
+gainStreaks: [],
   unusual: [],
 }
 
@@ -169,17 +186,42 @@ export default function AnalyticsPage() {
   const [days, setDays] = useState(30)
   const [summary, setSummary] = useState<Summary>(EMPTY_SUMMARY)
   const [insights, setInsights] = useState<Insights>(EMPTY_INSIGHTS)
+  const [collectionAnalytics, setCollectionAnalytics] =
+  useState<CollectionAnalytics | null>(null)
+  useEffect(() => {
+  if (entitlementsLoading || !analyticsAllowed) return
+
+  fetch("/api/analytics/collection")
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      if (data) {
+        setCollectionAnalytics(data)
+      }
+    })
+    .catch(() => undefined)
+}, [entitlementsLoading, analyticsAllowed])
+const collectionOverview = collectionAnalytics?.overview
+
   const snapshotSent = useRef(false)
 
   useEffect(() => {
     if (entitlementsLoading || !analyticsAllowed) return
 
     fetch(`/api/analytics/summary?days=${days}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        if (data) setSummary(data)
-      })
-      .catch(() => undefined)
+  .then((response) => (response.ok ? response.json() : null))
+  .then((data) => {
+    if (data) {
+      console.log("ANALYTICS SUMMARY:", data)
+      console.log("PRICE MOVERS:", data.priceMovers)
+      console.log("PRICE GAINERS:", data.priceMovers?.gainers)
+      console.log("PRICE LOSERS:", data.priceMovers?.losers)
+
+      setSummary(data)
+    }
+  })
+  .catch((error) => {
+    console.error("ANALYTICS SUMMARY FETCH FAILED:", error)
+  })
   }, [days, entitlementsLoading, analyticsAllowed])
 
   useEffect(() => {
@@ -361,24 +403,34 @@ export default function AnalyticsPage() {
       {/* Financial position */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric
-          title="Inventory Value"
-          value={usd(fin.inventoryValue)}
-          sub={`${fin.unitsOnHand.toLocaleString()} cards on hand`}
-          icon={DollarSign}
-        />
+  title="Inventory Value"
+  value={usd(collectionOverview?.totalValue ?? fin.inventoryValue)}
+  sub={`${(
+    collectionOverview?.totalUnits ?? fin.unitsOnHand
+  ).toLocaleString()} cards on hand`}
+  icon={DollarSign}
+/>
         <Metric
-          title="Cost Basis"
-          value={usd(fin.inventoryCost)}
-          sub="Total paid for current stock"
-          icon={PiggyBank}
-        />
+  title="Cost Basis"
+  value={usd(collectionOverview?.costBasis ?? fin.inventoryCost)}
+  sub="Total paid for current stock"
+  icon={PiggyBank}
+/>
         <Metric
-          title="Unrealized P/L"
-          value={usd(fin.unrealizedProfit)}
-          sub={`${pct(fin.unrealizedRoi)} ROI vs cost`}
-          tone={fin.unrealizedProfit >= 0 ? "positive" : "negative"}
-          icon={TrendingUp}
-        />
+  title="Unrealized P/L"
+  value={usd(
+    collectionOverview?.unrealizedGain ?? fin.unrealizedProfit,
+  )}
+  sub={`${pct(
+    collectionOverview?.unrealizedGainPercent ?? fin.unrealizedRoi,
+  )} ROI vs cost`}
+  tone={
+    (collectionOverview?.unrealizedGain ?? fin.unrealizedProfit) >= 0
+      ? "positive"
+      : "negative"
+  }
+  icon={TrendingUp}
+/>
         <Metric
           title={`Realized Revenue · ${days}D`}
           value={usd(realizedRevenue)}
@@ -460,7 +512,7 @@ export default function AnalyticsPage() {
         </div>
         <div className="mb-6 grid gap-6 lg:grid-cols-2">
           <ListCard
-            title={`Up more than ${insights.threshold}% this week`}
+            title={`Significant Gains`}
             icon={TrendingUp}
             hint={
               insights.bigGainers.length
@@ -471,7 +523,7 @@ export default function AnalyticsPage() {
             {insights.bigGainers.length === 0 ? (
               <InsightEmpty
                 ready={insights.daysTracked >= 2}
-                label="No cards are up more than 10% over the last week yet."
+                label={`No cards are up ${insights.thresholdPercent}% or $${insights.thresholdAmount.toFixed(2)} over the last week yet.`}
               />
             ) : (
               insights.bigGainers.map((mover) => (
@@ -484,7 +536,7 @@ export default function AnalyticsPage() {
           </ListCard>
 
           <ListCard
-            title={`Down more than ${insights.threshold}% this week`}
+            title="Significant Drops"
             icon={TrendingDown}
             hint={
               insights.bigDrops.length
@@ -495,7 +547,7 @@ export default function AnalyticsPage() {
             {insights.bigDrops.length === 0 ? (
               <InsightEmpty
                 ready={insights.daysTracked >= 2}
-                label="No cards are down more than 10% over the last week yet."
+                label={`No cards are down ${insights.thresholdPercent}% or $${insights.thresholdAmount.toFixed(2)} over the last week yet.`}
               />
             ) : (
               insights.bigDrops.map((mover) => (

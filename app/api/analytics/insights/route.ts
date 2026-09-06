@@ -122,40 +122,44 @@ export async function GET() {
     const unusual: Array<Record<string, unknown>> = []
 
     for (const s of series.values()) {
-      // --- This-week movers: first reading in the last 7 days vs the latest ---
-      const window = s.readings.filter((r) => r.date >= weekAgo)
-      if (window.length >= 2) {
-        const first = window[0].price
-        const last = window[window.length - 1].price
-        if (first >= 0.5 && first > 0) {
-          const change = last - first
-          const changePercent = (change / first) * 100
-          if (changePercent >= 10) {
-            bigGainers.push({
-              cardId: s.cardId,
-              name: s.name,
-              set: s.set,
-              finish: s.finish,
-              first: Number(first.toFixed(2)),
-              last: Number(last.toFixed(2)),
-              change: Number(change.toFixed(2)),
-              changePercent: Number(changePercent.toFixed(1)),
-            })
-          } else if (changePercent <= -10) {
-            bigDrops.push({
-              cardId: s.cardId,
-              name: s.name,
-              set: s.set,
-              finish: s.finish,
-              first: Number(first.toFixed(2)),
-              last: Number(last.toFixed(2)),
-              change: Number(change.toFixed(2)),
-              changePercent: Number(changePercent.toFixed(1)),
-            })
-          }
-        }
+  // --- This-week movers: first reading in the last 7 days vs the latest ---
+  const window = s.readings.filter((r) => r.date >= weekAgo)
+
+  if (window.length >= 2) {
+    const first = window[0].price
+    const last = window[window.length - 1].price
+
+    if (first >= 0.5 && first > 0) {
+      const change = last - first
+      const changePercent = (change / first) * 100
+
+      const mover = {
+        cardId: s.cardId,
+        name: s.name,
+        set: s.set,
+        finish: s.finish,
+        first: Number(first.toFixed(2)),
+        last: Number(last.toFixed(2)),
+        change: Number(change.toFixed(2)),
+        changePercent: Number(changePercent.toFixed(1)),
       }
 
+      // Significant gain: +7% OR +$1.00
+      if (changePercent >= 7 || change >= 1) {
+        bigGainers.push(mover)
+      }
+
+      // Significant drop: -7% OR -$1.00
+      if (changePercent <= -7 || change <= -1) {
+        bigDrops.push(mover)
+      }
+    }
+  }
+
+  // --- Weekly-based signals: streaks and unusual movement ---
+  const weekly = weeklyPrices(s.readings)
+
+  if (weekly.length >= 2) {
       // --- Weekly-based signals: streaks and unusual movement ---
       const weekly = weeklyPrices(s.readings)
       if (weekly.length >= 2) {
@@ -233,19 +237,22 @@ export async function GET() {
       trackedCards: series.size,
       daysTracked: distinctDays.size,
       weeksTracked: distinctWeeks.size,
-      threshold: 10,
+      thresholdPercent: 7,
+      thresholdAmount: 1,
       bigGainers: bigGainers.slice(0, 12),
       bigDrops: bigDrops.slice(0, 12),
       gainStreaks: gainStreaks.slice(0, 12),
       unusual: unusual.slice(0, 12),
     })
-  } catch (error) {
+  }
+} catch (error) {
     console.error("Insights computation failed", error)
     return NextResponse.json({
       trackedCards: 0,
       daysTracked: 0,
       weeksTracked: 0,
-      threshold: 10,
+      thresholdPercent: 7,
+      thresholdAmount: 1,
       bigGainers: [],
       bigDrops: [],
       gainStreaks: [],
@@ -253,3 +260,4 @@ export async function GET() {
     })
   }
 }
+
