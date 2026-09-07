@@ -13,7 +13,7 @@ import { requireFeature } from "@/lib/subscription-server"
 
 import type { InventoryItem } from "@/lib/types"
 
-import { rowToShowcase, type ShowcaseRow } from "../route"
+import { rowToShowcase, type ShowcaseRow } from "@/lib/showcase"
 
 interface RouteContext {
   params: Promise<{

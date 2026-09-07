@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
-import { rowToShowcase, type ShowcaseRow } from "../../route"
+import { rowToShowcase, type ShowcaseRow } from "@/lib/showcase"
 
 interface RouteContext {
   params: Promise<{ token: string }>

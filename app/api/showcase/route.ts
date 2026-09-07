@@ -1,52 +1,27 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
-import { SHOWCASE_CARD_LIMIT } from "@/lib/showcase"
-
+import {
+  SHOWCASE_CARD_LIMIT,
+  rowToShowcase,
+  type ShowcaseRow,
+} from "@/lib/showcase"
 import {
   resolveDataScope,
   scopeFilters,
   ownerStamp,
   pendingSetupResponse,
 } from "@/lib/user-scope"
-
 import { requireFeature } from "@/lib/subscription-server"
-
 import type { InventoryItem } from "@/lib/types"
 
-export interface ShowcaseRow {
-  id: string
-  share_token: string
-  name: string
-  items: InventoryItem[] | null
-  created_at: string
-  updated_at: string
-}
-
-export function rowToShowcase(row: ShowcaseRow) {
-  return {
-    id: row.id,
-    shareToken: row.share_token,
-    name: row.name ?? "Showcase",
-    items: Array.isArray(row.items) ? row.items : [],
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+function generateShareToken(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID().replace(/-/g, "")
   }
+
+  return `${Date.now()}${Math.random().toString(36).slice(2, 14)}`
 }
-
-function generateShareToken() {
-  const raw =
-    typeof globalThis.crypto?.randomUUID === "function"
-      ? globalThis.crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-
-  return raw.replace(/-/g, "").slice(0, 12)
-}
-
-const id =
-  typeof globalThis.crypto?.randomUUID === "function"
-    ? globalThis.crypto.randomUUID()
-    : `showcase-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 
 export async function GET() {
   const gate = await requireFeature(
@@ -72,9 +47,7 @@ export async function GET() {
   try {
     const rows = (await supabaseTable("showcase_binders", {
       select: "id,share_token,name,items,created_at,updated_at",
-
       filters: scopeFilters(scope),
-
       order: "updated_at.desc",
     })) as ShowcaseRow[] | null
 
@@ -86,9 +59,7 @@ export async function GET() {
       {
         error: error instanceof Error ? error.message : "Unknown error",
       },
-      {
-        status: 500,
-      },
+      { status: 500 },
     )
   }
 }
@@ -121,7 +92,9 @@ export async function POST(request: Request) {
       ? body.name.trim().slice(0, 120)
       : "Showcase"
 
-  const items: InventoryItem[] = Array.isArray(body?.items) ? body.items : []
+  const items: InventoryItem[] = Array.isArray(body?.items)
+    ? body.items
+    : []
 
   if (items.length > SHOWCASE_CARD_LIMIT) {
     return NextResponse.json(
@@ -136,18 +109,17 @@ export async function POST(request: Request) {
   const now = new Date().toISOString()
 
   const row = {
-    id: globalThis.crypto.randomUUID(),
+    id:
+      typeof globalThis.crypto?.randomUUID === "function"
+        ? globalThis.crypto.randomUUID()
+        : `showcase-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
 
     ...ownerStamp(scope),
 
     share_token: generateShareToken(),
-
     name,
-
     items,
-
     created_at: now,
-
     updated_at: now,
   }
 
@@ -159,9 +131,10 @@ export async function POST(request: Request) {
 
     const created = Array.isArray(inserted) ? inserted[0] : null
 
-    return NextResponse.json(rowToShowcase(created ?? (row as ShowcaseRow)), {
-      status: 201,
-    })
+    return NextResponse.json(
+      rowToShowcase(created ?? (row as ShowcaseRow)),
+      { status: 201 },
+    )
   } catch (error) {
     console.error("Showcase POST failed", error)
 
@@ -169,9 +142,7 @@ export async function POST(request: Request) {
       {
         error: error instanceof Error ? error.message : "Unknown error",
       },
-      {
-        status: 500,
-      },
+      { status: 500 },
     )
   }
 }

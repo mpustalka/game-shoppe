@@ -365,11 +365,11 @@ export function CardGrid({
 
       {/* Card Grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6">
-        {filtered.map((card) => (
-          <CardItem
-            key={card.id}
-            card={card}
-            inventoryItems={inventoryMap.get(card.id) || []}
+        {filtered.map((card, index) => (
+  <CardItem
+    key={`${card.id}-${card.number ?? index}-${index}`}
+    card={card}
+    inventoryItems={inventoryMap.get(card.id) || []}
             onClick={() => {
               setSelectedCard(card)
               setModalOpen(true)
