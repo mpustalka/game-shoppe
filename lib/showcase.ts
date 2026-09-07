@@ -13,6 +13,26 @@ export interface ShowcaseBinder {
   updatedAt: string
 }
 
+export interface ShowcaseRow {
+  id: string
+  share_token: string
+  name: string
+  items: InventoryItem[]
+  created_at: string
+  updated_at: string
+}
+
+export function rowToShowcase(row: ShowcaseRow): ShowcaseBinder {
+  return {
+    id: row.id,
+    shareToken: row.share_token,
+    name: row.name,
+    items: row.items,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
 /** Build the public, shareable URL for a showcase from its token. */
 export function buildShareUrl(shareToken: string, origin?: string): string {
   const base =
