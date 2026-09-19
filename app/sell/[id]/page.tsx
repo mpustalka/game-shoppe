@@ -32,6 +32,7 @@ import {
   ShoppingBag,
   Trash2,
   Truck,
+  Settings,
 } from "lucide-react"
 
 import { toast } from "sonner"
@@ -1378,8 +1379,8 @@ export default function SellBinderManagerPage() {
         <div>
           <Button
             variant="ghost"
-            className="mb-2 -ml-3"
-            asChild
+            className="mb-2 -ml-3 text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+  asChild
           >
             <Link href="/sell">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -1399,9 +1400,12 @@ export default function SellBinderManagerPage() {
             </Badge>
 
             {data.binder.is_public && (
-              <Badge variant="outline">
-                Public
-              </Badge>
+              <Badge
+  variant="outline"
+  className="border-white/20 bg-white/[0.04] text-zinc-200"
+>
+  Public
+</Badge>
             )}
 
           </div>
@@ -1412,19 +1416,32 @@ export default function SellBinderManagerPage() {
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          onClick={() =>
-            void Promise.all([
-              loadBinder(),
-              loadCards(),
-            ])
-          }
-        >
-          <RefreshCw className="mr-2 h-4 w-4" />
+        <div className="flex flex-wrap items-center gap-2">
+  <Button
+    asChild
+    variant="outline"
+    className="border-white/10 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:text-white"
+  >
+    <Link href="/sell/profile">
+      <Settings className="mr-2 h-4 w-4" />
+      Seller Preferences
+    </Link>
+  </Button>
 
-          Refresh
-        </Button>
+  <Button
+    variant="outline"
+    className="border-white/10 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:text-white"
+    onClick={() =>
+      void Promise.all([
+        loadBinder(),
+        loadCards(),
+      ])
+    }
+  >
+    <RefreshCw className="mr-2 h-4 w-4" />
+    Refresh
+  </Button>
+</div>
 
       </div>
 
@@ -2456,9 +2473,9 @@ function BinderSlot({
 
       <div className="p-2 sm:p-3">
 
-        <p className="truncate text-xs font-semibold sm:text-sm">
-          {cardName(row)}
-        </p>
+        <p className="truncate text-xs font-bold text-white sm:text-sm">
+  {cardName(row)}
+</p>
 
         <p className="truncate text-[10px] text-zinc-400 sm:text-xs">
           {cardSet(row)}
@@ -2474,20 +2491,20 @@ function BinderSlot({
 
           {cardCondition(row) && (
             <Badge
-              variant="secondary"
-              className="text-[10px]"
-            >
-              {cardCondition(row)}
-            </Badge>
+  variant="secondary"
+  className="border border-white/15 bg-zinc-800 text-[10px] font-semibold text-zinc-100 hover:bg-zinc-800"
+>
+  {cardCondition(row)}
+</Badge>
           )}
 
           {cardFinish(row) && (
             <Badge
-              variant="outline"
-              className="text-[10px]"
-            >
-              {cardFinish(row)}
-            </Badge>
+  variant="outline"
+  className="border-white/20 bg-black/20 text-[10px] font-semibold text-zinc-200"
+>
+  {cardFinish(row)}
+</Badge>
           )}
 
         </div>
@@ -2500,9 +2517,7 @@ function BinderSlot({
             Market Value
           </p>
 
-          <p className="text-sm font-bold">
-            {money(market)}
-          </p>
+          <p>className="text-xs font-black text-white"/</p>
 
         </div>
 
@@ -2515,7 +2530,7 @@ function BinderSlot({
               Owned
             </p>
 
-            <p className="text-xs font-bold">
+            <p className="text-xs font-black text-white">
               {row.owned}
             </p>
           </div>
@@ -2525,7 +2540,7 @@ function BinderSlot({
               Listed
             </p>
 
-            <p className="text-xs font-bold">
+            <p className="text-xs font-black text-white">
               {row.listed}
             </p>
           </div>
@@ -2535,79 +2550,94 @@ function BinderSlot({
               Available
             </p>
 
-            <p className="text-xs font-bold">
+            <p className="text-xs font-black text-white">
               {row.available}
             </p>
           </div>
 
         </div>
 
-        {/* SELL PRICE */}
+        {/* CREATE LISTING */}
 
-        <div className="mt-3">
+<div className="mt-4 rounded-xl border border-rose-500/20 bg-gradient-to-b from-rose-500/10 to-black/20 p-3">
+  <div className="mb-3 flex items-center justify-between gap-2">
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-400">
+        List This Card
+      </p>
 
-          <Label className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
-            Your Sell Price
-          </Label>
+      <p className="mt-0.5 text-[10px] leading-relaxed text-zinc-500">
+        Create an active marketplace listing
+      </p>
+    </div>
 
-          <div className="relative mt-1">
+    <ShoppingBag className="h-4 w-4 shrink-0 text-rose-400" />
+  </div>
 
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
-              $
-            </span>
+  {row.available > 0 ? (
+    <>
+      <Label className="text-[10px] font-semibold uppercase tracking-wide text-zinc-300">
+        Asking Price
+      </Label>
 
-            <Input
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={sellPrice}
-              disabled={
-                row.available <= 0
-              }
-              onChange={(event) =>
-                onPriceChange(
-                  event.target.value,
-                )
-              }
-              className="h-8 border-white/10 bg-zinc-950 pl-5 text-xs font-semibold text-white placeholder:text-zinc-600"
-              placeholder="0.00"
-            />
+      <div className="relative mt-1.5">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">
+          $
+        </span>
 
-          </div>
-
-        </div>
-
-        {/* QUICK LIST */}
-
-        <Button
-          size="sm"
-          className="mt-2 w-full bg-rose-600 font-bold text-white hover:bg-rose-500"
-          disabled={
-            working ||
-            row.available <= 0 ||
-            !validPrice
+        <Input
+          type="number"
+          min="0.01"
+          step="0.01"
+          value={sellPrice}
+          onChange={(event) =>
+            onPriceChange(event.target.value)
           }
-          onClick={onQuickSell}
-        >
-          <ShoppingBag className="mr-1 h-3.5 w-3.5" />
+          className="h-10 border-white/10 bg-zinc-950 pl-7 text-sm font-bold text-white placeholder:text-zinc-600 focus-visible:ring-rose-500"
+          placeholder="0.00"
+        />
+      </div>
 
-          List For Sale
-        </Button>
+      <Button
+        size="sm"
+        className="mt-3 h-10 w-full bg-rose-600 font-black text-white shadow-lg shadow-rose-950/20 hover:bg-rose-500"
+        disabled={
+          working ||
+          !validPrice
+        }
+        onClick={onQuickSell}
+      >
+        <ShoppingBag className="mr-2 h-4 w-4" />
 
-        {/* ADVANCED */}
+        {working
+          ? "Creating Listing..."
+          : "Create Listing"}
+      </Button>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          className="mt-1 w-full text-xs"
-          disabled={
-            working ||
-            row.available <= 0
-          }
-          onClick={onAdvanced}
-        >
-          Advanced Listing
-        </Button>
+      <button
+        type="button"
+        disabled={working}
+        onClick={onAdvanced}
+        className="mt-2 w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-zinc-300 transition hover:border-rose-500/30 hover:bg-rose-500/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Advanced Listing
+        <span className="ml-1 font-normal text-zinc-500">
+          • Sale / Trade / Shipping
+        </span>
+      </button>
+    </>
+  ) : (
+    <div className="rounded-lg border border-white/5 bg-black/30 px-3 py-3 text-center">
+      <p className="text-xs font-semibold text-zinc-400">
+        No copies available to list
+      </p>
+
+      <p className="mt-1 text-[10px] text-zinc-600">
+        All owned copies are currently listed.
+      </p>
+    </div>
+  )}
+</div>
 
       </div>
 
@@ -2709,125 +2739,115 @@ function ListingCard({
   onDelete,
 }: {
   listing: SellListing
-
   working: boolean
-
   onEdit: () => void
-
   onToggle: () => void
-
   onDelete: () => void
 }) {
+  const listingTypeLabel =
+    listing.listing_type === "trade"
+      ? "For Trade"
+      : listing.listing_type === "both"
+        ? "Sale / Trade"
+        : "For Sale"
+
+  const isActive = listing.status === "active"
+
   return (
-    <Card className="border-white/10 bg-zinc-900/70 transition hover:border-rose-500/25">
-
+    <Card className="border-white/10 bg-zinc-900/80 text-zinc-100 shadow-lg shadow-black/20 transition hover:border-rose-500/30">
       <CardContent className="p-4">
-
         <div className="flex items-start justify-between gap-3">
-
-          <div>
-            <p className="text-xs text-zinc-400">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
               Inventory Item
             </p>
 
-            <p className="mt-1 max-w-[220px] truncate font-mono text-xs">
-              {
-                listing.inventory_item_id
-              }
+            <p className="mt-1 max-w-[220px] truncate font-mono text-xs text-zinc-300">
+              {listing.inventory_item_id}
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">
-              {listing.listing_type === "trade"
-                ? "For Trade"
-                : listing.listing_type === "both"
-                  ? "Sale / Trade"
-                  : "For Sale"}
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Badge
+              variant="outline"
+              className="border-white/15 bg-white/[0.04] text-zinc-200"
+            >
+              {listingTypeLabel}
             </Badge>
 
-          <Badge
-            variant={
-              listing.status === "active"
-                ? "default"
-                : "secondary"
-            }
-          >
-            {listing.status}
-          </Badge>
+            <Badge
+              className={
+                isActive
+                  ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/15"
+                  : "border border-white/10 bg-white/[0.05] text-zinc-300 hover:bg-white/[0.05]"
+              }
+            >
+              {listing.status}
+            </Badge>
           </div>
-
         </div>
 
-        <div className="mt-4 rounded-xl border border-white/5 bg-black/25 p-3">
-
-          <div className="flex justify-between">
-
-            <span className="text-sm">
+        <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-zinc-400">
               {listing.listing_type === "trade"
                 ? "Listing Type"
                 : "Asking Price"}
             </span>
 
-            <strong>
+            <strong className="text-base font-black text-white">
               {listing.listing_type === "trade"
                 ? "Trade"
-                : money(
-                    listing.asking_price,
-                  )}
+                : money(listing.asking_price)}
             </strong>
-
           </div>
 
-          <div className="mt-2 flex justify-between text-sm">
-
-            <span>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-zinc-400">
               Quantity
             </span>
 
-            <strong>
+            <strong className="text-sm font-bold text-white">
               {listing.quantity}
             </strong>
-
           </div>
-
         </div>
 
-        <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
-
-          {listing.shipping_method ===
-          "envelope" ? (
-            <Mail className="h-4 w-4" />
+        <div className="mt-3 flex items-center gap-2 text-xs font-medium text-zinc-400">
+          {listing.shipping_method === "envelope" ? (
+            <Mail className="h-4 w-4 text-zinc-500" />
           ) : (
-            <Truck className="h-4 w-4" />
+            <Truck className="h-4 w-4 text-zinc-500" />
           )}
 
-          {listing.shipping_method ===
-          "envelope"
-            ? "USPS Envelope"
-            : "USPS Ground Advantage"}
-
+          <span>
+            {listing.shipping_method === "envelope"
+              ? "USPS Envelope"
+              : "USPS Ground Advantage"}
+          </span>
         </div>
 
         {(listing.trade_notes ||
           listing.payment_notes ||
           listing.shipping_notes) && (
-          <div className="mt-3 space-y-2 rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-zinc-300">
+          <div className="mt-3 space-y-2 rounded-lg border border-white/10 bg-black/25 p-3 text-xs text-zinc-300">
             {listing.trade_notes && (
               <div>
-                <strong>Trade:</strong>{" "}
+                <strong className="text-zinc-100">Trade:</strong>{" "}
                 {listing.trade_notes}
               </div>
             )}
+
             {listing.payment_notes && (
               <div>
-                <strong>Payment:</strong>{" "}
+                <strong className="text-zinc-100">Payment:</strong>{" "}
                 {listing.payment_notes}
               </div>
             )}
+
             {listing.shipping_notes && (
               <div>
-                <strong>Shipping:</strong>{" "}
+                <strong className="text-zinc-100">Shipping:</strong>{" "}
                 {listing.shipping_notes}
               </div>
             )}
@@ -2835,15 +2855,14 @@ function ListingCard({
         )}
 
         <div className="mt-4 flex flex-wrap gap-2">
-
           <Button
             size="sm"
             variant="outline"
             disabled={working}
             onClick={onEdit}
+            className="border-white/10 bg-zinc-950 text-zinc-100 hover:bg-zinc-800 hover:text-white"
           >
             <Edit className="mr-1 h-3.5 w-3.5" />
-
             Edit
           </Button>
 
@@ -2854,6 +2873,7 @@ function ListingCard({
               variant="outline"
               disabled={working}
               onClick={onToggle}
+              className="border-white/10 bg-zinc-950 text-zinc-100 hover:bg-zinc-800 hover:text-white"
             >
               {listing.status === "active" ? (
                 <>
@@ -2875,15 +2895,13 @@ function ListingCard({
               variant="destructive"
               disabled={working}
               onClick={onDelete}
+              className="bg-rose-600 text-white hover:bg-rose-500"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
-
         </div>
-
       </CardContent>
-
     </Card>
   )
 }
@@ -2899,24 +2917,19 @@ function SummaryCard({
   value,
 }: {
   title: string
-
   value: string | number
 }) {
   return (
-    <Card className="border-white/10 bg-zinc-950/80 shadow-lg shadow-black/20">
-
+    <Card className="border-white/10 bg-zinc-950/85 text-zinc-100 shadow-lg shadow-black/20">
       <CardContent className="p-5">
-
-        <p className="text-xs text-zinc-400">
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
           {title}
         </p>
 
-        <p className="mt-1 text-2xl font-bold">
+        <p className="mt-2 text-2xl font-black text-white">
           {value}
         </p>
-
       </CardContent>
-
     </Card>
   )
 }
