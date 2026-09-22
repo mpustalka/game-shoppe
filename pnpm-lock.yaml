@@ -101,6 +101,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.107.0
         version: 2.107.0
+      '@tcgdex/sdk':
+        specifier: ^2.9.0
+        version: 2.9.0
       '@vercel/analytics':
         specifier: 1.6.1
         version: 1.6.1(next@16.2.4(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
@@ -267,8 +270,20 @@ packages:
     resolution: {integrity: sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==}
     engines: {node: '>=6.9.0'}
 
+  '@cachex/core@1.0.1':
+    resolution: {integrity: sha512-sHynwjF9hKIvwg8rTUdvA7MOUMcUC5Mq0dpynPBILRS+IPvsHcE4Cb2uRSs0/I2nxO7NQp9p+xHYistdfJJSwg==}
+
+  '@cachex/memory@1.0.1':
+    resolution: {integrity: sha512-KWUTdCCXhIlAkJaVZMhUh9kD0uq8PxC3Z34Q3lMGZOAV6FXP/cOMW89ALrWX3VkoRrrM4R6MIMO+amZNOvEqgw==}
+
+  '@cachex/web-storage@1.0.1':
+    resolution: {integrity: sha512-E8Xa9qDZgNgr+lcj3eixowg7PH2CVZbp3huuoc5xVVTtwYrZi5YqbHBG12yG3r6C6Fts/2Yoq6cbVBSm6c8VRA==}
+
   '@date-fns/tz@1.5.0':
     resolution: {integrity: sha512-lwYN/vDPeNRULcepoE/LO2Pgx+7/RV+S9ARfbc9lr2DtGkOD7pAiruHvbR1RX3Qyf6ja47EWJDMsNK5vK08DJg==}
+
+  '@dzeio/object-util@1.9.2':
+    resolution: {integrity: sha512-L3EBaHnDmf/+LAC61eCgWzcGXjbaOoFB4ml3eeOFxKlVlO6IZ2BpdstoqgAfLNKqdy4Ixp7TlP5z4ohdPxfSLg==}
 
   '@emnapi/runtime@1.10.0':
     resolution: {integrity: sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA==}
@@ -1330,6 +1345,10 @@ packages:
 
   '@tailwindcss/postcss@4.3.0':
     resolution: {integrity: sha512-Jm05Tjx+9yCLGv5qw1c+84Psds8MnyrEQYCB+FFk2lgGiUjlRqdxke4mVTuYrj2xnVZqKim2Apr5ySuQRYAw/w==}
+
+  '@tcgdex/sdk@2.9.0':
+    resolution: {integrity: sha512-bSX4Bvj3jtxgpEgX/9gW9MOQk64tWozEF1Am1NJd7ruRqpich8wgf6rZkyQsHWy0Gnl7BBNWZCIDe4+izCcwXA==}
+    engines: {node: '>=18'}
 
   '@types/d3-array@3.2.2':
     resolution: {integrity: sha512-hOLWVbm7uRza0BYXpIIW5pxfrKe0W+D5lrFiAEYR+pb6w3N2SwSMaJbXdUfSEv+dT4MfHBLtn5js0LAWaO6otw==}
@@ -2499,7 +2518,21 @@ snapshots:
 
   '@babel/runtime@7.29.2': {}
 
+  '@cachex/core@1.0.1':
+    dependencies:
+      '@dzeio/object-util': 1.9.2
+
+  '@cachex/memory@1.0.1':
+    dependencies:
+      '@cachex/core': 1.0.1
+
+  '@cachex/web-storage@1.0.1':
+    dependencies:
+      '@cachex/core': 1.0.1
+
   '@date-fns/tz@1.5.0': {}
+
+  '@dzeio/object-util@1.9.2': {}
 
   '@emnapi/runtime@1.10.0':
     dependencies:
@@ -3533,6 +3566,12 @@ snapshots:
       '@tailwindcss/oxide': 4.3.0
       postcss: 8.5.15
       tailwindcss: 4.3.0
+
+  '@tcgdex/sdk@2.9.0':
+    dependencies:
+      '@cachex/memory': 1.0.1
+      '@cachex/web-storage': 1.0.1
+      '@dzeio/object-util': 1.9.2
 
   '@types/d3-array@3.2.2': {}
 

@@ -40,6 +40,7 @@
     "@radix-ui/react-tooltip": "1.2.8",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
+    "@tcgdex/sdk": "^2.9.0",
     "@vercel/analytics": "1.6.1",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
