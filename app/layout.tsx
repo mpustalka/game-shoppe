@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { Header } from "@/components/layout/header"
 import { InventoryProvider } from "@/lib/inventory-context"
+import StoreCartProviderWrapper from "@/components/store/store-cart-provider"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -45,7 +46,9 @@ export default function RootLayout({
             <Header />
 
             <main className="flex-1">
+              <StoreCartProviderWrapper>
               {children}
+              </StoreCartProviderWrapper>
             </main>
           </div>
 
