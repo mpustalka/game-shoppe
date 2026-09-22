@@ -10,6 +10,7 @@ import {
   Loader2,
   ShieldCheck,
   ChevronDown,
+  ShoppingBag,
 } from "lucide-react"
 import type { User } from "@supabase/supabase-js"
 
@@ -124,7 +125,15 @@ export function AuthNav() {
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator className="bg-white/10" />
-
+<DropdownMenuItem asChild>
+  <Link
+    href="/orders"
+    className="cursor-pointer rounded-xl text-white/70 focus:bg-white/10 focus:text-white"
+  >
+    <ShoppingBag className="mr-2 h-4 w-4 text-rose-400" />
+    My Orders
+  </Link>
+</DropdownMenuItem>
         {isAdminUser(user) && (
           <DropdownMenuItem asChild>
             <Link
