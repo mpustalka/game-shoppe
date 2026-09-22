@@ -3,6 +3,7 @@
 import Link from "next/link"
 
 import {
+  Suspense,
   type ReactNode,
   useEffect,
   useMemo,
@@ -282,7 +283,7 @@ function getStartingPrice(
       )
 }
 
-export default function StorePage() {
+function StorePageContent() {
   const router = useRouter()
   const searchParams =
     useSearchParams()
@@ -2277,5 +2278,33 @@ function FilterSelect({
             ),
           )}
     </select>
+  )
+}
+
+export default function StorePage() {
+  return (
+    <Suspense
+      fallback={
+        <StorePageLoading />
+      }
+    >
+      <StorePageContent />
+    </Suspense>
+  )
+}
+
+function StorePageLoading() {
+  return (
+    <main className="min-h-screen bg-[#070708] text-white">
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-rose-500" />
+
+          <p className="mt-4 text-sm text-white/45">
+            Loading store...
+          </p>
+        </div>
+      </div>
+    </main>
   )
 }
