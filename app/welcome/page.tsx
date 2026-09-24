@@ -10,6 +10,7 @@ import {
   Boxes,
   Share2,
   Sparkles,
+  ShoppingBag,
   Zap,
 } from "lucide-react"
 
@@ -26,6 +27,18 @@ type ShowcaseCard = {
   finish: string
   price: string
   image: string
+}
+
+type StoreCategory = {
+  id: string
+  name: string
+  slug: string
+  parent_id: string | null
+  image_url?: string | null
+  navigation_image_url?: string | null
+  banner_image_url?: string | null
+  active?: boolean
+  sort_order?: number
 }
 
 /* ============================================================
@@ -164,6 +177,55 @@ function RandomChaseRow() {
 ============================================================ */
 
 export default function WelcomePage() {
+  const [storeCategories, setStoreCategories] = useState<StoreCategory[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadStoreCategories() {
+      try {
+        const response = await fetch("/api/store/categories", {
+          cache: "no-store",
+        })
+
+        if (!response.ok) {
+          throw new Error("Unable to load store categories")
+        }
+
+        const data = await response.json()
+
+        const rows = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.categories)
+            ? data.categories
+            : []
+
+        const activeCategories = rows
+          .filter(
+            (category: StoreCategory) =>
+              category.active !== false && category.parent_id === null,
+          )
+          .sort(
+            (a: StoreCategory, b: StoreCategory) =>
+              Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0),
+          )
+          .slice(0, 7)
+
+        if (!cancelled) {
+          setStoreCategories(activeCategories)
+        }
+      } catch (error) {
+        console.error("Unable to load welcome store categories:", error)
+      }
+    }
+
+    void loadStoreCategories()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <main className="overflow-x-hidden bg-[#070708] text-white">
       <style jsx global>{`
@@ -302,36 +364,66 @@ export default function WelcomePage() {
             </div>
           </Link>
 
-          <div className="hidden items-center gap-8 text-sm text-white/60 md:flex">
-            <a href="#simplified" className="transition hover:text-white">
-              Features
-            </a>
+          <div className="hidden items-center gap-7 text-sm font-semibold text-white/60 lg:flex">
+  <Link
+    href="/store"
+    className="transition hover:text-white"
+  >
+    Store
+  </Link>
 
-            <a href="#anniversary" className="transition hover:text-white">
-              30th Anniversary
-            </a>
+  <Link
+    href="/store?collection=new"
+    className="transition hover:text-white"
+  >
+    New Arrivals
+  </Link>
 
-            <a href="#tracking" className="transition hover:text-white">
-              Collection Tracking
-            </a>
-          </div>
+  <Link
+    href="/store?collection=preorder"
+    className="transition hover:text-white"
+  >
+    Preorders
+  </Link>
 
-          <div className="flex gap-2">
-            <Button
-              asChild
-              variant="ghost"
-              className="text-white hover:bg-white/10 hover:text-white"
-            >
-              <Link href="/login">Sign In</Link>
-            </Button>
+  <Link
+    href="/store?collection=sale"
+    className="transition hover:text-white"
+  >
+    Sale
+  </Link>
+</div>
 
-            <Button
-              asChild
-              className="bg-rose-600 text-white hover:bg-rose-500"
-            >
-              <Link href="/login?mode=signup">Sign Up Free</Link>
-            </Button>
-          </div>
+<div className="flex items-center gap-2">
+  <Button
+    asChild
+    variant="ghost"
+    className="hidden text-white hover:bg-white/10 hover:text-white sm:inline-flex"
+  >
+    <Link href="/login">
+      Sign In
+    </Link>
+  </Button>
+
+  <Button
+    asChild
+    className="hidden bg-rose-600 text-white hover:bg-rose-500 sm:inline-flex"
+  >
+    <Link href="/login?mode=signup">
+      Sign Up Free
+    </Link>
+  </Button>
+
+  <Button
+    asChild
+    className="border border-amber-300/30 bg-gradient-to-r from-amber-400 to-yellow-400 font-black text-zinc-950 shadow-lg shadow-amber-500/10 hover:from-amber-300 hover:to-yellow-300"
+  >
+    <Link href="/store">
+      <ShoppingBag className="mr-2 h-4 w-4" />
+      Shop
+    </Link>
+  </Button>
+</div>
         </nav>
 
         <div className="mx-auto grid max-w-7xl gap-12 px-5 pb-24 pt-20 sm:px-8 md:pt-28 lg:grid-cols-[1.05fr_.95fr] lg:px-10">
@@ -667,89 +759,139 @@ export default function WelcomePage() {
       </section>
 
       {/* ============================================================
-          3. 30TH ANNIVERSARY
+          TEAM ROCKET MARKETS STORE
       ============================================================ */}
 
       <section
-        id="anniversary"
-        className="relative isolate overflow-hidden border-y border-amber-300/20 bg-[#080b10]"
+        id="shop"
+        className="relative isolate overflow-hidden border-y border-white/10 bg-[#08090b]"
       >
-        <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_10%_45%,rgba(250,204,21,.16),transparent_34%),radial-gradient(circle_at_85%_25%,rgba(249,115,22,.17),transparent_32%),radial-gradient(circle_at_55%_100%,rgba(37,99,235,.11),transparent_40%),linear-gradient(to_right,#0b0d0b,#07101b_50%,#120c09)]" />
+        <div className="absolute inset-0 -z-30 bg-[radial-gradient(circle_at_12%_30%,rgba(250,204,21,.10),transparent_30%),radial-gradient(circle_at_88%_70%,rgba(225,29,72,.10),transparent_32%),linear-gradient(to_bottom,#08090b,#050506)]" />
+        <div className="absolute inset-0 -z-20 opacity-[0.05] [background-image:linear-gradient(rgba(255,255,255,.16)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.16)_1px,transparent_1px)] [background-size:52px_52px]" />
 
-        <div className="absolute inset-0 -z-10 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,.15)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.15)_1px,transparent_1px)] [background-size:48px_48px]" />
-
-        <div className="relative mx-auto grid min-h-[560px] max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[.82fr_1.18fr] lg:items-center lg:px-10 lg:py-24">
-          <div>
-            <Badge className="border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-amber-200 hover:bg-amber-300/10">
-              30th Anniversary
-            </Badge>
-
-            <p className="mt-7 text-xs font-black uppercase tracking-[0.28em] text-amber-300">
-              Three decades of Pokémon
-            </p>
-
-            <h2 className="mt-3 text-4xl font-black leading-[.96] tracking-[-0.045em] sm:text-5xl lg:text-6xl">
-              Thirty years of
-
-              <span className="block bg-gradient-to-r from-amber-200 via-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                legendary pulls.
+        <div className="py-10 sm:py-12 lg:py-14">
+          <div className="mx-auto max-w-4xl px-5 text-center sm:px-8 lg:px-10">
+            <h2 className="text-3xl font-black leading-tight tracking-[-0.04em] sm:text-4xl lg:text-5xl">
+              We&apos;re a{" "}
+              <span className="bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                store too.
               </span>
             </h2>
 
-            <p className="mt-6 max-w-xl text-base leading-7 text-white/55 sm:text-lg">
-              Celebrate the 30th Anniversary with iconic Pokémon,
-              unforgettable artwork, and chase cards worthy of the front page.
+            <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-white/55 sm:text-base">
+              Shop Pokémon TCG releases, sealed products, collectibles,
+              exclusive nursing scrubs, apparel and more.
             </p>
-
-            <div className="mt-7 flex flex-wrap gap-2">
-              {[
-                "Iconic Artwork",
-                "Chase Cards",
-                "30 Years",
-              ].map((label) => (
-                <span
-                  key={label}
-                  className="rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-amber-100/80"
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
           </div>
 
-          <div className="relative min-h-[400px] sm:min-h-[470px]">
-            <div className="anniversary-left absolute left-[2%] top-[17%] w-[31%]">
-              <img
-                src="https://images.pokemontcg.io/sv4pt5/232_hires.png"
-                alt="Mew ex"
-                className="w-full drop-shadow-[0_32px_45px_rgba(0,0,0,.65)]"
-              />
+          <Link
+            href="/store"
+            className="group relative mt-7 block w-full overflow-hidden border-y border-white/10 bg-[#ffca05] shadow-[0_25px_70px_rgba(0,0,0,.38)]"
+          >
+            <img
+              src="/Pokemon_Team_Rocket_Set_Category_Banner.webp"
+              alt="Shop Team Rocket Markets"
+              className="block max-h-[340px] w-full object-cover object-center transition duration-700 group-hover:scale-[1.01]"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/5 via-transparent to-black/5" />
+          </Link>
+
+          <div className="mx-auto mt-7 max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-3 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/80">
+                  Explore the store
+                </p>
+                <h3 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">
+                  Shop by Category
+                </h3>
+              </div>
+
+              <Link
+                href="/store"
+                className="hidden items-center gap-1.5 text-xs font-bold text-white/50 transition hover:text-white sm:flex"
+              >
+                View All
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
 
-            <div className="anniversary-center absolute left-[34%] top-0 z-20 w-[34%]">
-              <img
-                src="https://images.pokemontcg.io/sv8/238_hires.png"
-                alt="Pikachu ex"
-                className="w-full drop-shadow-[0_32px_45px_rgba(250,204,21,.18)]"
-              />
-            </div>
+            {storeCategories.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+                {storeCategories.map((category) => {
+                  const categoryImage =
+                    category.navigation_image_url ||
+                    category.image_url ||
+                    category.banner_image_url
 
-            <div className="anniversary-right absolute right-[2%] top-[17%] z-10 w-[32%]">
-              <img
-                src="https://images.pokemontcg.io/sv3pt5/199_hires.png"
-                alt="Charizard ex"
-                className="w-full drop-shadow-[0_32px_45px_rgba(249,115,22,.18)]"
-              />
-            </div>
+                  return (
+                    <Link
+                      key={category.id}
+                      href={`/store?category=${encodeURIComponent(category.slug)}`}
+                      className="group relative aspect-[1.12/1] overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-[0_10px_28px_rgba(0,0,0,.24)]"
+                    >
+                      {categoryImage ? (
+                        <img
+                          src={categoryImage}
+                          alt={category.name}
+                          loading="lazy"
+                          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-950" />
+                      )}
 
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 whitespace-nowrap">
-              <p className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-amber-300/70 sm:text-xs">
-                Same passion · New memories
-              </p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent" />
+
+                      <div className="absolute inset-x-0 bottom-0 p-2.5">
+                        <p className="line-clamp-2 text-xs font-black leading-tight text-white sm:text-[13px]">
+                          {category.name}
+                        </p>
+                        <span className="mt-1 flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.16em] text-amber-300 opacity-80 transition group-hover:opacity-100">
+                          Shop
+                          <ArrowRight className="h-2.5 w-2.5" />
+                        </span>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+                {Array.from({ length: 7 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="aspect-[1.12/1] animate-pulse rounded-xl border border-white/10 bg-white/[0.05]"
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="mt-5 flex flex-wrap justify-center gap-2.5">
+              <Button asChild className="h-10 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 px-5 text-sm font-black text-zinc-950 hover:from-amber-300 hover:to-yellow-300">
+                <Link href="/store">
+                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  Shop Store
+                </Link>
+              </Button>
+
+              <Button asChild variant="outline" className="h-10 rounded-xl border-white/15 bg-white/5 px-5 text-sm font-bold text-white hover:bg-white/10 hover:text-white">
+                <Link href="/store?collection=new">New Arrivals</Link>
+              </Button>
+
+              <Button asChild variant="outline" className="h-10 rounded-xl border-white/15 bg-white/5 px-5 text-sm font-bold text-white hover:bg-white/10 hover:text-white">
+                <Link href="/store?collection=preorder">Preorders</Link>
+              </Button>
+
+              <Button asChild variant="outline" className="h-10 rounded-xl border-white/15 bg-white/5 px-5 text-sm font-bold text-white hover:bg-white/10 hover:text-white">
+                <Link href="/store?collection=sale">Sale</Link>
+              </Button>
             </div>
           </div>
         </div>
       </section>
+
+
 
       {/* ============================================================
           4. EXACT COLLECTION TRACKING

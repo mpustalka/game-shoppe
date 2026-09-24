@@ -4,29 +4,14 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
   try {
+    /*
+     * PUBLIC STOREFRONT ENDPOINT
+     *
+     * Active promotional banners are part of the
+     * public storefront and do not require login.
+     */
     const supabase =
       await createClient()
-
-    const {
-      data: { user },
-      error: authError,
-    } =
-      await supabase.auth.getUser()
-
-    if (
-      authError ||
-      !user
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Not signed in",
-        },
-        {
-          status: 401,
-        },
-      )
-    }
 
     const now =
       new Date().toISOString()
@@ -85,9 +70,18 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({
-      banners: data ?? [],
-    })
+    return NextResponse.json(
+      {
+        banners:
+          data ?? [],
+      },
+      {
+        headers: {
+          "Cache-Control":
+            "public, s-maxage=30, stale-while-revalidate=60",
+        },
+      },
+    )
   } catch (error) {
     console.error(
       "Store banners GET exception:",

@@ -14,6 +14,7 @@ import {
   BarChart3,
   BookOpen,
   Boxes,
+  CalendarDays,
   CircleDollarSign,
   Layers3,
   Package,
@@ -128,6 +129,79 @@ export default function DashboardPage() {
                 <Link href="/add">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Card
+                </Link>
+              </Button>
+            </div>
+          </div>
+                </section>
+
+        {/* =====================================================
+            STORE PROMOTION
+        ====================================================== */}
+
+        <section className="relative mt-4 overflow-hidden rounded-[26px] border border-rose-500/20 bg-gradient-to-br from-[#171014] via-[#0d0d10] to-[#09090b] sm:mt-5 sm:rounded-[30px]">
+          <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-rose-600/20 blur-3xl" />
+
+          <div className="pointer-events-none absolute bottom-[-100px] left-[25%] h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
+
+          <div className="absolute inset-0 opacity-[0.045] [background-image:linear-gradient(rgba(255,255,255,.3)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.3)_1px,transparent_1px)] [background-size:38px_38px]" />
+
+          <div className="relative flex flex-col gap-6 px-5 py-7 sm:px-7 sm:py-8 lg:flex-row lg:items-center lg:justify-between lg:px-9 lg:py-9">
+            <div className="max-w-3xl">
+              <Badge className="mb-4 border border-rose-400/20 bg-rose-500/10 text-rose-200 hover:bg-rose-500/10">
+                <ShoppingBag className="mr-1.5 h-3.5 w-3.5" />
+                Team Rocket Markets Store
+              </Badge>
+
+              <h2 className="text-2xl font-black tracking-[-0.035em] sm:text-3xl lg:text-4xl">
+                Stock up on
+                <span className="ml-2 bg-gradient-to-r from-rose-400 via-red-500 to-orange-400 bg-clip-text text-transparent">
+                  Pokémon TCG.
+                </span>
+              </h2>
+
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/50 sm:text-base sm:leading-7">
+                Shop booster packs, sealed products, cases, pre-orders,
+                collectibles, and more directly from Team Rocket Markets.
+              </p>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Badge
+                  variant="outline"
+                  className="border-white/10 bg-white/[0.04] text-white/55"
+                >
+                  <Package className="mr-1.5 h-3.5 w-3.5" />
+                  Sealed Products
+                </Badge>
+
+                <Badge
+                  variant="outline"
+                  className="border-white/10 bg-white/[0.04] text-white/55"
+                >
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  New Releases
+                </Badge>
+
+                <Badge
+                  variant="outline"
+                  className="border-white/10 bg-white/[0.04] text-white/55"
+                >
+                  <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
+                  Pre-Orders
+                </Badge>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
+              <Button
+                asChild
+                size="lg"
+                className="h-12 rounded-xl bg-rose-600 px-6 font-bold text-white shadow-lg shadow-rose-950/30 hover:bg-rose-500"
+              >
+                <Link href="/store">
+                  <ShoppingBag className="mr-2 h-5 w-5" />
+                  Shop Now
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </div>
