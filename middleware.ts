@@ -10,7 +10,16 @@ const SUPABASE_ANON_KEY =
 // Routes that are reachable without signing in. Everything else requires an
 // authenticated session, so the dashboard and navigation stay private until a
 // user logs in.
-const PUBLIC_PATHS = ["/welcome", "/login", "/reset-password", "/auth", "/share"]
+const PUBLIC_PATHS = [
+  "/welcome",
+  "/login",
+  "/reset-password",
+  "/auth",
+  "/share",
+
+  // Public storefront
+  "/store",
+]
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some(
@@ -64,11 +73,21 @@ export async function middleware(request: NextRequest) {
 
   // Not signed in and asking for a protected page → send to the landing page.
   if (!user && !isPublicPath(pathname)) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/welcome"
-    url.search = ""
-    return NextResponse.redirect(url)
-  }
+  const url = request.nextUrl.clone()
+
+  const returnTo =
+    `${request.nextUrl.pathname}${request.nextUrl.search}`
+
+  url.pathname = "/welcome"
+  url.search = ""
+
+  url.searchParams.set(
+    "returnTo",
+    returnTo,
+  )
+
+  return NextResponse.redirect(url)
+}
 
   // Already signed in but sitting on the landing or login page → go to the app.
   if (user && (pathname === "/welcome" || pathname === "/login")) {

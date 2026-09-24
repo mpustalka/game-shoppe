@@ -4,25 +4,14 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
   try {
+    /*
+     * PUBLIC STOREFRONT ENDPOINT
+     *
+     * Store navigation/categories must be available
+     * before a customer signs in.
+     */
     const supabase =
       await createClient()
-
-    const {
-      data: { user },
-      error: authError,
-    } =
-      await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        {
-          error: "Not signed in",
-        },
-        {
-          status: 401,
-        },
-      )
-    }
 
     const {
       data,
@@ -43,13 +32,22 @@ export async function GET() {
         active,
         sort_order
       `)
-      .eq("active", true)
-      .order("sort_order", {
-        ascending: true,
-      })
-      .order("name", {
-        ascending: true,
-      })
+      .eq(
+        "active",
+        true,
+      )
+      .order(
+        "sort_order",
+        {
+          ascending: true,
+        },
+      )
+      .order(
+        "name",
+        {
+          ascending: true,
+        },
+      )
 
     if (error) {
       console.error(
@@ -68,9 +66,18 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({
-      categories: data ?? [],
-    })
+    return NextResponse.json(
+      {
+        categories:
+          data ?? [],
+      },
+      {
+        headers: {
+          "Cache-Control":
+            "public, s-maxage=60, stale-while-revalidate=120",
+        },
+      },
+    )
   } catch (error) {
     console.error(
       "Store categories GET exception:",

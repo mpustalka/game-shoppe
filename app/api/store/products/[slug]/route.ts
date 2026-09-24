@@ -13,12 +13,14 @@ export async function GET(
   context: RouteContext,
 ) {
   try {
-    const { slug } = await context.params
+    const { slug } =
+      await context.params
 
     if (!slug) {
       return NextResponse.json(
         {
-          error: "Product slug is required",
+          error:
+            "Product slug is required",
         },
         {
           status: 400,
@@ -26,25 +28,15 @@ export async function GET(
       )
     }
 
+    /*
+     * PUBLIC STOREFRONT ENDPOINT
+     *
+     * Individual product pages can be viewed without
+     * authentication. Only active/sold-out storefront
+     * products are returned.
+     */
     const supabase =
       await createClient()
-
-    const {
-      data: { user },
-      error: authError,
-    } =
-      await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        {
-          error: "Not signed in",
-        },
-        {
-          status: 401,
-        },
-      )
-    }
 
     const {
       data: product,
@@ -95,7 +87,10 @@ export async function GET(
       .eq("slug", slug)
       .in(
         "status",
-        ["active", "sold_out"],
+        [
+          "active",
+          "sold_out",
+        ],
       )
       .single()
 
@@ -164,7 +159,10 @@ export async function GET(
           "product_id",
           product.id,
         )
-        .eq("active", true)
+        .eq(
+          "active",
+          true,
+        )
         .order(
           "sort_order",
           {
@@ -199,12 +197,20 @@ export async function GET(
         variantData ?? []
     }
 
-    return NextResponse.json({
-      product: {
-        ...product,
-        variants,
+    return NextResponse.json(
+      {
+        product: {
+          ...product,
+          variants,
+        },
       },
-    })
+      {
+        headers: {
+          "Cache-Control":
+            "public, s-maxage=30, stale-while-revalidate=60",
+        },
+      },
+    )
   } catch (error) {
     console.error(
       "Store product GET exception:",

@@ -4,19 +4,14 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
   try {
+    /*
+     * PUBLIC STOREFRONT ENDPOINT
+     *
+     * Customers do not need to be signed in to browse
+     * products. Supabase RLS controls which rows are
+     * publicly readable.
+     */
     const supabase = await createClient()
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Not signed in" },
-        { status: 401 },
-      )
-    }
 
     const { data, error } = await supabase
       .from("store_products")
@@ -88,7 +83,9 @@ export async function GET() {
           error:
             "Unable to load store products",
         },
-        { status: 500 },
+        {
+          status: 500,
+        },
       )
     }
 
@@ -163,7 +160,14 @@ export async function GET() {
           tags:
             product.tags ?? [],
 
-          price: product.price,
+          price:
+            product.price,
+
+          sku:
+            product.sku,
+
+          upc:
+            product.upc,
 
           compare_at_price:
             product.compare_at_price,
@@ -241,7 +245,7 @@ export async function GET() {
       {
         headers: {
           "Cache-Control":
-            "private, max-age=15, stale-while-revalidate=30",
+            "public, s-maxage=30, stale-while-revalidate=60",
         },
       },
     )
@@ -256,7 +260,9 @@ export async function GET() {
         error:
           "Unable to load store products",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     )
   }
 }

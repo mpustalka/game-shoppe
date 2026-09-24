@@ -1506,7 +1506,7 @@ function StorePageContent() {
 
         {topCategories.length >
         0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
             {topCategories.map(
               (category) => (
                 <CategoryCard
@@ -1929,43 +1929,33 @@ function CategoryCard({
     <button
       type="button"
       onClick={onClick}
-      className={`group relative min-h-[180px] overflow-hidden rounded-2xl border text-left transition hover:-translate-y-1 hover:shadow-xl ${
+      className={`group relative aspect-[1.15/1] overflow-hidden rounded-xl border text-left transition duration-300 hover:-translate-y-1 hover:shadow-xl ${
         selected
           ? "border-rose-500 ring-2 ring-rose-500/20"
-          : ""
+          : "border-border"
       }`}
     >
       {image ? (
         <img
           src={image}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          alt={category.name}
+          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-110"
         />
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-rose-950 to-slate-900" />
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
-      <div className="relative flex min-h-[180px] items-end p-5 text-white">
-        <div>
-          <h3 className="text-xl font-black">
-            {category.name}
-          </h3>
+      <div className="absolute inset-x-0 bottom-0 p-3 text-white">
+        <h3 className="line-clamp-1 text-sm font-black sm:text-[15px]">
+          {category.name}
+        </h3>
 
-          {category.description && (
-            <p className="mt-1 line-clamp-2 text-xs text-white/70">
-              {
-                category.description
-              }
-            </p>
-          )}
-
-          <span className="mt-3 inline-flex items-center text-xs font-black uppercase tracking-wider">
-            Shop
-            <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </span>
-        </div>
+        <span className="mt-1 flex items-center text-[9px] font-black uppercase tracking-[0.14em] text-white/65 transition group-hover:text-white">
+          Shop
+          <ChevronRight className="ml-0.5 h-3 w-3 transition-transform group-hover:translate-x-1" />
+        </span>
       </div>
     </button>
   )
