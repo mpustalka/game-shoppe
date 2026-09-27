@@ -1,23 +1,66 @@
-import { NextResponse, type NextRequest } from "next/server"
+import {
+  NextResponse,
+  type NextRequest,
+} from "next/server"
 
 import { createClient } from "@/lib/supabase/server"
 
-// Handles the link Supabase emails after sign-up: it exchanges the one-time
-// code for a session (setting the auth cookies) and then sends the user on to
-// wherever they were headed.
-export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get("code")
-  const redirect = searchParams.get("redirect") || "/"
+export async function GET(
+  request: NextRequest,
+) {
+  const {
+    searchParams,
+    origin,
+  } = new URL(request.url)
+
+  const code =
+    searchParams.get("code")
+
+  const requestedRedirect =
+    searchParams.get("redirect") || "/"
+
+  /*
+   * Only permit redirects within this application.
+   *
+   * This prevents an attacker from turning the
+   * authentication callback into an open redirect.
+   */
+  const redirect =
+    requestedRedirect.startsWith("/") &&
+    !requestedRedirect.startsWith("//")
+      ? requestedRedirect
+      : "/"
 
   if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const supabase =
+      await createClient()
+
+    const {
+      error,
+    } =
+      await supabase.auth.exchangeCodeForSession(
+        code,
+      )
 
     if (!error) {
-      return NextResponse.redirect(`${origin}${redirect}`)
+      return NextResponse.redirect(
+        new URL(
+          redirect,
+          origin,
+        ),
+      )
     }
+
+    console.error(
+      "Supabase auth callback failed:",
+      error,
+    )
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`)
+  return NextResponse.redirect(
+    new URL(
+      "/login?error=auth",
+      origin,
+    ),
+  )
 }
