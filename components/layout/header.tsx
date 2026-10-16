@@ -2,22 +2,28 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
+import {
+  useEffect,
+  useState,
+} from "react"
 
 import {
   BarChart3,
   BookOpen,
+  Building2,
   ChevronDown,
   ClipboardList,
   Crown,
+  FileUp,
   LayoutGrid,
+  LifeBuoy,
   Lock,
   Menu,
   MessageCircle,
   CircleHelp,
-  LifeBuoy,
   Package,
   PlusCircle,
+  Plug,
   QrCode,
   Search,
   Settings,
@@ -26,6 +32,7 @@ import {
   Store,
   Tags,
   Upload,
+  Users,
   X,
 } from "lucide-react"
 
@@ -46,12 +53,41 @@ type NavItem = {
   name: string
   href: string
   icon: typeof LayoutGrid
-  gate?: (e: Entitlements) => boolean
+  gate?: (
+    e: Entitlements,
+  ) => boolean
   premium?: boolean
 }
 
+type CompanyRole =
+  | "owner"
+  | "manager"
+  | "employee"
+
+type AccountAccess = {
+  authenticated: boolean
+
+  accountType:
+    | "individual"
+    | "business"
+    | "super_admin"
+    | null
+
+  isSuperAdmin: boolean
+
+  company: {
+    id: string
+    name: string | null
+    role: CompanyRole
+    subscriptionStatus?: string | null
+    subscriptionPlan?: string | null
+    trialPlan?: string | null
+    includedSeats?: number | null
+  } | null
+}
+
 /* =========================================================
- * DESKTOP NAVIGATION
+ * COLLECTOR NAVIGATION
  * ======================================================= */
 
 const primaryNavigation: NavItem[] = [
@@ -80,7 +116,8 @@ const primaryNavigation: NavItem[] = [
     href: "/analytics",
     icon: BarChart3,
     premium: true,
-    gate: (e) => e.canUseAnalytics,
+    gate: (e) =>
+      e.canUseAnalytics,
   },
 ]
 
@@ -121,14 +158,16 @@ const moreNavigation: NavItem[] = [
     href: "/showcase",
     icon: Share2,
     premium: true,
-    gate: (e) => e.canUseShowcase,
+    gate: (e) =>
+      e.canUseShowcase,
   },
   {
     name: "Customer Lists",
     href: "/customer-lists",
     icon: ClipboardList,
     premium: true,
-    gate: (e) => e.canUseCustomerLists,
+    gate: (e) =>
+      e.canUseCustomerLists,
   },
   {
     name: "Messages",
@@ -139,21 +178,24 @@ const moreNavigation: NavItem[] = [
     name: "Add Card",
     href: "/add",
     icon: PlusCircle,
-    gate: (e) => e.canAddCards,
+    gate: (e) =>
+      e.canAddCards,
   },
   {
     name: "Import",
     href: "/import",
     icon: Upload,
     premium: true,
-    gate: (e) => e.canImport,
+    gate: (e) =>
+      e.canImport,
   },
   {
     name: "Scan",
     href: "/scan",
     icon: QrCode,
     premium: true,
-    gate: (e) => e.canScan,
+    gate: (e) =>
+      e.canScan,
   },
   {
     name: "FAQ",
@@ -172,6 +214,97 @@ const moreNavigation: NavItem[] = [
   },
 ]
 
+/* =========================================================
+ * BUSINESS NAVIGATION
+ * ======================================================= */
+
+const businessPrimaryNavigation: NavItem[] = [
+  {
+    name: "Business",
+    href: "/business",
+    icon: Building2,
+  },
+  {
+    name: "Inventory",
+    href: "/inventory",
+    icon: Package,
+  },
+  {
+    name: "Add Cards",
+    href: "/add",
+    icon: PlusCircle,
+  },
+  {
+    name: "Binders",
+    href: "/binders",
+    icon: BookOpen,
+  },
+  {
+    name: "Analytics",
+    href: "/analytics",
+    icon: BarChart3,
+  },
+]
+
+const businessBrowseNavigation: NavItem[] = [
+  {
+    name: "English Sets",
+    href: "/sets",
+    icon: Package,
+  },
+  {
+    name: "Japanese Sets",
+    href: "/japanese-sets",
+    icon: Package,
+  },
+  {
+    name: "Chinese Sets",
+    href: "/chinese-sets",
+    icon: Package,
+  },
+]
+
+const businessToolsNavigation: NavItem[] = [
+  {
+    name: "Import / Export",
+    href: "/import",
+    icon: FileUp,
+  },
+  {
+    name: "Scan Cards",
+    href: "/scan",
+    icon: QrCode,
+  },
+  {
+    name: "Support",
+    href: "/support",
+    icon: LifeBuoy,
+  },
+]
+
+const businessManagementNavigation: NavItem[] = [
+  {
+    name: "Team",
+    href: "/business/team",
+    icon: Users,
+  },
+  {
+    name: "Integrations",
+    href: "/business/integrations",
+    icon: Plug,
+  },
+  {
+    name: "Business Settings",
+    href: "/business/settings",
+    icon: Settings,
+  },
+]
+
+/*
+ * PLATFORM administration.
+ *
+ * This must NEVER be controlled by a subscription plan.
+ */
 const adminNavigation: NavItem[] = [
   {
     name: "Manage Store",
@@ -185,36 +318,134 @@ const adminNavigation: NavItem[] = [
  * ======================================================= */
 
 export function Header() {
-  const pathname = usePathname()
+  const pathname =
+    usePathname()
 
-  const [mobileMenuOpen, setMobileMenuOpen] =
-    useState(false)
+  const [
+    mobileMenuOpen,
+    setMobileMenuOpen,
+  ] = useState(false)
 
-  const [unreadMessages, setUnreadMessages] =
-    useState(0)
+  const [
+    unreadMessages,
+    setUnreadMessages,
+  ] = useState(0)
+
+  const [
+    accountAccess,
+    setAccountAccess,
+  ] =
+    useState<AccountAccess | null>(
+      null,
+    )
 
   const {
     entitlements,
-    loading: entitlementsLoading,
+    loading:
+      entitlementsLoading,
   } = useEntitlements()
 
-  const isAdmin =
-    !entitlementsLoading &&
-    entitlements.plan === "admin"
-
   /* =======================================================
-   * MESSAGE COUNT
+   * ACCOUNT ACCESS
    * ===================================================== */
 
   useEffect(() => {
     let cancelled = false
 
+    async function loadAccountAccess() {
+      try {
+        const response =
+          await fetch(
+            "/api/account/access",
+            {
+              cache: "no-store",
+            },
+          )
+
+        if (!response.ok) {
+          return
+        }
+
+        const data =
+          (await response.json()) as AccountAccess
+
+        if (!cancelled) {
+          setAccountAccess(
+            data,
+          )
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load account access:",
+          error,
+        )
+      }
+    }
+
+    void loadAccountAccess()
+
+    return () => {
+      cancelled = true
+    }
+  }, [pathname])
+
+  const isAdmin =
+    accountAccess?.isSuperAdmin ===
+    true
+
+  const isBusiness =
+    accountAccess?.accountType ===
+      "business" &&
+    accountAccess.company !== null
+
+  const companyRole =
+    accountAccess?.company?.role ??
+    null
+
+  const canManageBusiness =
+    companyRole === "owner" ||
+    companyRole === "manager"
+
+  /* =======================================================
+   * MESSAGE COUNT
+   *
+   * Business accounts do not use consumer messaging.
+   * ===================================================== */
+
+  useEffect(() => {
+    if (isBusiness) {
+      setUnreadMessages(0)
+      return
+    }
+
+    /*
+     * Wait until account access resolves before polling.
+     *
+     * This prevents business accounts from making an initial
+     * /api/messages request before we know their account type.
+     */
+    if (!accountAccess) {
+      return
+    }
+
+    if (
+      !accountAccess.authenticated
+    ) {
+      setUnreadMessages(0)
+      return
+    }
+
+    let cancelled = false
+
     async function loadUnreadMessages() {
       try {
         const response =
-          await fetch("/api/messages", {
-            cache: "no-store",
-          })
+          await fetch(
+            "/api/messages",
+            {
+              cache: "no-store",
+            },
+          )
 
         if (!response.ok) {
           return
@@ -249,10 +480,7 @@ export function Header() {
           )
         }
       } catch {
-        /*
-         * Header navigation should never fail because
-         * unread-message loading failed.
-         */
+        // Header must not fail because messages failed.
       }
     }
 
@@ -272,7 +500,10 @@ export function Header() {
         interval,
       )
     }
-  }, [pathname])
+  }, [
+    accountAccess,
+    isBusiness,
+  ])
 
   /* =======================================================
    * PUBLIC ROUTES
@@ -284,6 +515,7 @@ export function Header() {
     "/reset-password",
     "/auth",
     "/share",
+    "/business/signup",
   ]
 
   const isPublicRoute =
@@ -313,6 +545,15 @@ export function Header() {
   function getNavigationHref(
     item: NavItem,
   ) {
+    /*
+     * Business plans are being handled independently from
+     * collector subscriptions. Don't send business users to
+     * the collector billing screen.
+     */
+    if (isBusiness) {
+      return item.href
+    }
+
     if (entitlementsLoading) {
       return item.href
     }
@@ -332,6 +573,10 @@ export function Header() {
   function isLocked(
     item: NavItem,
   ) {
+    if (isBusiness) {
+      return false
+    }
+
     if (entitlementsLoading) {
       return false
     }
@@ -363,20 +608,53 @@ export function Header() {
     )
 
   const browseActive =
-    browseNavigation.some(
-      isActive,
-    )
+    (
+      isBusiness
+        ? businessBrowseNavigation
+        : browseNavigation
+    ).some(isActive)
 
   const moreActive =
-    moreNavigation.some(
-      isActive,
-    ) ||
     (
-      isAdmin &&
-      adminNavigation.some(
-        isActive,
-      )
-    )
+      isBusiness
+        ? [
+            ...businessToolsNavigation,
+            ...(canManageBusiness
+              ? businessManagementNavigation
+              : []),
+          ]
+        : [
+            ...moreNavigation,
+            ...(isAdmin
+              ? adminNavigation
+              : []),
+          ]
+    ).some(isActive)
+
+  const desktopPrimaryNavigation =
+    isBusiness
+      ? businessPrimaryNavigation
+      : primaryNavigation
+
+  const desktopBrowseNavigation =
+    isBusiness
+      ? businessBrowseNavigation
+      : browseNavigation
+
+  const desktopMoreNavigation =
+    isBusiness
+      ? [
+          ...businessToolsNavigation,
+          ...(canManageBusiness
+            ? businessManagementNavigation
+            : []),
+        ]
+      : [
+          ...moreNavigation,
+          ...(isAdmin
+            ? adminNavigation
+            : []),
+        ]
 
   /* =======================================================
    * RENDER
@@ -385,13 +663,14 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#070708]/90 text-white shadow-[0_12px_40px_rgba(0,0,0,.22)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#070708]/75">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-2 px-3 sm:px-5 lg:px-7">
-
-        {/* =================================================
-            BRAND
-        ================================================== */}
+        {/* BRAND */}
 
         <Link
-          href="/"
+          href={
+            isBusiness
+              ? "/business"
+              : "/"
+          }
           className="group flex shrink-0 items-center gap-2.5"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-400/25 bg-rose-500/10 shadow-lg shadow-rose-950/20 transition group-hover:border-rose-400/45 group-hover:bg-rose-500/15">
@@ -402,21 +681,26 @@ export function Header() {
 
           <div className="hidden xl:block">
             <p className="text-xs font-black uppercase tracking-[0.15em] text-white">
-              Team Rocket
+              {isBusiness &&
+              accountAccess?.company
+                ?.name
+                ? accountAccess
+                    .company.name
+                : "Team Rocket"}
             </p>
 
             <p className="-mt-0.5 text-[10px] text-white/40">
-              Markets
+              {isBusiness
+                ? "Business"
+                : "Markets"}
             </p>
           </div>
         </Link>
 
-        {/* =================================================
-            DESKTOP NAV
-        ================================================== */}
+        {/* DESKTOP NAV */}
 
         <nav className="hidden shrink-0 items-center gap-0.5 lg:flex">
-          {primaryNavigation.map(
+          {desktopPrimaryNavigation.map(
             (item) => {
               const locked =
                 isLocked(item)
@@ -429,7 +713,9 @@ export function Header() {
 
               return (
                 <Link
-                  key={item.name}
+                  key={
+                    item.name
+                  }
                   href={getNavigationHref(
                     item,
                   )}
@@ -462,21 +748,23 @@ export function Header() {
             },
           )}
 
-          <NavDropdown
-            label="Singles"
-            active={
-              singlesActive
-            }
-            items={
-              singlesNavigation
-            }
-            getNavigationHref={
-              getNavigationHref
-            }
-            isLocked={
-              isLocked
-            }
-          />
+          {!isBusiness && (
+            <NavDropdown
+              label="Singles"
+              active={
+                singlesActive
+              }
+              items={
+                singlesNavigation
+              }
+              getNavigationHref={
+                getNavigationHref
+              }
+              isLocked={
+                isLocked
+              }
+            />
+          )}
 
           <NavDropdown
             label="Browse"
@@ -484,7 +772,7 @@ export function Header() {
               browseActive
             }
             items={
-              browseNavigation
+              desktopBrowseNavigation
             }
             getNavigationHref={
               getNavigationHref
@@ -495,17 +783,16 @@ export function Header() {
           />
 
           <NavDropdown
-            label="More"
+            label={
+              isBusiness
+                ? "Business Tools"
+                : "More"
+            }
             active={
               moreActive
             }
             items={
-              isAdmin
-                ? [
-                    ...moreNavigation,
-                    ...adminNavigation,
-                  ]
-                : moreNavigation
+              desktopMoreNavigation
             }
             getNavigationHref={
               getNavigationHref
@@ -516,9 +803,7 @@ export function Header() {
           />
         </nav>
 
-        {/* =================================================
-            SEARCH
-        ================================================== */}
+        {/* SEARCH */}
 
         <div className="ml-auto hidden min-w-0 flex-1 justify-end md:flex">
           <form
@@ -536,12 +821,11 @@ export function Header() {
           </form>
         </div>
 
-        {/* =================================================
-            RIGHT SIDE
-        ================================================== */}
+        {/* RIGHT SIDE */}
 
         <div className="flex shrink-0 items-center gap-1.5">
-          {!entitlementsLoading &&
+          {!isBusiness &&
+            !entitlementsLoading &&
             !hasPremiumAccess &&
             entitlements.plan ===
               "basic" && (
@@ -558,39 +842,37 @@ export function Header() {
               </Button>
             )}
 
-          {/* ===============================
-              MESSAGES
-          ================================ */}
+          {/* Consumer messages only */}
 
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            className="relative rounded-xl text-white/65 hover:bg-white/10 hover:text-white"
-          >
-            <Link
-              href="/messages"
-              aria-label="Messages"
+          {!isBusiness && (
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="relative rounded-xl text-white/65 hover:bg-white/10 hover:text-white"
             >
-              <MessageCircle className="h-5 w-5" />
+              <Link
+                href="/messages"
+                aria-label="Messages"
+              >
+                <MessageCircle className="h-5 w-5" />
 
-              {unreadMessages >
-                0 && (
-                <span className="absolute -right-1 -top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-black leading-none text-white">
-                  {unreadMessages >
-                  99
-                    ? "99+"
-                    : unreadMessages}
-                </span>
-              )}
-            </Link>
-          </Button>
+                {unreadMessages >
+                  0 && (
+                  <span className="absolute -right-1 -top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-black leading-none text-white">
+                    {unreadMessages >
+                    99
+                      ? "99+"
+                      : unreadMessages}
+                  </span>
+                )}
+              </Link>
+            </Button>
+          )}
 
           <AuthNav />
 
-          {/* =================================================
-              MOBILE MENU
-          ================================================== */}
+          {/* MOBILE */}
 
           <Sheet
             open={
@@ -621,10 +903,6 @@ export function Header() {
               side="right"
               className="w-[min(92vw,380px)] overflow-y-auto border-white/10 bg-[#09090b] p-0 text-white"
             >
-              {/* ===============================
-                  MOBILE HEADER
-              ================================ */}
-
               <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#09090b]/95 px-5 py-4 backdrop-blur">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-400/25 bg-rose-500/10 text-xs font-black text-rose-400">
@@ -633,11 +911,20 @@ export function Header() {
 
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.14em]">
-                      Team Rocket
+                      {isBusiness &&
+                      accountAccess
+                        ?.company
+                        ?.name
+                        ? accountAccess
+                            .company
+                            .name
+                        : "Team Rocket"}
                     </p>
 
                     <p className="text-[10px] text-white/40">
-                      Markets
+                      {isBusiness
+                        ? "Business"
+                        : "Markets"}
                     </p>
                   </div>
                 </div>
@@ -657,59 +944,89 @@ export function Header() {
               </div>
 
               <div className="flex flex-col gap-5 px-4 py-5">
+                {/* ACCOUNT / PLAN */}
 
-                {/* =============================
-                    PLAN
-                ============================== */}
+                {isBusiness &&
+                accountAccess?.company ? (
+                  <div className="rounded-2xl border border-rose-400/15 bg-rose-500/[0.06] p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-rose-300/70">
+                      Business Account
+                    </p>
 
-                {!entitlementsLoading && (
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.15em] text-white/30">
-                          Current plan
-                        </p>
+                    <p className="mt-1 font-bold text-white">
+                      {
+                        accountAccess
+                          .company
+                          .name
+                      }
+                    </p>
 
-                        <p className="mt-1 font-bold capitalize">
-                          {entitlements.plan ===
-                          "trial"
-                            ? "Premium Trial"
-                            : entitlements.plan ===
-                                "grandfathered"
-                              ? "Founding Premium"
-                              : entitlements.plan ===
-                                  "admin"
-                                ? "Admin"
-                                : entitlements.plan}
-                        </p>
-                      </div>
+                    <p className="mt-1 text-xs capitalize text-white/45">
+                      {
+                        accountAccess
+                          .company
+                          .role
+                      }
 
-                      {entitlements.plan ===
-                        "basic" && (
-                        <Button
-                          asChild
-                          size="sm"
-                          className="rounded-xl bg-rose-600 hover:bg-rose-500"
-                        >
-                          <Link
-                            href="/settings?tab=billing"
-                            onClick={() =>
-                              setMobileMenuOpen(
-                                false,
-                              )
-                            }
-                          >
-                            Upgrade
-                          </Link>
-                        </Button>
-                      )}
-                    </div>
+                      {accountAccess
+                        .company
+                        .trialPlan
+                        ? ` · ${accountAccess.company.trialPlan} trial`
+                        : accountAccess
+                            .company
+                            .subscriptionPlan
+                          ? ` · ${accountAccess.company.subscriptionPlan}`
+                          : ""}
+                    </p>
                   </div>
+                ) : (
+                  !entitlementsLoading && (
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.15em] text-white/30">
+                            Current plan
+                          </p>
+
+                          <p className="mt-1 font-bold capitalize">
+                            {entitlements.plan ===
+                            "trial"
+                              ? "Premium Trial"
+                              : entitlements.plan ===
+                                  "grandfathered"
+                                ? "Founding Premium"
+                                : entitlements.plan ===
+                                    "admin"
+                                  ? "Admin"
+                                  : entitlements.plan}
+                          </p>
+                        </div>
+
+                        {entitlements.plan ===
+                          "basic" && (
+                          <Button
+                            asChild
+                            size="sm"
+                            className="rounded-xl bg-rose-600 hover:bg-rose-500"
+                          >
+                            <Link
+                              href="/settings?tab=billing"
+                              onClick={() =>
+                                setMobileMenuOpen(
+                                  false,
+                                )
+                              }
+                            >
+                              Upgrade
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )
                 )}
 
-                {/* =============================
-                    SEARCH
-                ============================== */}
+                {/* SEARCH */}
 
                 <form
                   action="/search"
@@ -725,146 +1042,230 @@ export function Header() {
                   />
                 </form>
 
-                {/* =============================
-                    MAIN
-                ============================== */}
+                {isBusiness ? (
+                  <>
+                    <MobileNavSection
+                      label="Business"
+                      items={
+                        businessPrimaryNavigation
+                      }
+                      pathname={
+                        pathname
+                      }
+                      unreadMessages={
+                        0
+                      }
+                      getNavigationHref={
+                        getNavigationHref
+                      }
+                      isLocked={
+                        isLocked
+                      }
+                      closeMenu={() =>
+                        setMobileMenuOpen(
+                          false,
+                        )
+                      }
+                    />
 
-                <MobileNavSection
-                  label="Collection"
-                  items={
-                    primaryNavigation
-                  }
-                  pathname={
-                    pathname
-                  }
-                  unreadMessages={
-                    unreadMessages
-                  }
-                  getNavigationHref={
-                    getNavigationHref
-                  }
-                  isLocked={
-                    isLocked
-                  }
-                  closeMenu={() =>
-                    setMobileMenuOpen(
-                      false,
-                    )
-                  }
-                />
+                    <MobileNavSection
+                      label="Browse Sets"
+                      items={
+                        businessBrowseNavigation
+                      }
+                      pathname={
+                        pathname
+                      }
+                      unreadMessages={
+                        0
+                      }
+                      getNavigationHref={
+                        getNavigationHref
+                      }
+                      isLocked={
+                        isLocked
+                      }
+                      closeMenu={() =>
+                        setMobileMenuOpen(
+                          false,
+                        )
+                      }
+                    />
 
-                {/* =============================
-                    SINGLES
-                ============================== */}
+                    <MobileNavSection
+                      label="Tools"
+                      items={
+                        businessToolsNavigation
+                      }
+                      pathname={
+                        pathname
+                      }
+                      unreadMessages={
+                        0
+                      }
+                      getNavigationHref={
+                        getNavigationHref
+                      }
+                      isLocked={
+                        isLocked
+                      }
+                      closeMenu={() =>
+                        setMobileMenuOpen(
+                          false,
+                        )
+                      }
+                    />
 
-                <MobileNavSection
-                  label="Singles"
-                  items={
-                    singlesNavigation
-                  }
-                  pathname={
-                    pathname
-                  }
-                  unreadMessages={
-                    unreadMessages
-                  }
-                  getNavigationHref={
-                    getNavigationHref
-                  }
-                  isLocked={
-                    isLocked
-                  }
-                  closeMenu={() =>
-                    setMobileMenuOpen(
-                      false,
-                    )
-                  }
-                />
+                    {canManageBusiness && (
+                      <MobileNavSection
+                        label="Management"
+                        items={
+                          businessManagementNavigation
+                        }
+                        pathname={
+                          pathname
+                        }
+                        unreadMessages={
+                          0
+                        }
+                        getNavigationHref={
+                          getNavigationHref
+                        }
+                        isLocked={
+                          isLocked
+                        }
+                        closeMenu={() =>
+                          setMobileMenuOpen(
+                            false,
+                          )
+                        }
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <MobileNavSection
+                      label="Collection"
+                      items={
+                        primaryNavigation
+                      }
+                      pathname={
+                        pathname
+                      }
+                      unreadMessages={
+                        unreadMessages
+                      }
+                      getNavigationHref={
+                        getNavigationHref
+                      }
+                      isLocked={
+                        isLocked
+                      }
+                      closeMenu={() =>
+                        setMobileMenuOpen(
+                          false,
+                        )
+                      }
+                    />
 
-                {/* =============================
-                    SETS
-                ============================== */}
+                    <MobileNavSection
+                      label="Singles"
+                      items={
+                        singlesNavigation
+                      }
+                      pathname={
+                        pathname
+                      }
+                      unreadMessages={
+                        unreadMessages
+                      }
+                      getNavigationHref={
+                        getNavigationHref
+                      }
+                      isLocked={
+                        isLocked
+                      }
+                      closeMenu={() =>
+                        setMobileMenuOpen(
+                          false,
+                        )
+                      }
+                    />
 
-                <MobileNavSection
-                  label="Browse Sets"
-                  items={
-                    browseNavigation
-                  }
-                  pathname={
-                    pathname
-                  }
-                  unreadMessages={
-                    unreadMessages
-                  }
-                  getNavigationHref={
-                    getNavigationHref
-                  }
-                  isLocked={
-                    isLocked
-                  }
-                  closeMenu={() =>
-                    setMobileMenuOpen(
-                      false,
-                    )
-                  }
-                />
+                    <MobileNavSection
+                      label="Browse Sets"
+                      items={
+                        browseNavigation
+                      }
+                      pathname={
+                        pathname
+                      }
+                      unreadMessages={
+                        unreadMessages
+                      }
+                      getNavigationHref={
+                        getNavigationHref
+                      }
+                      isLocked={
+                        isLocked
+                      }
+                      closeMenu={() =>
+                        setMobileMenuOpen(
+                          false,
+                        )
+                      }
+                    />
 
-                {/* =============================
-                    TOOLS
-                ============================== */}
+                    <MobileNavSection
+                      label="Tools & Account"
+                      items={
+                        moreNavigation
+                      }
+                      pathname={
+                        pathname
+                      }
+                      unreadMessages={
+                        unreadMessages
+                      }
+                      getNavigationHref={
+                        getNavigationHref
+                      }
+                      isLocked={
+                        isLocked
+                      }
+                      closeMenu={() =>
+                        setMobileMenuOpen(
+                          false,
+                        )
+                      }
+                    />
 
-                <MobileNavSection
-                  label="Tools & Account"
-                  items={
-                    moreNavigation
-                  }
-                  pathname={
-                    pathname
-                  }
-                  unreadMessages={
-                    unreadMessages
-                  }
-                  getNavigationHref={
-                    getNavigationHref
-                  }
-                  isLocked={
-                    isLocked
-                  }
-                  closeMenu={() =>
-                    setMobileMenuOpen(
-                      false,
-                    )
-                  }
-                />
-
-                {/* =============================
-                    ADMIN
-                ============================== */}
-
-                {isAdmin && (
-                  <MobileNavSection
-                    label="Admin"
-                    items={
-                      adminNavigation
-                    }
-                    pathname={
-                      pathname
-                    }
-                    unreadMessages={
-                      unreadMessages
-                    }
-                    getNavigationHref={
-                      getNavigationHref
-                    }
-                    isLocked={
-                      isLocked
-                    }
-                    closeMenu={() =>
-                      setMobileMenuOpen(
-                        false,
-                      )
-                    }
-                  />
+                    {isAdmin && (
+                      <MobileNavSection
+                        label="Admin"
+                        items={
+                          adminNavigation
+                        }
+                        pathname={
+                          pathname
+                        }
+                        unreadMessages={
+                          unreadMessages
+                        }
+                        getNavigationHref={
+                          getNavigationHref
+                        }
+                        isLocked={
+                          isLocked
+                        }
+                        closeMenu={() =>
+                          setMobileMenuOpen(
+                            false,
+                          )
+                        }
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </SheetContent>
@@ -1047,13 +1448,13 @@ function MobileNavSection({
                   "/messages" &&
                   unreadMessages >
                     0 && (
-                    <span className="ml-auto flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[10px] font-black text-white">
-                      {unreadMessages >
-                      99
-                        ? "99+"
-                        : unreadMessages}
-                    </span>
-                  )}
+                  <span className="ml-auto flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[10px] font-black text-white">
+                    {unreadMessages >
+                    99
+                      ? "99+"
+                      : unreadMessages}
+                  </span>
+                )}
 
                 {item.premium && (
                   <div className="ml-auto">

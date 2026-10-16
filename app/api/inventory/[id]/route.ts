@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
-import { resolveDataScope, scopeFilters } from "@/lib/user-scope"
+import {
+  resolveDataScope,
+  scopeFilters,
+  tenantScopeRequiredResponse,
+} from "@/lib/user-scope"
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -10,15 +14,11 @@ interface RouteContext {
 export async function GET(_request: Request, { params }: RouteContext) {
   const scope = await resolveDataScope()
   if (scope instanceof NextResponse) return scope
+  const tenantError = tenantScopeRequiredResponse(scope)
+if (tenantError) return tenantError
 
   const { id } = await params
 
-  if (scope.mode === "isolated") {
-    return NextResponse.json(
-      { error: "Inventory item not found" },
-      { status: 404 },
-    )
-  }
 
   try {
     const rows = await supabaseTable("inventory_items", {
@@ -73,6 +73,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const scope = await resolveDataScope()
   if (scope instanceof NextResponse) return scope
 
+  const tenantError = tenantScopeRequiredResponse(scope)
+if (tenantError) return tenantError
+
   const { id } = await params
   const patch = await request.json().catch(() => null)
 
@@ -80,13 +83,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json(
       { error: "Invalid inventory update" },
       { status: 400 },
-    )
-  }
-
-  if (scope.mode === "isolated") {
-    return NextResponse.json(
-      { error: "Inventory item not found" },
-      { status: 404 },
     )
   }
 
@@ -136,17 +132,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const scope = await resolveDataScope()
   if (scope instanceof NextResponse) return scope
+  const tenantError = tenantScopeRequiredResponse(scope)
+if (tenantError) return tenantError
 
   const { id } = await params
 
-  // Nothing of this account's own exists yet, so there is nothing to delete —
-  // and deleting unscoped here would destroy another account's rows.
-  if (scope.mode === "isolated") {
-    return NextResponse.json(
-      { error: "Inventory item not found" },
-      { status: 404 },
-    )
-  }
 
   // Both deletes are owner-scoped. Without the scope on binder_entries, deleting
   // one item would clear that card from every user's binders.

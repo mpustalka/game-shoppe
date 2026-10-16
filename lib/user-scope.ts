@@ -1,116 +1,307 @@
 import { NextResponse } from "next/server"
+import type { User } from "@supabase/supabase-js"
 
-import { supabaseTable } from "@/lib/supabase"
-import { resolveEntitlements } from "@/lib/subscription-server"
+import { createClient } from "@/lib/supabase/server"
+import {
+  getCompanyMembership,
+  type CompanyRole,
+} from "@/lib/company-auth"
+import {
+  isSuperAdmin,
+} from "@/lib/platform-auth"
 
-// Per-account data ownership needs a `user_id` column on the data tables, which
-// arrives via supabase/migrations/20260725000000_per_user_data_isolation.sql.
-// This project has no automated migration runner, so that file is applied by
-// hand and the code can be live before the column exists. Querying a missing
-// column fails the whole request, so routes must not assume it is there — they
-// ask for a scope and get one that matches the schema actually present.
+export type AccountType =
+  | "individual"
+  | "business"
+  | "super_admin"
+
 export type DataScope =
-  // Migration applied: real per-row ownership.
-  | { mode: "owned"; userId: string; filters: string[] }
-  // Pre-migration, account predates the paid program: sees the shared rows it
-  // has always seen. No regression for established users.
-  | { mode: "legacy"; userId: string; filters: string[] }
-  // Pre-migration, account created after launch: sees nothing, because the
-  // shared rows belong to someone else.
-  | { mode: "isolated"; userId: string }
+  | {
+      kind: "individual"
+      accountType: "individual"
+      userId: string
+      companyId: null
+      companyRole: null
+      isSuperAdmin: false
+    }
+  | {
+      kind: "company"
+      accountType: "business"
+      userId: string
+      companyId: string
+      companyRole: CompanyRole
+      isSuperAdmin: false
+    }
+  | {
+      kind: "super_admin"
+      accountType: "super_admin"
+      userId: string
+      companyId: null
+      companyRole: null
+      isSuperAdmin: true
+    }
 
-// Probing costs one cheap query, so the result is cached. A positive result is
-// permanent (columns don't disappear); a negative one is re-checked so the app
-// picks up the migration without waiting for a redeploy.
-const MISSING_COLUMN_RECHECK_MS = 60_000
-let ownershipProbe: { present: boolean; checkedAt: number } | null = null
+export type ScopeFilter =
+  | {
+      column: "user_id"
+      value: string
+    }
+  | {
+      column: "company_id"
+      value: string
+    }
 
-export async function hasOwnershipColumn(): Promise<boolean> {
-  if (ownershipProbe?.present) return true
-  if (
-    ownershipProbe &&
-    Date.now() - ownershipProbe.checkedAt < MISSING_COLUMN_RECHECK_MS
-  ) {
-    return false
-  }
+/**
+ * Resolve the signed-in user's data ownership context.
+ *
+ * IMPORTANT:
+ *
+ * Individual collector:
+ *   inventory_items.user_id = user.id
+ *   inventory_items.company_id = NULL
+ *
+ * Business member:
+ *   inventory_items.user_id = NULL
+ *   inventory_items.company_id = membership.companyId
+ *
+ * Super admin:
+ *   Platform administration only.
+ *   Normal tenant-data routes do NOT automatically expose
+ *   every company's data.
+ */
+export async function resolveDataScope(
+  suppliedUser?: User | null,
+): Promise<DataScope | NextResponse> {
+  const supabase = await createClient()
 
-  let present = false
-  try {
-    // All the ownership columns land in one migration, so inventory_items is
-    // representative of the whole set.
-    await supabaseTable("inventory_items", { select: "user_id", limit: 1 })
-    present = true
-  } catch (error) {
-    console.error("OWNERSHIP PROBE FAILED:", error)
-    present = false
-  }
-
-  ownershipProbe = { present, checkedAt: Date.now() }
-  return present
-}
-
-// Resolves how the current request may see the shared data tables.
-//
-// Ownership fails CLOSED, the opposite of `requireFeature` in
-// lib/subscription-server.ts. That guard is permissive on purpose: a billing
-// hiccup should never lock a paying customer out of their own data. Here the
-// risk runs the other way — guessing wrong hands one account another's
-// inventory — so an empty list is always preferred to an unfiltered read.
-export async function resolveDataScope(): Promise<DataScope | NextResponse> {
-  const { user, entitlements } = await resolveEntitlements()
+  let user =
+    suppliedUser ?? null
 
   if (!user) {
-    return NextResponse.json(
-      { error: "Not signed in", code: "auth_required" },
-      { status: 401 },
-    )
+    const {
+      data: { user: authenticatedUser },
+      error,
+    } = await supabase.auth.getUser()
+
+    if (
+      error ||
+      !authenticatedUser
+    ) {
+      return NextResponse.json(
+        {
+          error: "Not signed in",
+          code: "auth_required",
+        },
+        {
+          status: 401,
+        },
+      )
+    }
+
+    user = authenticatedUser
   }
 
-  if (await hasOwnershipColumn()) {
-    // Transitional compatibility: rows created before the ownership migration
-    // have NULL user_id. Keep them visible/editable to the signed-in account
-    // so existing collections do not appear to vanish overnight.
+  /*
+   * Platform authority is deliberately checked first.
+   *
+   * A super admin remains a platform account even if someone
+   * accidentally creates a company_members row for that user.
+   */
+  if (
+    await isSuperAdmin(user)
+  ) {
     return {
-      mode: "owned",
+      kind: "super_admin",
+      accountType:
+        "super_admin",
       userId: user.id,
-      filters: [`or=(user_id.eq.${user.id},user_id.is.null)`],
+      companyId: null,
+      companyRole: null,
+      isSuperAdmin: true,
     }
   }
 
-  // Pre-migration. Established accounts keep the shared view they already had;
-  // new signups get nothing rather than someone else's collection.
-  const isEstablished = entitlements ? !entitlements.isNewAccount : true
-  return isEstablished
-    ? { mode: "legacy", userId: user.id, filters: [] }
-    : { mode: "isolated", userId: user.id }
+  const membership =
+    await getCompanyMembership(
+      user.id,
+    )
+
+  if (membership) {
+    return {
+      kind: "company",
+      accountType: "business",
+      userId: user.id,
+      companyId:
+        membership.companyId,
+      companyRole:
+        membership.role,
+      isSuperAdmin: false,
+    }
+  }
+
+  /*
+   * No company membership = existing individual collector.
+   *
+   * This preserves all current personal accounts and their
+   * existing inventory ownership.
+   */
+  return {
+    kind: "individual",
+    accountType:
+      "individual",
+    userId: user.id,
+    companyId: null,
+    companyRole: null,
+    isSuperAdmin: false,
+  }
 }
 
-// Convenience for the common shape: ownership filters, or [] pre-migration.
-export function scopeFilters(scope: DataScope): string[] {
-  return scope.mode === "isolated" ? [] : scope.filters
+/**
+ * Returns the ownership filter(s) that MUST be applied to a
+ * tenant-data query.
+ *
+ * Super admins intentionally receive no automatic tenant filter.
+ * Callers should reject the super_admin scope unless they are
+ * implementing an explicit platform-admin workflow.
+ */
+export function scopeFilters(
+  scope: DataScope,
+): string[] {
+  if (
+    scope.kind ===
+    "individual"
+  ) {
+    return [
+      `user_id=eq.${scope.userId}`,
+      "company_id=is.null",
+    ]
+  }
+
+  if (
+    scope.kind ===
+    "company"
+  ) {
+    return [
+      `company_id=eq.${scope.companyId}`,
+      "user_id=is.null",
+    ]
+  }
+
+  return []
 }
 
-// Stamps ownership on writes, but only once the column exists.
-export function ownerStamp(scope: DataScope): { user_id?: string } {
-  return scope.mode === "owned" ? { user_id: scope.userId } : {}
+/**
+ * Apply strict ownership filters to a Supabase query.
+ *
+ * We intentionally also require the opposite owner column to
+ * be NULL. This matches the database ownership model and makes
+ * the tenant boundary explicit in every normal inventory query.
+ */
+export function applyScopeFilters<
+  T extends {
+    eq: (
+      column: string,
+      value: string,
+    ) => T
+    is: (
+      column: string,
+      value: null,
+    ) => T
+  },
+>(
+  query: T,
+  scope: DataScope,
+): T {
+  if (
+    scope.kind ===
+    "individual"
+  ) {
+    return query
+      .eq(
+        "user_id",
+        scope.userId,
+      )
+      .is(
+        "company_id",
+        null,
+      )
+  }
+
+  if (
+    scope.kind ===
+    "company"
+  ) {
+    return query
+      .eq(
+        "company_id",
+        scope.companyId,
+      )
+      .is(
+        "user_id",
+        null,
+      )
+  }
+
+  return query
 }
 
-// Pre-migration, a post-launch account has nowhere safe to write: an unstamped
-// row would join the shared pool and show up in established accounts. Rather
-// than silently mix data, the write is refused with an explanation.
-export function pendingSetupResponse() {
-  return NextResponse.json(
-    {
-      error:
-        "Per-account storage isn't ready yet. The database migration that " +
-        "separates each account's data still needs to be applied.",
-      code: "ownership_migration_pending",
-    },
-    { status: 503 },
+/**
+ * Ownership columns used when creating new tenant records.
+ */
+export function ownerStamp(
+  scope: DataScope,
+) {
+  if (
+    scope.kind ===
+    "individual"
+  ) {
+    return {
+      user_id:
+        scope.userId,
+      company_id:
+        null,
+    }
+  }
+
+  if (
+    scope.kind ===
+    "company"
+  ) {
+    return {
+      user_id: null,
+      company_id:
+        scope.companyId,
+    }
+  }
+
+  throw new Error(
+    "Super admin inventory creation requires an explicit tenant context.",
   )
 }
 
-// Note: there is deliberately no bare `ownedBy(userId)` helper. Building a
-// `user_id=eq.…` filter without going through resolveDataScope() is what breaks
-// the app while the migration is unapplied — the query errors on the missing
-// column and the route returns nothing. Always ask for a scope.
+/**
+ * Normal inventory routes should not silently turn a super admin
+ * into a cross-tenant inventory user.
+ */
+export function tenantScopeRequiredResponse(
+  scope: DataScope,
+) {
+  if (
+    scope.kind !==
+    "super_admin"
+  ) {
+    return null
+  }
+
+  return NextResponse.json(
+    {
+      error:
+        "Select a tenant before accessing tenant inventory.",
+      code:
+        "tenant_context_required",
+    },
+    {
+      status: 403,
+    },
+  )
+}

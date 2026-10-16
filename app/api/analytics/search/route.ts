@@ -1,26 +1,43 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
-import { resolveDataScope, ownerStamp } from "@/lib/user-scope"
+import {
+  resolveDataScope,
+  ownerStamp,
+  tenantScopeRequiredResponse,
+} from "@/lib/user-scope"
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
-  const query = typeof body?.query === "string" ? body.query.trim() : ""
-  const resultCount = Number.isFinite(body?.resultCount)
-    ? Number(body.resultCount)
-    : 0
 
-  if (query.length < 2) {
-    return NextResponse.json({ ok: true, skipped: true })
+  const query =
+    typeof body?.query === "string"
+      ? body.query.trim()
+      : ""
+
+  const resultCount =
+    typeof body?.resultCount === "number"
+      ? body.resultCount
+      : Number(body?.resultCount ?? 0)
+
+  if (!query) {
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+    })
   }
 
-  // Search telemetry feeds each account's own "top searches" / "unmet demand"
-  // insights, so it's recorded per user. This is fire-and-forget from the search
-  // page: anything unusable — no session, no per-account storage yet, a failed
-  // insert — is skipped rather than turned into a failed search.
   const scope = await resolveDataScope()
-  if (scope instanceof NextResponse || scope.mode === "isolated") {
-    return NextResponse.json({ ok: true, skipped: true })
+
+  if (scope instanceof NextResponse) {
+    return scope
+  }
+
+  const tenantError =
+    tenantScopeRequiredResponse(scope)
+
+  if (tenantError) {
+    return tenantError
   }
 
   try {
@@ -29,14 +46,34 @@ export async function POST(request: Request) {
       body: {
         ...ownerStamp(scope),
         query: query.slice(0, 160),
-        normalized_query: query.toLowerCase().slice(0, 160),
-        result_count: Math.max(0, resultCount),
+        normalized_query: query
+          .toLowerCase()
+          .slice(0, 160),
+        result_count: Math.max(
+          0,
+          Number.isFinite(resultCount)
+            ? resultCount
+            : 0,
+        ),
       },
     })
   } catch (error) {
-    console.error("Search telemetry failed", error)
-    return NextResponse.json({ ok: true, skipped: true })
+    console.error(
+      "Search telemetry failed",
+      error,
+    )
+
+    /*
+     * Search telemetry must never break the
+     * user's actual search experience.
+     */
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+    })
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({
+    ok: true,
+  })
 }

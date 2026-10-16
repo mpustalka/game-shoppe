@@ -6,7 +6,7 @@ import {
   resolveDataScope,
   scopeFilters,
   ownerStamp,
-  pendingSetupResponse,
+  tenantScopeRequiredResponse,
 } from "@/lib/user-scope"
 
 import { requireFeature } from "@/lib/subscription-server"
@@ -51,9 +51,11 @@ export async function GET() {
     return scope
   }
 
-  if (scope.mode === "isolated") {
-    return NextResponse.json([])
-  }
+  const tenantError = tenantScopeRequiredResponse(scope)
+
+if (tenantError) {
+  return tenantError
+}
 
   try {
     const rows = (await supabaseTable("customer_lists", {
@@ -97,9 +99,11 @@ export async function POST(request: Request) {
     return scope
   }
 
-  if (scope.mode === "isolated") {
-    return pendingSetupResponse()
-  }
+ const tenantError = tenantScopeRequiredResponse(scope)
+
+if (tenantError) {
+  return tenantError
+}
 
   const body = await request.json().catch(() => null)
 

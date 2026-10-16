@@ -439,10 +439,7 @@ const redirectTo =
     acceptPath,
   )}`
 
-console.log(
-  "TEAM INVITE redirectTo:",
-  redirectTo,
-)
+
   const {
     error: inviteError,
   } =

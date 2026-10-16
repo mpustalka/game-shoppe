@@ -2,20 +2,10 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 import { requireFeature } from "@/lib/subscription-server"
-
-/**
- * Weekly price movement per card + finish.
- *
- * Turns the daily price-snapshot history into a simple "up / down / flat over
- * the last week" reading for every tracked card, keyed by `${cardId}|${finish}`
- * so any page (the binders view in particular) can show whether a card's market
- * value is trending up or down without recomputing the history itself.
- *
- * The comparison is anchored to each card's most recent reading, not to the
- * wall-clock date: current = latest reading, baseline = the last reading on or
- * before (latest − 7 days). This keeps the "this week" delta meaningful even if
- * the newest snapshot is a day or two old.
- */
+import {
+  resolveDataScope,
+  scopeFilters,
+} from "@/lib/user-scope"
 
 type SnapshotRow = {
   card_id: string
@@ -24,127 +14,442 @@ type SnapshotRow = {
   captured_on: string
 }
 
-type Reading = { date: string; price: number }
+type InventoryRow = {
+  item: Record<string, unknown>
+}
+
+type Reading = {
+  date: string
+  price: number
+}
 
 type Move = {
   last: number
   prev: number
   change: number
   changePercent: number
-  direction: "up" | "down" | "flat"
+  direction:
+    | "up"
+    | "down"
+    | "flat"
   spanDays: number
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000
-const HISTORY_DAYS = 45 // enough to always contain a reading ~7 days back
+const DAY_MS =
+  24 * 60 * 60 * 1000
 
-function daysAgoIsoDate(days: number) {
-  return new Date(Date.now() - days * DAY_MS).toISOString().slice(0, 10)
-}
+const HISTORY_DAYS = 45
 
-function shiftIso(isoDate: string, deltaDays: number) {
-  return new Date(Date.parse(`${isoDate}T00:00:00Z`) + deltaDays * DAY_MS)
+function daysAgoIsoDate(
+  days: number,
+) {
+  return new Date(
+    Date.now() -
+      days * DAY_MS,
+  )
     .toISOString()
     .slice(0, 10)
 }
 
-function daySpan(fromIso: string, toIso: string) {
+function shiftIso(
+  isoDate: string,
+  deltaDays: number,
+) {
+  return new Date(
+    Date.parse(
+      `${isoDate}T00:00:00Z`,
+    ) +
+      deltaDays * DAY_MS,
+  )
+    .toISOString()
+    .slice(0, 10)
+}
+
+function daySpan(
+  fromIso: string,
+  toIso: string,
+) {
   return Math.round(
-    (Date.parse(`${toIso}T00:00:00Z`) - Date.parse(`${fromIso}T00:00:00Z`)) /
+    (
+      Date.parse(
+        `${toIso}T00:00:00Z`,
+      ) -
+      Date.parse(
+        `${fromIso}T00:00:00Z`,
+      )
+    ) /
       DAY_MS,
   )
 }
 
-export async function GET() {
-  const gate = await requireFeature(
-    (e) => e.canUseAnalytics,
-    "Price movement analytics",
-    "premium",
-  )
+function normalizeFinish(
+  value: unknown,
+) {
+  return typeof value ===
+    "string" &&
+    value.trim()
+    ? value.trim()
+    : "Normal"
+}
 
-  if (gate instanceof NextResponse) {
+function emptyResponse() {
+  return NextResponse.json({
+    asOf: null,
+    tracked: 0,
+    up: 0,
+    down: 0,
+    flat: 0,
+    moves: {},
+  })
+}
+
+export async function GET() {
+  const gate =
+    await requireFeature(
+      (e) =>
+        e.canUseAnalytics,
+      "Price movement analytics",
+      "premium",
+    )
+
+  if (
+    gate instanceof
+    NextResponse
+  ) {
     return gate
   }
 
-  try {
-    const rows = (await supabaseTable("card_price_snapshots", {
-      select: "card_id,finish,market_price,captured_on",
-      filters: [`captured_on=gte.${daysAgoIsoDate(HISTORY_DAYS)}`],
-      order: "captured_on.asc",
-      limit: 100000,
-    }).catch(() => [])) as SnapshotRow[]
+  const scope =
+    await resolveDataScope()
 
-    // Group readings by card + finish (rows already ascending by date).
-    const series = new Map<string, Reading[]>()
-    for (const row of rows || []) {
-      const price = Number(row.market_price)
-      if (!Number.isFinite(price) || price <= 0) continue
-      const finish =
-        typeof row.finish === "string" && row.finish ? row.finish : "Normal"
-      const key = `${row.card_id}|${finish}`
-      const list = series.get(key) ?? []
-      list.push({ date: row.captured_on, price })
-      series.set(key, list)
+  if (
+    scope instanceof
+    NextResponse
+  ) {
+    return scope
+  }
+
+  try {
+    /*
+     * First establish ownership.
+     *
+     * Individual account:
+     *   inventory_items.user_id
+     *
+     * Business:
+     *   inventory_items.company_id
+     *
+     * scopeFilters() handles that
+     * distinction for us.
+     */
+    const inventoryRows =
+      (await supabaseTable(
+        "inventory_items",
+        {
+          select: "item",
+          filters:
+            scopeFilters(scope),
+          order:
+            "created_at.desc",
+          limit: 50000,
+        },
+      ).catch(
+        () => [],
+      )) as InventoryRow[]
+
+    const ownedKeys =
+      new Set<string>()
+
+    for (
+      const row of
+      inventoryRows
+    ) {
+      const item =
+        row.item || {}
+
+      const cardId =
+        typeof item.cardId ===
+        "string"
+          ? item.cardId
+          : ""
+
+      if (!cardId) {
+        continue
+      }
+
+      const quantity =
+        Number(
+          item.quantity ?? 1,
+        )
+
+      if (
+        !Number.isFinite(
+          quantity,
+        ) ||
+        quantity <= 0
+      ) {
+        continue
+      }
+
+      ownedKeys.add(
+        `${cardId}|${normalizeFinish(
+          item.finish,
+        )}`,
+      )
     }
 
-    const moves: Record<string, Move> = {}
+    if (
+      ownedKeys.size === 0
+    ) {
+      return emptyResponse()
+    }
+
+    /*
+     * Snapshot data itself remains
+     * global market data.
+     */
+    const snapshotRows =
+      (await supabaseTable(
+        "card_price_snapshots",
+        {
+          select:
+            "card_id,finish,market_price,captured_on",
+          filters: [
+            `captured_on=gte.${daysAgoIsoDate(
+              HISTORY_DAYS,
+            )}`,
+          ],
+          order:
+            "captured_on.asc",
+          limit: 100000,
+        },
+      ).catch(
+        () => [],
+      )) as SnapshotRow[]
+
+    /*
+     * Critical ownership boundary.
+     */
+    const rows =
+      snapshotRows.filter(
+        (row) =>
+          ownedKeys.has(
+            `${row.card_id}|${normalizeFinish(
+              row.finish,
+            )}`,
+          ),
+      )
+
+    const series =
+      new Map<
+        string,
+        Reading[]
+      >()
+
+    for (
+      const row of rows
+    ) {
+      const price =
+        Number(
+          row.market_price,
+        )
+
+      if (
+        !Number.isFinite(
+          price,
+        ) ||
+        price <= 0
+      ) {
+        continue
+      }
+
+      const finish =
+        normalizeFinish(
+          row.finish,
+        )
+
+      const key =
+        `${row.card_id}|${finish}`
+
+      const list =
+        series.get(key) ??
+        []
+
+      list.push({
+        date:
+          row.captured_on,
+        price,
+      })
+
+      series.set(
+        key,
+        list,
+      )
+    }
+
+    const moves:
+      Record<
+        string,
+        Move
+      > = {}
+
     let up = 0
     let down = 0
     let flat = 0
 
-    for (const [key, readings] of series) {
-      if (readings.length < 2) continue
-
-      const latest = readings[readings.length - 1]
-      const baselineDate = shiftIso(latest.date, -7)
-
-      // Last reading on or before the baseline date; fall back to the earliest
-      // reading so cards with under a week of history still get a comparison.
-      let baseline: Reading | null = null
-      for (const r of readings) {
-        if (r.date <= baselineDate) baseline = r
-        else break
+    for (
+      const [
+        key,
+        readings,
+      ] of series
+    ) {
+      if (
+        readings.length <
+        2
+      ) {
+        continue
       }
-      if (!baseline) baseline = readings[0]
-      if (baseline.date === latest.date) continue
 
-      const change = latest.price - baseline.price
+      const latest =
+        readings[
+          readings.length -
+            1
+        ]
+
+      const baselineDate =
+        shiftIso(
+          latest.date,
+          -7,
+        )
+
+      let baseline:
+        Reading | null =
+        null
+
+      for (
+        const reading of
+        readings
+      ) {
+        if (
+          reading.date <=
+          baselineDate
+        ) {
+          baseline =
+            reading
+        } else {
+          break
+        }
+      }
+
+      if (!baseline) {
+        baseline =
+          readings[0]
+      }
+
+      if (
+        baseline.date ===
+        latest.date
+      ) {
+        continue
+      }
+
+      const change =
+        latest.price -
+        baseline.price
+
       const changePercent =
-        baseline.price > 0 ? (change / baseline.price) * 100 : 0
-      const direction: Move["direction"] =
-        change > 0.001 ? "up" : change < -0.001 ? "down" : "flat"
+        baseline.price > 0
+          ? (change /
+              baseline.price) *
+            100
+          : 0
 
-      if (direction === "up") up += 1
-      else if (direction === "down") down += 1
-      else flat += 1
+      const direction:
+        Move["direction"] =
+        change > 0.001
+          ? "up"
+          : change <
+              -0.001
+            ? "down"
+            : "flat"
+
+      if (
+        direction === "up"
+      ) {
+        up += 1
+      } else if (
+        direction ===
+        "down"
+      ) {
+        down += 1
+      } else {
+        flat += 1
+      }
 
       moves[key] = {
-        last: Number(latest.price.toFixed(2)),
-        prev: Number(baseline.price.toFixed(2)),
-        change: Number(change.toFixed(2)),
-        changePercent: Number(changePercent.toFixed(1)),
+        last:
+          Number(
+            latest.price.toFixed(
+              2,
+            ),
+          ),
+
+        prev:
+          Number(
+            baseline.price.toFixed(
+              2,
+            ),
+          ),
+
+        change:
+          Number(
+            change.toFixed(
+              2,
+            ),
+          ),
+
+        changePercent:
+          Number(
+            changePercent.toFixed(
+              1,
+            ),
+          ),
+
         direction,
-        spanDays: daySpan(baseline.date, latest.date),
+
+        spanDays:
+          daySpan(
+            baseline.date,
+            latest.date,
+          ),
       }
     }
 
     return NextResponse.json({
-      asOf: rows && rows.length ? rows[rows.length - 1].captured_on : null,
-      tracked: Object.keys(moves).length,
+      asOf:
+        rows.length > 0
+          ? rows[
+              rows.length -
+                1
+            ].captured_on
+          : null,
+
+      tracked:
+        Object.keys(
+          moves,
+        ).length,
+
       up,
       down,
       flat,
       moves,
     })
   } catch (error) {
-    console.error("Weekly price-moves computation failed", error)
-    return NextResponse.json({
-      asOf: null,
-      tracked: 0,
-      up: 0,
-      down: 0,
-      flat: 0,
-      moves: {},
-    })
+    console.error(
+      "Weekly price-moves computation failed",
+      error,
+    )
+
+    return emptyResponse()
   }
 }

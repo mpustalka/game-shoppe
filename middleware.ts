@@ -16,9 +16,8 @@ const PUBLIC_PATHS = [
   "/reset-password",
   "/auth",
   "/share",
-
-  // Public storefront
   "/store",
+  "/business/signup",
 ]
 
 function isPublicPath(pathname: string) {

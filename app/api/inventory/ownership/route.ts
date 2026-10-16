@@ -4,6 +4,7 @@ import { supabaseTable } from "@/lib/supabase"
 import {
   resolveDataScope,
   scopeFilters,
+  tenantScopeRequiredResponse,
 } from "@/lib/user-scope"
 
 type OwnershipSummaryRow = {
@@ -56,12 +57,11 @@ export async function GET(request: Request) {
     return scope
   }
 
-  if (scope.mode === "isolated") {
-    return NextResponse.json({
-      bySet: {},
-      items: [],
-    })
-  }
+  const tenantError = tenantScopeRequiredResponse(scope)
+
+if (tenantError) {
+  return tenantError
+}
 
   const { searchParams } = new URL(request.url)
   const setId = searchParams.get("setId")?.trim() || null
