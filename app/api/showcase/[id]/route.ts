@@ -6,6 +6,7 @@ import { SHOWCASE_CARD_LIMIT } from "@/lib/showcase"
 import {
   resolveDataScope,
   scopeFilters,
+  tenantScopeRequiredResponse,
   type DataScope,
 } from "@/lib/user-scope"
 
@@ -25,9 +26,6 @@ async function fetchShowcase(
   id: string,
   scope: DataScope,
 ): Promise<ShowcaseRow | null> {
-  if (scope.mode === "isolated") {
-    return null
-  }
 
   const rows = (await supabaseTable("showcase_binders", {
     select: "id,share_token,name,items,created_at,updated_at",
@@ -56,6 +54,12 @@ export async function GET(_request: Request, { params }: RouteContext) {
   if (scope instanceof NextResponse) {
     return scope
   }
+
+  const tenantError = tenantScopeRequiredResponse(scope)
+
+if (tenantError) {
+  return tenantError
+}
 
   const { id } = await params
 
@@ -91,6 +95,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (scope instanceof NextResponse) {
     return scope
   }
+
+  const tenantError = tenantScopeRequiredResponse(scope)
+
+if (tenantError) {
+  return tenantError
+}
 
   const { id } = await params
 
@@ -186,11 +196,12 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     return scope
   }
 
-  if (scope.mode === "isolated") {
-    return NextResponse.json({
-      ok: true,
-    })
-  }
+  const tenantError = tenantScopeRequiredResponse(scope)
+
+if (tenantError) {
+  return tenantError
+}
+
 
   const { id } = await params
   if (!id?.trim()) {

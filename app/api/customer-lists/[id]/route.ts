@@ -2,7 +2,11 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 
-import { resolveDataScope, scopeFilters } from "@/lib/user-scope"
+import {
+  resolveDataScope,
+  scopeFilters,
+  tenantScopeRequiredResponse,
+} from "@/lib/user-scope"
 
 import { requireFeature } from "@/lib/subscription-server"
 
@@ -32,11 +36,11 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
 
   // Account has no usable data scope yet.
   // Treat delete as a no-op rather than leaking anything.
-  if (scope.mode === "isolated") {
-    return NextResponse.json({
-      ok: true,
-    })
-  }
+  const tenantError = tenantScopeRequiredResponse(scope)
+
+if (tenantError) {
+  return tenantError
+}
 
   const { id } = await params
 

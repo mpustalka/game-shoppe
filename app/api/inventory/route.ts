@@ -6,154 +6,452 @@ import {
   resolveDataScope,
   scopeFilters,
   ownerStamp,
-  pendingSetupResponse,
+  tenantScopeRequiredResponse,
 } from "@/lib/user-scope"
 
 type InventoryJson = Record<string, unknown>
 
 function normalizeInventoryItem(
   item: InventoryJson,
-): InventoryJson & { finish: string; quantitySold: number } {
+): InventoryJson & {
+  finish: string
+  quantitySold: number
+} {
   return {
     ...item,
+
     finish:
-      typeof item.finish === "string" && item.finish ? item.finish : "Normal",
-    quantitySold: typeof item.quantitySold === "number" ? item.quantitySold : 0,
+      typeof item.finish === "string" &&
+      item.finish
+        ? item.finish
+        : "Normal",
+
+    quantitySold:
+      typeof item.quantitySold === "number"
+        ? item.quantitySold
+        : 0,
   }
 }
 
+/**
+ * GET /api/inventory
+ *
+ * Individual collector:
+ *   user_id = authenticated user
+ *   company_id IS NULL
+ *
+ * Business:
+ *   company_id = active company membership
+ *   user_id IS NULL
+ *
+ * Super Admin:
+ *   Normal inventory access is blocked unless we later create
+ *   an explicit company/tenant context.
+ */
 export async function GET() {
-
   console.log("Inventory GET started")
 
-  const scope = await resolveDataScope()
+  const scope =
+    await resolveDataScope()
 
-   console.log("Inventory scope:", scope)
+  console.log(
+    "Inventory scope:",
+    scope,
+  )
 
-  if (scope instanceof NextResponse) return scope
-
-  // A post-launch account with ownership not yet in place owns nothing.
-  if (scope.mode === "isolated") {
-    console.log("Inventory isolated mode - returning empty") // log
-    return NextResponse.json([])
+  if (
+    scope instanceof NextResponse
+  ) {
+    return scope
   }
 
-const filters = scopeFilters(scope)
+  const tenantGate =
+    tenantScopeRequiredResponse(
+      scope,
+    )
 
-console.log("Inventory filters:", filters)
+  if (tenantGate) {
+    console.log(
+      "Inventory blocked: explicit tenant context required",
+    )
 
+    return tenantGate
+  }
 
-  const rows = await supabaseTable("inventory_items", {
-  select: "item",
-  filters: scopeFilters(scope),
-  order: "created_at.desc",
-  limit: 10000,
-})
- console.log("Inventory rows:", rows.length)
+  const filters =
+    scopeFilters(scope)
 
-  return NextResponse.json(
-    rows.map((row: { item: unknown }) =>
-      normalizeInventoryItem(row.item as Record<string, unknown>),
-    ),
+  console.log(
+    "Inventory filters:",
+    filters,
   )
-} 
 
-export async function POST(request: Request) {
-  const scope = await resolveDataScope()
-  if (scope instanceof NextResponse) return scope
-  if (scope.mode === "isolated") return pendingSetupResponse()
+  try {
+    const rows =
+      await supabaseTable(
+        "inventory_items",
+        {
+          select: "item",
 
-  // Trial accounts can't create inventory rows (covers Add Card and Import).
-  const gate = await requireFeature((e) => e.canAddCards, "Adding cards")
-  if (gate instanceof NextResponse) return gate
+          filters,
 
-  const item = await request.json().catch(() => null)
+          order:
+            "created_at.desc",
 
-  if (!item?.id || !item?.cardId) {
+          limit: 10000,
+        },
+      )
+
+    console.log(
+      "Inventory rows:",
+      rows.length,
+    )
+
     return NextResponse.json(
-      { error: "Invalid inventory item" },
-      { status: 400 },
+      rows.map(
+        (row: {
+          item: unknown
+        }) =>
+          normalizeInventoryItem(
+            row.item as Record<
+              string,
+              unknown
+            >,
+          ),
+      ),
+    )
+  } catch (error) {
+    console.error(
+      "Inventory GET failed",
+      error,
+    )
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to fetch inventory",
+      },
+      {
+        status: 500,
+      },
+    )
+  }
+}
+
+/**
+ * POST /api/inventory
+ *
+ * Creates inventory under the resolved owner.
+ *
+ * Individual:
+ *   user_id    = user UUID
+ *   company_id = NULL
+ *
+ * Business:
+ *   user_id    = NULL
+ *   company_id = company UUID
+ */
+export async function POST(
+  request: Request,
+) {
+  const scope =
+    await resolveDataScope()
+
+  if (
+    scope instanceof NextResponse
+  ) {
+    return scope
+  }
+
+  const tenantGate =
+    tenantScopeRequiredResponse(
+      scope,
+    )
+
+  if (tenantGate) {
+    return tenantGate
+  }
+
+  /*
+   * Keep the existing subscription feature gate.
+   *
+   * We will make subscription-server.ts business-plan-aware
+   * separately. Tenant ownership should not bypass the
+   * application's existing feature checks.
+   */
+  const gate =
+    await requireFeature(
+      (e) => e.canAddCards,
+      "Adding cards",
+    )
+
+  if (
+    gate instanceof NextResponse
+  ) {
+    return gate
+  }
+
+  const item =
+    await request
+      .json()
+      .catch(() => null)
+
+  if (
+    !item?.id ||
+    !item?.cardId
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Invalid inventory item",
+      },
+      {
+        status: 400,
+      },
     )
   }
 
-  const createdAt = item.createdAt ? new Date(item.createdAt) : new Date()
-  const updatedAt = item.updatedAt ? new Date(item.updatedAt) : createdAt
-  const normalizedItem = normalizeInventoryItem(item)
+  const createdAt =
+    item.createdAt
+      ? new Date(
+          item.createdAt,
+        )
+      : new Date()
+
+  const updatedAt =
+    item.updatedAt
+      ? new Date(
+          item.updatedAt,
+        )
+      : createdAt
+
+  if (
+    Number.isNaN(
+      createdAt.getTime(),
+    ) ||
+    Number.isNaN(
+      updatedAt.getTime(),
+    )
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Invalid inventory date",
+      },
+      {
+        status: 400,
+      },
+    )
+  }
+
+  const normalizedItem =
+    normalizeInventoryItem(
+      item,
+    )
+
+  const ownership =
+    ownerStamp(scope)
+
+  console.log(
+    "Inventory POST ownership:",
+    ownership,
+  )
 
   try {
-    await supabaseTable("inventory_items", {
-      method: "POST",
-      body: {
-        id: String(normalizedItem.id),
-        ...ownerStamp(scope),
-        card_id: String(normalizedItem.cardId),
-        item: normalizedItem,
-        language: normalizedItem.language ?? "en",
-        created_at: createdAt.toISOString(),
-        updated_at: updatedAt.toISOString(),
+    await supabaseTable(
+      "inventory_items",
+      {
+        method: "POST",
+
+        body: {
+          id: String(
+            normalizedItem.id,
+          ),
+
+          ...ownership,
+
+          card_id: String(
+            normalizedItem.cardId,
+          ),
+
+          item:
+            normalizedItem,
+
+          language:
+            normalizedItem.language ??
+            "en",
+
+          created_at:
+            createdAt.toISOString(),
+
+          updated_at:
+            updatedAt.toISOString(),
+        },
+
+        onConflict: "id",
       },
-      onConflict: "id",
-    })
+    )
   } catch (error) {
-    console.error("Inventory POST failed")
+    console.error(
+      "Inventory POST failed",
+    )
+
     console.error(error)
 
-    if (error instanceof Error) {
-      console.error(error.message)
-      console.error(error.stack)
+    if (
+      error instanceof Error
+    ) {
+      console.error(
+        error.message,
+      )
+
+      console.error(
+        error.stack,
+      )
     }
 
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : String(error),
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     )
   }
 
-  return NextResponse.json(normalizedItem, { status: 201 })
+  return NextResponse.json(
+    normalizedItem,
+    {
+      status: 201,
+    },
+  )
 }
 
-export async function PUT(request: Request) {
-  const scope = await resolveDataScope()
-  if (scope instanceof NextResponse) return scope
-  if (scope.mode === "isolated") return pendingSetupResponse()
+/**
+ * PUT /api/inventory
+ *
+ * Updating requires BOTH:
+ *
+ *   id = requested inventory id
+ *
+ * AND the resolved ownership filter.
+ *
+ * Therefore knowing another tenant's inventory UUID does not
+ * give permission to modify it.
+ */
+export async function PUT(
+  request: Request,
+) {
+  const scope =
+    await resolveDataScope()
 
-  const item = await request.json().catch(() => null)
-
-  if (!item?.id || !item?.cardId) {
-    return NextResponse.json(
-      { error: "Invalid inventory item" },
-      { status: 400 },
-    )
+  if (
+    scope instanceof NextResponse
+  ) {
+    return scope
   }
 
-  const normalizedItem = normalizeInventoryItem(item)
-  const updatedAt = new Date().toISOString()
+  const tenantGate =
+    tenantScopeRequiredResponse(
+      scope,
+    )
 
-  try {
-    await supabaseTable("inventory_items", {
-      method: "PATCH",
-      body: {
-        card_id: String(normalizedItem.cardId),
-        item: normalizedItem,
-        language: normalizedItem.language ?? "en",
-        updated_at: updatedAt,
-      },
-      // Scoped to the owner as well as the id, so one account can never
-      // overwrite another's row by guessing its id.
-      filters: [`id=eq.${String(normalizedItem.id)}`, ...scopeFilters(scope)],
-    })
-  } catch (error) {
-    console.error("Inventory PUT failed", error)
+  if (tenantGate) {
+    return tenantGate
+  }
+
+  const item =
+    await request
+      .json()
+      .catch(() => null)
+
+  if (
+    !item?.id ||
+    !item?.cardId
+  ) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error ? error.message : "Unknown inventory error",
+          "Invalid inventory item",
       },
-      { status: 500 },
+      {
+        status: 400,
+      },
     )
   }
 
-  return NextResponse.json(normalizedItem)
+  const normalizedItem =
+    normalizeInventoryItem(
+      item,
+    )
+
+  const updatedAt =
+    new Date().toISOString()
+
+  const filters = [
+    `id=eq.${String(
+      normalizedItem.id,
+    )}`,
+
+    ...scopeFilters(scope),
+  ]
+
+  console.log(
+    "Inventory PUT filters:",
+    filters,
+  )
+
+  try {
+    await supabaseTable(
+      "inventory_items",
+      {
+        method: "PATCH",
+
+        body: {
+          card_id: String(
+            normalizedItem.cardId,
+          ),
+
+          item:
+            normalizedItem,
+
+          language:
+            normalizedItem.language ??
+            "en",
+
+          updated_at:
+            updatedAt,
+        },
+
+        filters,
+      },
+    )
+  } catch (error) {
+    console.error(
+      "Inventory PUT failed",
+      error,
+    )
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown inventory error",
+      },
+      {
+        status: 500,
+      },
+    )
+  }
+
+  return NextResponse.json(
+    normalizedItem,
+  )
 }

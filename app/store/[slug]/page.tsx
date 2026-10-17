@@ -140,7 +140,7 @@ export default function StoreProductPage() {
 
           <p className="mt-2 text-sm text-muted-foreground">
             {error ||
-              "This product could not be found."}
+              "This product could not be found - BAAAAAD Eevee."}
           </p>
 
           <Button
