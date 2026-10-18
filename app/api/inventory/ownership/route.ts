@@ -1,11 +1,10 @@
+
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
-import {
-  resolveDataScope,
-  scopeFilters,
-  tenantScopeRequiredResponse,
-} from "@/lib/user-scope"
+import { scopeFilters } from "@/lib/user-scope"
+import { resolveInventoryScope } from "@/lib/inventory-scope"
+
 
 type OwnershipSummaryRow = {
   card_id?: unknown
@@ -20,6 +19,7 @@ function parsePositiveQuantity(value: unknown): number {
 
   if (typeof value === "string") {
     const parsed = Number(value)
+
     if (Number.isFinite(parsed)) {
       return Math.max(0, parsed)
     }
@@ -51,17 +51,11 @@ function normalizeLanguage(value: string | null): string | null {
 }
 
 export async function GET(request: Request) {
-  const scope = await resolveDataScope()
+  const scope = await resolveInventoryScope()
 
   if (scope instanceof NextResponse) {
     return scope
   }
-
-  const tenantError = tenantScopeRequiredResponse(scope)
-
-if (tenantError) {
-  return tenantError
-}
 
   const { searchParams } = new URL(request.url)
   const setId = searchParams.get("setId")?.trim() || null
@@ -77,9 +71,7 @@ if (tenantError) {
     /**
      * Set-detail mode
      * ----------------
-     * A card grid needs the actual inventory variants for only the set being
-     * viewed. This is dramatically smaller than loading the user's complete
-     * inventory on every set page.
+     * Return inventory variants for only the set being viewed.
      */
     if (setId) {
       // Pokemon TCG card IDs are `${set.id}-${card.number}`.
@@ -89,32 +81,31 @@ if (tenantError) {
         select: "item",
         filters,
         order: "created_at.desc",
-        // A single set should never approach this in normal use, while still
-        // allowing multiple conditions / finishes / copies per card.
+        // Allow multiple conditions, finishes, and copies per card.
         limit: 5000,
       })
 
       const items = rows
-  .map((row: { item?: unknown }) => row.item)
-  .filter(
-    (item: unknown): item is Record<string, unknown> =>
-      Boolean(item) && typeof item === "object",
-  )
-  .filter((item: Record<string, unknown>) => {
-    const quantity = parsePositiveQuantity(item.quantity)
-    return quantity > 0
-  })
-  .map((item: Record<string, unknown>) => ({
-    ...item,
-    finish:
-      typeof item.finish === "string" && item.finish
-        ? item.finish
-        : "Normal",
-    quantitySold:
-      typeof item.quantitySold === "number"
-        ? item.quantitySold
-        : 0,
-  }))
+        .map((row: { item?: unknown }) => row.item)
+        .filter(
+          (item: unknown): item is Record<string, unknown> =>
+            Boolean(item) && typeof item === "object",
+        )
+        .filter((item: Record<string, unknown>) => {
+          const quantity = parsePositiveQuantity(item.quantity)
+          return quantity > 0
+        })
+        .map((item: Record<string, unknown>) => ({
+          ...item,
+          finish:
+            typeof item.finish === "string" && item.finish
+              ? item.finish
+              : "Normal",
+          quantitySold:
+            typeof item.quantitySold === "number"
+              ? item.quantitySold
+              : 0,
+        }))
 
       return NextResponse.json(
         { items },
@@ -129,9 +120,7 @@ if (tenantError) {
     /**
      * Set-catalog mode
      * ----------------
-     * Only retrieve the tiny pieces required to calculate unique-card
-     * completion counts. Do not send complete inventory/card/image JSON to the
-     * browser.
+     * Retrieve only the fields needed to calculate unique-card completion.
      */
     const rows = (await supabaseTable("inventory_items", {
       select:

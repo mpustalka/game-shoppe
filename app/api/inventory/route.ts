@@ -3,11 +3,10 @@ import { NextResponse } from "next/server"
 import { supabaseTable } from "@/lib/supabase"
 import { requireFeature } from "@/lib/subscription-server"
 import {
-  resolveDataScope,
   scopeFilters,
   ownerStamp,
-  tenantScopeRequiredResponse,
 } from "@/lib/user-scope"
+import { resolveInventoryScope } from "@/lib/inventory-scope"
 
 type InventoryJson = Record<string, unknown>
 
@@ -52,7 +51,7 @@ export async function GET() {
   console.log("Inventory GET started")
 
   const scope =
-    await resolveDataScope()
+    await resolveInventoryScope()
 
   console.log(
     "Inventory scope:",
@@ -63,19 +62,6 @@ export async function GET() {
     scope instanceof NextResponse
   ) {
     return scope
-  }
-
-  const tenantGate =
-    tenantScopeRequiredResponse(
-      scope,
-    )
-
-  if (tenantGate) {
-    console.log(
-      "Inventory blocked: explicit tenant context required",
-    )
-
-    return tenantGate
   }
 
   const filters =
@@ -157,21 +143,12 @@ export async function POST(
   request: Request,
 ) {
   const scope =
-    await resolveDataScope()
+    await resolveInventoryScope()
 
   if (
     scope instanceof NextResponse
   ) {
     return scope
-  }
-
-  const tenantGate =
-    tenantScopeRequiredResponse(
-      scope,
-    )
-
-  if (tenantGate) {
-    return tenantGate
   }
 
   /*
@@ -349,21 +326,12 @@ export async function PUT(
   request: Request,
 ) {
   const scope =
-    await resolveDataScope()
+    await resolveInventoryScope()
 
   if (
     scope instanceof NextResponse
   ) {
     return scope
-  }
-
-  const tenantGate =
-    tenantScopeRequiredResponse(
-      scope,
-    )
-
-  if (tenantGate) {
-    return tenantGate
   }
 
   const item =

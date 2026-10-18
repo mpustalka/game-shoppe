@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
+import { resolveInventoryScope } from "@/lib/inventory-scope"
 import {
-  resolveDataScope,
   scopeFilters,
   ownerStamp,
-  tenantScopeRequiredResponse,
 } from "@/lib/user-scope"
 
 const VALID_TIERS = new Set(["budget", "mid", "premium"])
@@ -47,17 +46,12 @@ export async function GET(
   request: Request,
   { params }: RouteContext,
 ) {
-  const scope = await resolveDataScope()
+  // Use the inventory-specific resolver so super-admins receive an individual
+  // scope (personal ownership) when reading personal binders.
+  const scope = await resolveInventoryScope()
 
   if (scope instanceof NextResponse) {
     return scope
-  }
-
-  const tenantError =
-    tenantScopeRequiredResponse(scope)
-
-  if (tenantError) {
-    return tenantError
   }
 
   const { tier } = await params
@@ -129,17 +123,10 @@ export async function POST(
   request: Request,
   { params }: RouteContext,
 ) {
-  const scope = await resolveDataScope()
+  const scope = await resolveInventoryScope()
 
   if (scope instanceof NextResponse) {
     return scope
-  }
-
-  const tenantError =
-    tenantScopeRequiredResponse(scope)
-
-  if (tenantError) {
-    return tenantError
   }
 
   const { tier } = await params
@@ -307,17 +294,10 @@ export async function DELETE(
   request: Request,
   { params }: RouteContext,
 ) {
-  const scope = await resolveDataScope()
+  const scope = await resolveInventoryScope()
 
   if (scope instanceof NextResponse) {
     return scope
-  }
-
-  const tenantError =
-    tenantScopeRequiredResponse(scope)
-
-  if (tenantError) {
-    return tenantError
   }
 
   const { tier } = await params

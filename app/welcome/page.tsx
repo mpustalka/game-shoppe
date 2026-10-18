@@ -10,12 +10,12 @@ import {
   Boxes,
   Share2,
   Sparkles,
-  ShoppingBag,
   Zap,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import  Slider  from "@/components/hero/Slider"
 
 /* ============================================================
    TYPES
@@ -100,7 +100,7 @@ const showcaseCards: ShowcaseCard[] = [
 
 /* ============================================================
    RANDOM CHASE STRIP
-============================================================ */
+=========================================================== */
 
 function RandomChaseRow() {
   const [visibleCards, setVisibleCards] =
@@ -174,7 +174,7 @@ function RandomChaseRow() {
 
 /* ============================================================
    PAGE
-============================================================ */
+=========================================================== */
 
 export default function WelcomePage() {
   const [storeCategories, setStoreCategories] = useState<StoreCategory[]>([])
@@ -229,6 +229,7 @@ export default function WelcomePage() {
   return (
     <main className="overflow-x-hidden bg-[#070708] text-white">
       <style jsx global>{`
+        /* (kept your keyframes + styles) */
         @keyframes feature-marquee {
           from {
             transform: translateX(0);
@@ -337,187 +338,56 @@ export default function WelcomePage() {
         }
       `}</style>
 
-      {/* ============================================================
-          1. EXISTING HERO
-      ============================================================ */}
-
-      <section className="relative isolate min-h-[760px] overflow-hidden border-b border-white/10">
+      {/* NAV (keep verbiage, removed Shop button, added Business actions) */}
+      <section className="relative isolate min-h-[160px] overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_18%_15%,rgba(225,29,72,.28),transparent_32%),radial-gradient(circle_at_82%_8%,rgba(127,29,29,.25),transparent_28%),linear-gradient(to_bottom,#09090b,#070708)]" />
-
         <div className="absolute inset-0 -z-10 opacity-[0.09] [background-image:linear-gradient(rgba(255,255,255,.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.2)_1px,transparent_1px)] [background-size:56px_56px]" />
 
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-6 sm:px-8 lg:px-10">
           <Link href="/welcome" className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-rose-400/30 bg-rose-500/10">
-              <span className="text-lg font-black text-rose-400">
-                TR
-              </span>
+              <span className="text-lg font-black text-rose-400">TR</span>
             </div>
 
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.18em]">
-                Team Rocket
-              </p>
-              <p className="-mt-0.5 text-xs text-white/45">
-                Markets
-              </p>
+              <p className="text-sm font-black uppercase tracking-[0.18em]">Team Rocket</p>
+              <p className="-mt-0.5 text-xs text-white/45">Markets</p>
             </div>
           </Link>
 
           <div className="hidden items-center gap-7 text-sm font-semibold text-white/60 lg:flex">
-  <Link
-    href="/store"
-    className="transition hover:text-white"
-  >
-    Store
-  </Link>
+            <Link href="/store" className="transition hover:text-white">Store</Link>
+            <Link href="/store?collection=new" className="transition hover:text-white">New Arrivals</Link>
+            <Link href="/store?collection=preorder" className="transition hover:text-white">Preorders</Link>
+            <Link href="/store?collection=sale" className="transition hover:text-white">Sale</Link>
+          </div>
 
-  <Link
-    href="/store?collection=new"
-    className="transition hover:text-white"
-  >
-    New Arrivals
-  </Link>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" className="hidden text-white hover:bg-white/10 hover:text-white sm:inline-flex">
+              <Link href="/login">Sign In</Link>
+            </Button>
 
-  <Link
-    href="/store?collection=preorder"
-    className="transition hover:text-white"
-  >
-    Preorders
-  </Link>
+                        {/* Business actions in the top nav (explicit link buttons so text + color are reliable) */}
+            <Link
+              href="/business/signup"
+              className="ml-3 inline-flex h-10 items-center justify-center rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 px-4 text-sm font-black text-zinc-950 shadow-lg hover:from-amber-300 hover:to-yellow-300"
+            >
+              Business Signup
+            </Link>
 
-  <Link
-    href="/store?collection=sale"
-    className="transition hover:text-white"
-  >
-    Sale
-  </Link>
-</div>
-
-<div className="flex items-center gap-2">
-  <Button
-    asChild
-    variant="ghost"
-    className="hidden text-white hover:bg-white/10 hover:text-white sm:inline-flex"
-  >
-    <Link href="/login">
-      Sign In
-    </Link>
-  </Button>
-
-  <Button
-    asChild
-    className="hidden bg-rose-600 text-white hover:bg-rose-500 sm:inline-flex"
-  >
-    <Link href="/login?mode=signup">
-      Sign Up Free
-    </Link>
-  </Button>
-
-  <Button
-    asChild
-    className="border border-amber-300/30 bg-gradient-to-r from-amber-400 to-yellow-400 font-black text-zinc-950 shadow-lg shadow-amber-500/10 hover:from-amber-300 hover:to-yellow-300"
-  >
-    <Link href="/store">
-      <ShoppingBag className="mr-2 h-4 w-4" />
-      Shop
-    </Link>
-  </Button>
-</div>
+            <Link
+              href="/login?redirect=/business"
+              className="ml-2 inline-flex h-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              Business Sign in
+            </Link>
+          </div>
         </nav>
-
-        <div className="mx-auto grid max-w-7xl gap-12 px-5 pb-24 pt-20 sm:px-8 md:pt-28 lg:grid-cols-[1.05fr_.95fr] lg:px-10">
-          <div className="relative z-10">
-            <Badge className="mb-6 border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-rose-200 hover:bg-rose-500/10">
-              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              Now featuring Smart Scanner Beta
-            </Badge>
-
-            <h1 className="max-w-4xl text-5xl font-black leading-[.92] tracking-[-0.055em] sm:text-6xl md:text-7xl xl:text-[86px]">
-              Your collection.
-
-              <span className="block bg-gradient-to-r from-rose-400 via-red-500 to-orange-400 bg-clip-text text-transparent">
-                Your market.
-              </span>
-            </h1>
-
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-white/60 sm:text-xl">
-              Track every card. Know what it&apos;s worth. Organize every
-              binder. And with Premium Smart Scanner Beta, point your phone at
-              a supported English card, identify it, confirm the exact match,
-              and send it straight into your inventory.
-            </p>
-
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-white/45">
-              Basic is $0.99/month and Premium is $3.99/month. We&apos;re
-              collectors ourselves and we&apos;re always open to new features
-              and ideas.
-            </p>
-
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Button
-                size="lg"
-                asChild
-                className="h-12 rounded-xl bg-rose-600 px-6 text-white hover:bg-rose-500"
-              >
-                <Link href="/login?mode=signup">
-                  Start your collection
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-
-              <Button
-                size="lg"
-                asChild
-                variant="outline"
-                className="h-12 rounded-xl border-white/15 bg-white/5 px-6 text-white hover:bg-white/10 hover:text-white"
-              >
-                <Link href="/login">Sign In</Link>
-              </Button>
-            </div>
-
-            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/50">
-              {[
-                "Premium Smart Scanner",
-                "English + Japanese collection",
-                "Variant-level tracking",
-                "0% selling fees",
-              ].map((label) => (
-                <span key={label} className="flex items-center gap-2">
-                  <BadgeCheck className="h-4 w-4 text-rose-400" />
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative min-h-[470px]">
-            <div className="absolute left-[5%] top-12 w-[42%] -rotate-6 transition duration-300 hover:z-20 hover:rotate-0 hover:scale-105">
-              <img
-                src="https://images.pokemontcg.io/sv4pt5/232_hires.png"
-                alt="Mew ex"
-                className="w-full drop-shadow-[0_35px_55px_rgba(0,0,0,.55)]"
-              />
-            </div>
-
-            <div className="absolute right-[3%] top-0 z-10 w-[46%] rotate-6 transition duration-300 hover:z-20 hover:rotate-0 hover:scale-105">
-              <img
-                src="https://images.pokemontcg.io/sv8/238_hires.png"
-                alt="Pikachu ex"
-                className="w-full drop-shadow-[0_35px_55px_rgba(0,0,0,.55)]"
-              />
-            </div>
-
-            <div className="absolute bottom-0 left-[31%] z-10 w-[42%] rotate-1 transition duration-300 hover:z-20 hover:rotate-0 hover:scale-105">
-              <img
-                src="https://images.pokemontcg.io/sv6/214_hires.png"
-                alt="Greninja ex"
-                className="w-full drop-shadow-[0_35px_55px_rgba(0,0,0,.55)]"
-              />
-            </div>
-          </div>
-        </div>
       </section>
+
+      {/* HERO SLIDER (replaces previous hero grid) */}
+      <Slider />
+
 
       {/* ============================================================
           SMALL FEATURE TICKER
@@ -870,7 +740,7 @@ export default function WelcomePage() {
             <div className="mt-5 flex flex-wrap justify-center gap-2.5">
               <Button asChild className="h-10 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 px-5 text-sm font-black text-zinc-950 hover:from-amber-300 hover:to-yellow-300">
                 <Link href="/store">
-                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  {/* <ShoppingBag className="mr-2 h-4 w-4" /> */}
                   Shop Store
                 </Link>
               </Button>
@@ -891,8 +761,6 @@ export default function WelcomePage() {
         </div>
       </section>
 
-
-
       {/* ============================================================
           4. EXACT COLLECTION TRACKING
       ============================================================ */}
@@ -905,7 +773,7 @@ export default function WelcomePage() {
 
         <div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <p className="text-xs font-black uppercase tracking-[0.24em] text-rose-400">
-            Exact Collection Tracking
+            Active Users Get FREE Premium Access
           </p>
 
           <h2 className="mt-2 text-3xl font-black tracking-[-0.045em] sm:text-4xl lg:text-5xl">
@@ -954,7 +822,7 @@ export default function WelcomePage() {
       </h2>
 
       <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg">
-        Create your free account and start building your collection today.
+        Create your free account and start building your collection today. Get exclusive benefits as an active user.
       </p>
 
       <div className="mx-auto mt-8 flex max-w-xl flex-col justify-center gap-3 sm:flex-row">
