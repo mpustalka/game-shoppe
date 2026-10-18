@@ -170,6 +170,12 @@ function LoginForm() {
           Sign in to your collection, or start a free {TRIAL_DAYS}-day Premium
           trial.
         </p>
+        <p className="mt-3 text-sm text-muted-foreground">
+  Are you a business?{" "}
+  <Link href="/business/signup" className="font-semibold underline underline-offset-2">
+    Sign up here
+  </Link>
+</p>
       </div>
 
       <Card>
@@ -188,7 +194,7 @@ function LoginForm() {
           <CardContent>
             {/* SIGN IN */}
             <TabsContent value="signin" className="mt-0">
-              <CardTitle className="mb-1 text-lg">Welcome back</CardTitle>
+              <CardTitle className="mb-1 text-lg">Welcome Home</CardTitle>
 
               <CardDescription className="mb-4">
                 Enter your credentials to access your inventory and collection.
@@ -336,6 +342,7 @@ function LoginForm() {
                 <p className="text-center text-xs text-muted-foreground">
                   No credit card required.
                 </p>
+                
               </form>
             </TabsContent>
           </CardContent>
