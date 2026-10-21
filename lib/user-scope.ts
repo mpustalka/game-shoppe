@@ -65,17 +65,17 @@ export type ScopeFilter =
  *   inventory_items.company_id = membership.companyId
  *
  * Super admin:
- *   Platform administration only.
- *   Normal tenant-data routes do NOT automatically expose
- *   every company's data.
+ *   Normal collection, inventory, and analytics routes should still resolve to
+ *   the super admin's personal ownership instead of a company tenant or no
+ *   tenant at all. Only explicit platform-admin workflows should project them
+ *   through a different scope.
  */
 export async function resolveDataScope(
   suppliedUser?: User | null,
 ): Promise<DataScope | NextResponse> {
   const supabase = await createClient()
 
-  let user =
-    suppliedUser ?? null
+  let user = suppliedUser ?? null
 
   if (!user) {
     const {
@@ -83,10 +83,7 @@ export async function resolveDataScope(
       error,
     } = await supabase.auth.getUser()
 
-    if (
-      error ||
-      !authenticatedUser
-    ) {
+    if (error || !authenticatedUser) {
       return NextResponse.json(
         {
           error: "Not signed in",
@@ -101,19 +98,13 @@ export async function resolveDataScope(
     user = authenticatedUser
   }
 
-  /*
-   * Platform authority is deliberately checked first.
-   *
-   * A super admin remains a platform account even if someone
-   * accidentally creates a company_members row for that user.
-   */
-  if (
-    await isSuperAdmin(user)
-  ) {
+  // Platform authority is checked first, but for ordinary inventory/analytics
+  // flows we still want a normal personal ownership scope rather than a vacant
+  // tenant scope.
+  if (await isSuperAdmin(user)) {
     return {
       kind: "super_admin",
-      accountType:
-        "super_admin",
+      accountType: "super_admin",
       userId: user.id,
       companyId: null,
       companyRole: null,
@@ -121,34 +112,22 @@ export async function resolveDataScope(
     }
   }
 
-  const membership =
-    await getCompanyMembership(
-      user.id,
-    )
+  const membership = await getCompanyMembership(user.id)
 
   if (membership) {
     return {
       kind: "company",
       accountType: "business",
       userId: user.id,
-      companyId:
-        membership.companyId,
-      companyRole:
-        membership.role,
+      companyId: membership.companyId,
+      companyRole: membership.role,
       isSuperAdmin: false,
     }
   }
 
-  /*
-   * No company membership = existing individual collector.
-   *
-   * This preserves all current personal accounts and their
-   * existing inventory ownership.
-   */
   return {
     kind: "individual",
-    accountType:
-      "individual",
+    accountType: "individual",
     userId: user.id,
     companyId: null,
     companyRole: null,
@@ -157,151 +136,88 @@ export async function resolveDataScope(
 }
 
 /**
- * Returns the ownership filter(s) that MUST be applied to a
- * tenant-data query.
+ * Returns the ownership filter(s) that MUST be applied to a tenant-data query.
  *
- * Super admins intentionally receive no automatic tenant filter.
- * Callers should reject the super_admin scope unless they are
- * implementing an explicit platform-admin workflow.
+ * For super admins we intentionally scope to their own personal account because
+ * ordinary collection/analytics access is not a cross-tenant view.
  */
-export function scopeFilters(
-  scope: DataScope,
-): string[] {
-  if (
-    scope.kind ===
-    "individual"
-  ) {
+export function scopeFilters(scope: DataScope): string[] {
+  if (scope.kind === "individual") {
     return [
       `user_id=eq.${scope.userId}`,
       "company_id=is.null",
     ]
   }
 
-  if (
-    scope.kind ===
-    "company"
-  ) {
+  if (scope.kind === "company") {
     return [
       `company_id=eq.${scope.companyId}`,
       "user_id=is.null",
     ]
   }
 
-  return []
+  // Super admin fallback: keep them scoped to their own inventory, not no scope.
+  return [
+    `user_id=eq.${scope.userId}`,
+    "company_id=is.null",
+  ]
 }
 
 /**
  * Apply strict ownership filters to a Supabase query.
- *
- * We intentionally also require the opposite owner column to
- * be NULL. This matches the database ownership model and makes
- * the tenant boundary explicit in every normal inventory query.
  */
 export function applyScopeFilters<
   T extends {
-    eq: (
-      column: string,
-      value: string,
-    ) => T
-    is: (
-      column: string,
-      value: null,
-    ) => T
+    eq: (column: string, value: string) => T
+    is: (column: string, value: null) => T
   },
->(
-  query: T,
-  scope: DataScope,
-): T {
-  if (
-    scope.kind ===
-    "individual"
-  ) {
-    return query
-      .eq(
-        "user_id",
-        scope.userId,
-      )
-      .is(
-        "company_id",
-        null,
-      )
+>(query: T, scope: DataScope): T {
+  if (scope.kind === "individual") {
+    return query.eq("user_id", scope.userId).is("company_id", null)
   }
 
-  if (
-    scope.kind ===
-    "company"
-  ) {
-    return query
-      .eq(
-        "company_id",
-        scope.companyId,
-      )
-      .is(
-        "user_id",
-        null,
-      )
+  if (scope.kind === "company") {
+    return query.eq("company_id", scope.companyId).is("user_id", null)
   }
 
-  return query
+  return query.eq("user_id", scope.userId).is("company_id", null)
 }
 
 /**
  * Ownership columns used when creating new tenant records.
  */
-export function ownerStamp(
-  scope: DataScope,
-) {
-  if (
-    scope.kind ===
-    "individual"
-  ) {
+export function ownerStamp(scope: DataScope) {
+  if (scope.kind === "individual") {
     return {
-      user_id:
-        scope.userId,
-      company_id:
-        null,
+      user_id: scope.userId,
+      company_id: null,
     }
   }
 
-  if (
-    scope.kind ===
-    "company"
-  ) {
+  if (scope.kind === "company") {
     return {
       user_id: null,
-      company_id:
-        scope.companyId,
+      company_id: scope.companyId,
     }
   }
 
-  throw new Error(
-    "Super admin inventory creation requires an explicit tenant context.",
-  )
+  // Super admins still create personal ownership records, never cross-tenant rows.
+  return {
+    user_id: scope.userId,
+    company_id: null,
+  }
 }
 
 /**
- * Normal inventory routes should not silently turn a super admin
- * into a cross-tenant inventory user.
+ * Normal inventory routes should not silently turn a super admin into a
+ * cross-tenant inventory user.
  */
-export function tenantScopeRequiredResponse(
-  scope: DataScope,
-) {
-  if (
-    scope.kind !==
-    "super_admin"
-  ) {
+export function tenantScopeRequiredResponse(scope: DataScope) {
+  if (scope.kind !== "super_admin") {
     return null
   }
 
-  return NextResponse.json(
-    {
-      error:
-        "Select a tenant before accessing tenant inventory.",
-      code:
-        "tenant_context_required",
-    },
-    {
-      status: 403,
-    },
-  )
+  // For normal collection/inventory analytics flows, a super admin is treated as
+  // a personal account. Only explicit platform-admin operations should reject.
+  return null
 }
