@@ -2,17 +2,17 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 import {
-  resolveDataScope,
   scopeFilters,
   tenantScopeRequiredResponse,
 } from "@/lib/user-scope"
+import { resolveInventoryScope } from "@/lib/inventory-scope"
 
 interface RouteContext {
   params: Promise<{ id: string }>
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
-  const scope = await resolveDataScope()
+  const scope = await resolveInventoryScope()
   if (scope instanceof NextResponse) return scope
   const tenantError = tenantScopeRequiredResponse(scope)
 if (tenantError) return tenantError
@@ -70,7 +70,7 @@ if (tenantError) return tenantError
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const scope = await resolveDataScope()
+  const scope = await resolveInventoryScope()
   if (scope instanceof NextResponse) return scope
 
   const tenantError = tenantScopeRequiredResponse(scope)
@@ -130,7 +130,7 @@ if (tenantError) return tenantError
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
-  const scope = await resolveDataScope()
+  const scope = await resolveInventoryScope()
   if (scope instanceof NextResponse) return scope
   const tenantError = tenantScopeRequiredResponse(scope)
 if (tenantError) return tenantError

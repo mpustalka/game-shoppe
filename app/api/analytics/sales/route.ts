@@ -3,10 +3,10 @@ import { NextResponse } from "next/server"
 import { supabaseTable } from "@/lib/supabase"
 
 import {
-  resolveDataScope,
   ownerStamp,
   tenantScopeRequiredResponse,
 } from "@/lib/user-scope"
+import { resolveInventoryScope } from "@/lib/inventory-scope"
 
 /**
  * Append-only ledger of realized sales.
@@ -32,7 +32,7 @@ import {
  * workflow instead of creating unowned sales records.
  */
 export async function POST(request: Request) {
-  const scope = await resolveDataScope()
+  const scope = await resolveInventoryScope()
 
   if (scope instanceof NextResponse) {
     return scope

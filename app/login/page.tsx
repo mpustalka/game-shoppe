@@ -41,7 +41,14 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const redirectTo = searchParams.get("redirect") || "/"
+  // Middleware sends ?returnTo=, older links use ?redirect=. Only same-site
+  // paths are allowed so this can't be used to bounce users to another site.
+  const requestedRedirect =
+    searchParams.get("redirect") || searchParams.get("returnTo") || "/"
+  const redirectTo =
+    requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
+      ? requestedRedirect
+      : "/"
 
   // Allow direct links such as:
   // /login?mode=signup

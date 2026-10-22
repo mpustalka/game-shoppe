@@ -2,11 +2,12 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 import {
-  resolveDataScope,
   scopeFilters,
   type DataScope,
 } from "@/lib/user-scope"
+import { resolveInventoryScope } from "@/lib/inventory-scope"
 import { requireFeature } from "@/lib/subscription-server"
+import { loadSnapshotsForCards } from "@/lib/price-snapshots"
 
 function daysAgoIso(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
@@ -395,6 +396,7 @@ async function buildSales(
 async function buildPriceMovers(
   windowIso: string,
   scope: DataScope,
+  minMove: number,
 ) {
   /*
    * IMPORTANT:
@@ -416,17 +418,10 @@ async function buildPriceMovers(
   }
 
   const snapshotRows =
-    (await supabaseTable(
-      "card_price_snapshots",
-      {
-        select:
-          "card_id,card_name,set_name,finish,market_price,captured_on",
-        filters: [
-          `captured_on=gte.${windowIso.slice(0, 10)}`,
-        ],
-        order: "captured_on.asc",
-        limit: 20000,
-      },
+    (await loadSnapshotsForCards<SnapshotRow>(
+      Array.from(ownedKeys, (key) => key.split("|")[0]),
+      windowIso.slice(0, 10),
+      "card_id,card_name,set_name,finish,market_price,captured_on",
     ).catch(() => [])) as SnapshotRow[]
 
   const rows =
@@ -497,7 +492,7 @@ async function buildPriceMovers(
       .filter(
         (entry) =>
           entry.days.size >= 2 &&
-          entry.first >= 0.5,
+          entry.first >= 0.1,
       )
       .map((entry) => {
         const change =
@@ -535,7 +530,8 @@ async function buildPriceMovers(
       })
       .filter(
         (entry) =>
-          entry.change !== 0,
+          Math.abs(entry.change) >=
+          Math.max(minMove, 0.01),
       )
 
   return {
@@ -589,7 +585,7 @@ export async function GET(
   }
 
   const scope =
-    await resolveDataScope()
+    await resolveInventoryScope()
 
   if (
     scope instanceof
@@ -617,6 +613,17 @@ export async function GET(
   const windowIso =
     daysAgoIso(days)
 
+  // Per-user minimum price move (dollars) for the movers lists.
+  const minMove =
+    Math.max(
+      0,
+      Number(
+        url.searchParams.get(
+          "minMove",
+        ),
+      ) || 0,
+    )
+
   const fourteenIso =
     daysAgoIso(14)
 
@@ -639,6 +646,7 @@ export async function GET(
   buildPriceMovers(
     windowIso,
     scope,
+    minMove,
   ).catch(() => EMPTY_PRICE_MOVERS),
 ])
 

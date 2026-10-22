@@ -1,6 +1,8 @@
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
+
+import { authCookieOptions } from "./cookie-options"
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 
@@ -13,9 +15,12 @@ export async function createClient() {
     throw new Error("Supabase client environment variables are missing")
   }
 
-  const cookieStore = await cookies()
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()])
 
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookieOptions: authCookieOptions(
+      headerStore.get("x-forwarded-host") ?? headerStore.get("host"),
+    ),
     cookies: {
       getAll() {
         return cookieStore.getAll()

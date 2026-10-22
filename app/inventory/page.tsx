@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useInventory } from "@/lib/inventory-context"
 import type { CardCondition } from "@/lib/types"
@@ -45,8 +45,11 @@ import { TrialBanner } from "@/components/billing/trial-banner"
 type ViewMode = "grid" | "list"
 type SortOption = "newest" | "oldest" | "price-high" | "price-low" | "name"
 
+// Cards rendered at first, and added each time the list is scrolled to the end.
+const RENDER_BATCH = 48
+
 export default function InventoryPage() {
-  const { items, deleteItem } = useInventory()
+  const { items, deleteItem, isLoaded } = useInventory()
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
   const [sortBy, setSortBy] = useState<SortOption>("newest")
@@ -129,6 +132,34 @@ export default function InventoryPage() {
     [filteredItems, inventoryLimit],
   )
   const hiddenCount = filteredItems.length - visibleItems.length
+
+  // Render the list incrementally: rendering thousands of cards at once makes
+  // the page slow, especially on tablets.
+  const [renderCount, setRenderCount] = useState(RENDER_BATCH)
+  useEffect(() => {
+    setRenderCount(RENDER_BATCH)
+  }, [searchQuery, sortBy, filterCondition, filterSet, viewMode])
+
+  const renderedItems = visibleItems.slice(0, renderCount)
+  const hasMoreToRender = renderedItems.length < visibleItems.length
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const sentinel = loadMoreRef.current
+    if (!sentinel || !hasMoreToRender) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setRenderCount((count) => count + RENDER_BATCH)
+        }
+      },
+      // Start rendering the next batch a little before the end is reached.
+      { rootMargin: "800px 0px" },
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMoreToRender, renderCount])
 
   const totalValue = filteredItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -274,7 +305,11 @@ export default function InventoryPage() {
       </div>
 
       {/* Content */}
-      {filteredItems.length === 0 ? (
+      {filteredItems.length === 0 && !isLoaded ? (
+        <div className="flex items-center justify-center py-16 text-sm text-white/45">
+          Loading inventory…
+        </div>
+      ) : filteredItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
           <Package className="mb-4 h-12 w-12 text-muted-foreground/50" />
           <h3 className="mb-2 text-lg font-medium text-white">
@@ -293,7 +328,7 @@ export default function InventoryPage() {
         </div>
       ) : viewMode === "grid" ? (
         <div className="mx-auto grid max-w-[1500px] grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-          {visibleItems.map((item) => (
+          {renderedItems.map((item) => (
             <Card key={item.id} className="group overflow-hidden rounded-2xl border-white/10 bg-white/[0.035] text-white shadow-none transition duration-300 hover:-translate-y-1 hover:border-rose-400/25 hover:bg-white/[0.05]">
               <Link href={`/inventory/${item.id}`}>
                 <div className="relative aspect-[2.5/3.5] w-full overflow-hidden bg-muted">
@@ -378,7 +413,7 @@ export default function InventoryPage() {
         </div>
       ) : (
         <div className="mx-auto max-w-[1500px] space-y-2">
-          {visibleItems.map((item) => (
+          {renderedItems.map((item) => (
             <div
               key={item.id}
               className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-white transition hover:border-rose-400/20 hover:bg-white/[0.05] sm:gap-4 sm:p-4"
@@ -459,7 +494,30 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Edit Modal */}
+      {hasMoreToRender && (
+        <div
+          ref={loadMoreRef}
+          className="mx-auto mt-6 flex max-w-[1500px] flex-col items-center gap-2 text-sm text-white/40"
+        >
+          <span>
+            Showing {renderedItems.length} of {visibleItems.length}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setRenderCount((count) => count + RENDER_BATCH)}
+          >
+            Show more
+          </Button>
+        </div>
+      )}
+
+      {!isLoaded && items.length > 0 && (
+        <p className="mx-auto mt-4 max-w-[1500px] text-center text-xs text-white/35">
+          Loading the rest of your inventory…
+        </p>
+      )}
+
       {hiddenCount > 0 && (
         <div className="mt-6 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-6 py-8 text-center">
           <p className="text-sm font-medium text-white">
@@ -475,6 +533,7 @@ export default function InventoryPage() {
         </div>
       )}
 
+      {/* Edit Modal */}
       <EditInventoryModal
         item={itemToEdit}
         open={!!editItem}
