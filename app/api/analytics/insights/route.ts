@@ -2,10 +2,11 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 import { requireFeature } from "@/lib/subscription-server"
+import { loadSnapshotsForCards } from "@/lib/price-snapshots"
 import {
-  resolveDataScope,
   scopeFilters,
 } from "@/lib/user-scope"
+import { resolveInventoryScope } from "@/lib/inventory-scope"
 
 type SnapshotRow = {
   card_id: string
@@ -234,7 +235,7 @@ export async function GET() {
   }
 
   const scope =
-    await resolveDataScope()
+    await resolveInventoryScope()
 
   if (
     scope instanceof
@@ -314,23 +315,15 @@ export async function GET() {
      * Global market history.
      */
     const snapshotRows =
-      (await supabaseTable(
-        "card_price_snapshots",
-        {
-          select:
-            "card_id,card_name,set_name,finish,market_price,captured_on",
-
-          filters: [
-            `captured_on=gte.${daysAgoIsoDate(
-              HISTORY_DAYS,
-            )}`,
-          ],
-
-          order:
-            "captured_on.asc",
-
-          limit: 50000,
-        },
+      (await loadSnapshotsForCards<SnapshotRow>(
+        Array.from(
+          ownedKeys,
+          (key) => key.split("|")[0],
+        ),
+        daysAgoIsoDate(
+          HISTORY_DAYS,
+        ),
+        "card_id,card_name,set_name,finish,market_price,captured_on",
       ).catch(
         () => [],
       )) as SnapshotRow[]

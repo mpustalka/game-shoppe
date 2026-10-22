@@ -6,6 +6,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useRef,
   type ReactNode,
 } from "react"
 
@@ -72,6 +73,9 @@ interface InventoryContextType {
   }>
 }
 
+// Items per /api/inventory request while loading the session's inventory.
+const INVENTORY_PAGE_SIZE = 500
+
 const InventoryContext = createContext<InventoryContextType | undefined>(
   undefined,
 )
@@ -132,27 +136,38 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   /**
    * -------------------------------------------------
-   * ROUTE-AWARE INVENTORY LOADING
+   * ROUTE-AWARE, LOAD-ONCE INVENTORY
    * -------------------------------------------------
    *
-   * Normal application pages use /api/inventory.
+   * Inventory is fetched the first time a page that needs it is opened, then
+   * kept in memory for the rest of the session — navigating between pages
+   * does not download it again. Local adds/edits/deletes keep it current.
    *
-   * Admin pages use their own selected-user endpoints.
-   * Sell pages use /api/sell-binders/[id], which already
-   * loads the inventory needed by the listing manager.
+   * It loads in pages: the first page renders right away and the rest stream
+   * in behind it. isLoaded only turns true once every page has arrived, so
+   * "not found" checks never run against a partial list.
    *
-   * Do not make the expensive global /api/inventory request
-   * while inside admin, sell, or set-browsing routes. Set pages load
-   * catalog/card data and do not need the user's full inventory payload.
+   * Admin, sell, and set-browsing routes load their own data and never
+   * trigger this fetch. Visiting admin or auth pages drops the cached copy, so
+   * switching account or admin tenant always shows fresh inventory.
    */
+  const loadState = useRef<"idle" | "loading" | "loaded">("idle")
+  const loadGeneration = useRef(0)
+
   useEffect(() => {
     if (!pathname) {
       return
     }
 
-    const shouldSkipGlobalInventory =
+    const isAdminOrAuthRoute =
       pathname === "/admin" ||
       pathname.startsWith("/admin/") ||
+      pathname === "/login" ||
+      pathname === "/welcome" ||
+      pathname.startsWith("/auth")
+
+    const shouldSkipGlobalInventory =
+      isAdminOrAuthRoute ||
       pathname === "/sell" ||
       pathname.startsWith("/sell/") ||
       pathname === "/sets" ||
@@ -162,62 +177,85 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       pathname === "/chinese-sets" ||
       pathname.startsWith("/chinese-sets/")
 
-    if (shouldSkipGlobalInventory) {
-      console.log("SKIPPING GLOBAL INVENTORY ON:", pathname)
+    if (isAdminOrAuthRoute) {
+      // Invalidate: any in-flight load is abandoned and the next normal page
+      // fetches fresh data.
+      loadGeneration.current += 1
+      loadState.current = "idle"
       setItems([])
-      setIsLoaded(true)
+      setIsLoaded(false)
+    }
+
+    if (shouldSkipGlobalInventory || loadState.current !== "idle") {
       return
     }
 
-    let cancelled = false
+    loadState.current = "loading"
+    const generation = ++loadGeneration.current
+    const isCurrent = () => loadGeneration.current === generation
 
     async function fetchInventory() {
-      console.log("GLOBAL INVENTORY FETCH RUNNING ON:", pathname)
       setIsLoaded(false)
+      setItems([])
 
       try {
-        const response = await fetch("/api/inventory", {
-          cache: "no-store",
-        })
-
-        if (response.status === 401) {
-          if (!cancelled) {
-            setItems([])
-          }
-          return
-        }
-
-        if (!response.ok) {
-          const text = await response.text().catch(() => "")
-
-          throw new Error(
-            text
-              ? `Failed to fetch inventory: ${text}`
-              : "Failed to fetch inventory",
+        for (let offset = 0; ; offset += INVENTORY_PAGE_SIZE) {
+          const response = await fetch(
+            `/api/inventory?limit=${INVENTORY_PAGE_SIZE}&offset=${offset}`,
+            { cache: "no-store" },
           )
+
+          if (!isCurrent()) return
+
+          if (response.status === 401) {
+            setItems([])
+            break
+          }
+
+          if (!response.ok) {
+            const text = await response.text().catch(() => "")
+
+            throw new Error(
+              text
+                ? `Failed to fetch inventory: ${text}`
+                : "Failed to fetch inventory",
+            )
+          }
+
+          const page = await response.json()
+
+          if (!isCurrent()) return
+
+          const pageItems: InventoryItem[] = Array.isArray(page) ? page : []
+
+          // Append only — edits, deletes, and adds made to already-shown
+          // items while later pages load are left untouched.
+          setItems((prev) => {
+            const shown = new Set(prev.map((item) => item.id))
+            return [
+              ...prev,
+              ...pageItems.filter((item) => !shown.has(item.id)),
+            ]
+          })
+
+          if (pageItems.length < INVENTORY_PAGE_SIZE) break
         }
 
-        const data = await response.json()
-
-        if (!cancelled) {
-          setItems(Array.isArray(data) ? data : [])
-        }
+        loadState.current = "loaded"
       } catch (error) {
-        if (!cancelled) {
+        if (isCurrent()) {
           console.error("Failed to fetch inventory:", error)
+          // Allow a retry on the next navigation.
+          loadState.current = "idle"
         }
       } finally {
-        if (!cancelled) {
+        if (isCurrent()) {
           setIsLoaded(true)
         }
       }
     }
 
     void fetchInventory()
-
-    return () => {
-      cancelled = true
-    }
   }, [pathname])
 
   const addItem = useCallback(

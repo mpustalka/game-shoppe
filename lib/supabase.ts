@@ -61,6 +61,9 @@ export async function supabaseTable(
     limit?: number
     body?: unknown
     onConflict?: string
+    // With onConflict, skip rows that already exist (or update them) instead of
+    // failing the whole batch on a unique-constraint violation.
+    resolution?: "ignore-duplicates" | "merge-duplicates"
   } = {},
 ) {
   if (!hasSupabaseConfig()) {
@@ -127,7 +130,11 @@ export async function supabaseTable(
 
   const response = await fetch(url, {
     method,
-    headers: buildHeaders(),
+    headers: buildHeaders(
+      options.resolution
+        ? { Prefer: `return=representation,resolution=${options.resolution}` }
+        : undefined,
+    ),
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   })
 

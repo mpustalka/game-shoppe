@@ -2,11 +2,12 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 import {
-  resolveDataScope,
   scopeFilters,
   type DataScope,
 } from "@/lib/user-scope"
+import { resolveInventoryScope } from "@/lib/inventory-scope"
 import { requireFeature } from "@/lib/subscription-server"
+import { loadSnapshotsForCards } from "@/lib/price-snapshots"
 
 function daysAgoIso(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
@@ -416,17 +417,10 @@ async function buildPriceMovers(
   }
 
   const snapshotRows =
-    (await supabaseTable(
-      "card_price_snapshots",
-      {
-        select:
-          "card_id,card_name,set_name,finish,market_price,captured_on",
-        filters: [
-          `captured_on=gte.${windowIso.slice(0, 10)}`,
-        ],
-        order: "captured_on.asc",
-        limit: 20000,
-      },
+    (await loadSnapshotsForCards<SnapshotRow>(
+      Array.from(ownedKeys, (key) => key.split("|")[0]),
+      windowIso.slice(0, 10),
+      "card_id,card_name,set_name,finish,market_price,captured_on",
     ).catch(() => [])) as SnapshotRow[]
 
   const rows =
@@ -589,7 +583,7 @@ export async function GET(
   }
 
   const scope =
-    await resolveDataScope()
+    await resolveInventoryScope()
 
   if (
     scope instanceof

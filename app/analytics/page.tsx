@@ -127,6 +127,15 @@ type CollectionAnalytics = {
     change30d: number
     change30dPercent: number
   }
+  holdings?: Array<{
+    cardId: string
+    finish: string
+    name: string
+    set: string
+    quantity: number
+    current: number
+    currentValue: number
+  }>
 }
 
 const EMPTY_INSIGHTS: Insights = {
@@ -477,7 +486,7 @@ const collectionOverview = collectionAnalytics?.overview
             hint={`${priceMovers.trackedCards} cards tracked`}
           >
             {priceMovers.gainers.length === 0 ? (
-              <EmptyMovers />
+              <EmptyMovers holdings={collectionAnalytics?.holdings} />
             ) : (
               priceMovers.gainers.map((mover) => (
                 <MoverRow
@@ -1013,7 +1022,40 @@ function MoverRow({ mover }: { mover: Mover }) {
   )
 }
 
-function EmptyMovers() {
+function EmptyMovers({
+  holdings,
+}: {
+  holdings?: CollectionAnalytics["holdings"]
+}) {
+  if (holdings && holdings.length > 0) {
+    // No measured movement yet — show what the collection is worth right now.
+    return (
+      <>
+        <p className="text-sm text-muted-foreground">
+          No price movement measured yet. Your most valuable cards at current
+          market price:
+        </p>
+        {holdings.slice(0, 8).map((card) => (
+          <div
+            key={`${card.cardId}-${card.finish}`}
+            className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
+          >
+            <div className="min-w-0">
+              <p className="truncate font-medium">{card.name}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {card.set ? `${card.set} · ` : ""}
+                {card.finish} · {card.quantity} × {usd(card.current)}
+              </p>
+            </div>
+            <span className="font-semibold tabular-nums">
+              {usd(card.currentValue)}
+            </span>
+          </div>
+        ))}
+      </>
+    )
+  }
+
   return (
     <p className="text-sm text-muted-foreground">
       Price movement needs at least two days of readings. A snapshot of every

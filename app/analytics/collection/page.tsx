@@ -66,6 +66,8 @@ type SetRow = {
 
 type CollectionData = {
   trendDays: number
+  historyDays: number
+  holdings: MoverRow[]
   overview: {
     totalValue: number
     change7d: number
@@ -99,6 +101,8 @@ type CollectionData = {
 
 const EMPTY: CollectionData = {
   trendDays: 90,
+  historyDays: 0,
+  holdings: [],
   overview: {
     totalValue: 0,
     change7d: 0,
@@ -183,7 +187,7 @@ export default function CollectionInsightsPage() {
     }).catch(() => undefined)
   }, [items])
 
-  const { overview, trend, movers, contribution, winnersLosers, sets } = data
+  const { overview, trend, movers, contribution, winnersLosers, sets, holdings } = data
   const hasTrend = trend.length >= 2
 
   return (
@@ -281,11 +285,24 @@ export default function CollectionInsightsPage() {
             {!hasTrend ? (
               <div className="flex h-[280px] flex-col items-center justify-center gap-2 text-center">
                 <BarChart3 className="h-8 w-8 text-muted-foreground" />
-                <p className="max-w-md text-sm text-muted-foreground">
-                  {loading
-                    ? "Loading collection history…"
-                    : "The trend chart needs at least two days of price readings. A snapshot of every card's value is captured each day this page is opened — check back tomorrow to watch the line take shape."}
-                </p>
+                {loading ? (
+                  <p className="max-w-md text-sm text-muted-foreground">
+                    Loading collection history…
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">Current collection value</p>
+                    <p className="text-3xl font-bold tabular-nums">{usd(overview.totalValue)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {overview.totalUnits.toLocaleString()} cards · cost basis{" "}
+                      {usd(overview.costBasis)}
+                    </p>
+                    <p className="mt-2 max-w-md text-xs text-muted-foreground">
+                      Today&apos;s price reading has been saved. The trend line appears
+                      once a second day of readings is captured by the daily snapshot.
+                    </p>
+                  </>
+                )}
               </div>
             ) : (
               <>
@@ -358,7 +375,12 @@ export default function CollectionInsightsPage() {
 
       {/* 3. Top movers --------------------------------------------------- */}
       <section className="mb-8">
-        <TopMovers gainers={movers.gainers} losers={movers.losers} loading={loading} />
+        <TopMovers
+          gainers={movers.gainers}
+          losers={movers.losers}
+          holdings={holdings}
+          loading={loading}
+        />
       </section>
 
       {/* 4. Weekly gain/loss contribution -------------------------------- */}
@@ -498,10 +520,12 @@ function HighlightCard({
 function TopMovers({
   gainers,
   losers,
+  holdings,
   loading,
 }: {
   gainers: MoverRow[]
   losers: MoverRow[]
+  holdings: MoverRow[]
   loading: boolean
 }) {
   const [view, setView] = useState<"gainers" | "losers">("gainers")
@@ -541,7 +565,31 @@ function TopMovers({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {rows.length === 0 ? (
+        {rows.length === 0 && !loading && holdings.length > 0 ? (
+          <div>
+            <p className="mb-3 text-sm text-muted-foreground">
+              No measured price movement this week yet — showing your most
+              valuable cards at current market price instead.
+            </p>
+            <div className="divide-y divide-border/60">
+              {holdings.map((row) => (
+                <div
+                  key={`${row.cardId}-${row.finish}`}
+                  className="flex items-center justify-between gap-3 py-2.5 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{row.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {row.set ? `${row.set} · ` : ""}
+                      {row.finish} · {row.quantity} × {usd(row.current)}
+                    </p>
+                  </div>
+                  <span className="font-semibold tabular-nums">{usd(row.currentValue)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : rows.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {loading
               ? "Loading movers…"

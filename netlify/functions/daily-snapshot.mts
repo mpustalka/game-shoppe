@@ -1,24 +1,25 @@
 // Scheduled daily price snapshot.
 //
-// Runs once a day (early UTC) and asks the site to capture today's market-value
-// reading for every card in inventory. This is what keeps the Analytics
-// "price movers" and "insights" history growing on its own — without it, a
-// second day of readings would only exist if an employee happened to open the
-// Analytics page. Scheduled functions only run on published production deploys.
+// Runs once a day (early UTC) and captures today's market-value reading for
+// every card in inventory. This is what keeps the Analytics "price movers" and
+// "insights" history growing on its own — without it, a second day of readings
+// would only exist if an employee happened to open the Analytics page.
+// Scheduled functions only run on published production deploys.
+//
+// The capture runs here directly against the database instead of calling the
+// /api/analytics/snapshot-daily route over HTTP. That route is protected by a
+// secret that is only available inside the Next.js app, so HTTP calls from this
+// function were rejected with 401 and no history was being recorded.
+
+import { captureDailySnapshots } from "../../lib/price-snapshots"
 
 export default async () => {
-  const base = process.env.URL || process.env.DEPLOY_URL
-  if (!base) {
-    console.error("daily-snapshot: site URL is not available in the environment")
-    return
-  }
-
   try {
-    const response = await fetch(`${base}/api/analytics/snapshot-daily`)
-    const result = await response.json().catch(() => null)
-    console.log("daily-snapshot result", response.status, result)
+    const result = await captureDailySnapshots()
+    console.log("daily-snapshot result", result)
   } catch (error) {
-    console.error("daily-snapshot request failed", error)
+    console.error("daily-snapshot failed", error)
+    throw error
   }
 }
 

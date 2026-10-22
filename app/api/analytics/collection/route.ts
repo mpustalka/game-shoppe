@@ -2,10 +2,14 @@ import { NextResponse } from "next/server"
 
 import { supabaseTable } from "@/lib/supabase"
 import {
-  resolveDataScope,
   scopeFilters,
   tenantScopeRequiredResponse,
 } from "@/lib/user-scope"
+import { resolveInventoryScope } from "@/lib/inventory-scope"
+import {
+  loadSnapshotsForCards,
+  recordPriceSnapshots,
+} from "@/lib/price-snapshots"
 import { requireFeature } from "@/lib/subscription-server"
 
 // ---------------------------------------------------------------------------
@@ -145,7 +149,7 @@ function buildOwned(
         : "Normal"
 
     const quantity = num(
-      item.quantity,
+      item.quantity ?? 1,
     )
 
     if (quantity <= 0) {
@@ -327,7 +331,7 @@ export async function GET(
    *   inventory_items.company_id
    */
   const scope =
-    await resolveDataScope()
+    await resolveInventoryScope()
 
   if (
     scope instanceof
@@ -442,28 +446,50 @@ export async function GET(
     inventoryRows = []
   }
 
+  const owned =
+    buildOwned(
+      inventoryRows,
+    )
+
+  /*
+   * Capture today's reading for every owned card server-side, so history
+   * keeps accruing even if the scheduled snapshot or the browser-side
+   * capture was missed. Rows already captured today are skipped.
+   */
+  try {
+    await recordPriceSnapshots(
+      Array.from(owned.values()).map((card) => ({
+        card_id: card.cardId,
+        card_name: card.name,
+        set_name: card.set || null,
+        finish: card.finish,
+        market_price: card.fallbackPrice,
+      })),
+    )
+  } catch (error) {
+    console.error(
+      "Collection analytics snapshot capture failed",
+      error,
+    )
+  }
+
   /*
    * Price snapshots are global market data.
    *
    * They do NOT represent ownership.
    * Ownership is established exclusively by
-   * the scoped inventory query above.
+   * the scoped inventory query above, and only
+   * the owned cards' history is loaded.
    */
   try {
     snapshotRows =
-      (await supabaseTable(
-        "card_price_snapshots",
-        {
-          select:
-            "card_id,finish,market_price,captured_on",
-          filters: [
-            `captured_on=gte.${windowStart}`,
-          ],
-          order:
-            "captured_on.asc",
-          limit: 100000,
-        },
-      )) as SnapshotRow[]
+      await loadSnapshotsForCards<SnapshotRow>(
+        Array.from(owned.values()).map(
+          (card) => card.cardId,
+        ),
+        windowStart,
+        "card_id,finish,market_price,captured_on",
+      )
   } catch (error) {
     console.error(
       "Collection analytics snapshot load failed",
@@ -472,11 +498,6 @@ export async function GET(
 
     snapshotRows = []
   }
-
-  const owned =
-    buildOwned(
-      inventoryRows,
-    )
 
   const series =
     buildSeries(
@@ -779,6 +800,14 @@ export async function GET(
     }
   }
 
+  /*
+   * Always plot today from current values, so the chart and headline value
+   * still show the collection when price history is missing or stale.
+   */
+  if (owned.size > 0) {
+    daySet.add(today)
+  }
+
   const trendDaysList =
     Array.from(
       daySet,
@@ -1017,8 +1046,33 @@ export async function GET(
         ) * 100
       : 0
 
+  /*
+   * Fallback view for when price history is thin: the most valuable cards
+   * on hand right now, valued at current market price.
+   */
+  const holdings =
+    [...rows]
+      .sort(
+        (a, b) =>
+          b.currentValue -
+          a.currentValue,
+      )
+      .slice(0, 10)
+
+  const historyDays =
+    new Set(
+      snapshotRows.map(
+        (row) =>
+          row.captured_on,
+      ),
+    ).size
+
   return NextResponse.json({
     trendDays,
+
+    historyDays,
+
+    holdings,
 
     overview: {
       totalValue:

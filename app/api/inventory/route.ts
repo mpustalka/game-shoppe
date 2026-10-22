@@ -32,8 +32,59 @@ function normalizeInventoryItem(
   }
 }
 
+// Card fields stored with each item that no inventory screen displays
+// (gameplay text, legalities, evolution data). They make up most of each
+// stored item, so list responses leave them out; the full card stays in the
+// database, and item edits merge server-side so nothing is lost.
+const UNUSED_CARD_FIELDS = [
+  "attacks",
+  "abilities",
+  "flavorText",
+  "legalities",
+  "weaknesses",
+  "resistances",
+  "retreatCost",
+  "convertedRetreatCost",
+  "rules",
+  "evolvesFrom",
+  "evolvesTo",
+  "nationalPokedexNumbers",
+]
+
+function slimInventoryItem(item: InventoryJson): InventoryJson {
+  const card = item.card
+
+  if (!card || typeof card !== "object") {
+    return item
+  }
+
+  const slimCard = {
+    ...(card as Record<string, unknown>),
+  }
+
+  for (const field of UNUSED_CARD_FIELDS) {
+    delete slimCard[field]
+  }
+
+  if (slimCard.set && typeof slimCard.set === "object") {
+    const { legalities: _legalities, ...set } =
+      slimCard.set as Record<string, unknown>
+    slimCard.set = set
+  }
+
+  return {
+    ...item,
+    card: slimCard,
+  }
+}
+
+const MAX_PAGE_SIZE = 1000
+
 /**
- * GET /api/inventory
+ * GET /api/inventory?limit=500&offset=0
+ *
+ * Returns one page of the account's inventory, newest first. Callers page
+ * through with `offset` until a page comes back shorter than `limit`.
  *
  * Individual collector:
  *   user_id = authenticated user
@@ -44,19 +95,12 @@ function normalizeInventoryItem(
  *   user_id IS NULL
  *
  * Super Admin:
- *   Normal inventory access is blocked unless we later create
- *   an explicit company/tenant context.
+ *   Their own personal inventory, or the company they selected on
+ *   /admin/inventory (see resolveInventoryScope).
  */
-export async function GET() {
-  console.log("Inventory GET started")
-
+export async function GET(request: Request) {
   const scope =
     await resolveInventoryScope()
-
-  console.log(
-    "Inventory scope:",
-    scope,
-  )
 
   if (
     scope instanceof NextResponse
@@ -64,12 +108,19 @@ export async function GET() {
     return scope
   }
 
-  const filters =
-    scopeFilters(scope)
+  const url = new URL(request.url)
 
-  console.log(
-    "Inventory filters:",
-    filters,
+  const limit = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(
+      1,
+      Number(url.searchParams.get("limit")) || MAX_PAGE_SIZE,
+    ),
+  )
+
+  const offset = Math.max(
+    0,
+    Math.floor(Number(url.searchParams.get("offset")) || 0),
   )
 
   try {
@@ -79,30 +130,31 @@ export async function GET() {
         {
           select: "item",
 
-          filters,
+          filters: [
+            ...scopeFilters(scope),
+            `offset=${offset}`,
+          ],
 
+          // id breaks ties so pages never overlap or skip rows.
           order:
-            "created_at.desc",
+            "created_at.desc,id.desc",
 
-          limit: 10000,
+          limit,
         },
       )
-
-    console.log(
-      "Inventory rows:",
-      rows.length,
-    )
 
     return NextResponse.json(
       rows.map(
         (row: {
           item: unknown
         }) =>
-          normalizeInventoryItem(
-            row.item as Record<
-              string,
-              unknown
-            >,
+          slimInventoryItem(
+            normalizeInventoryItem(
+              row.item as Record<
+                string,
+                unknown
+              >,
+            ),
           ),
       ),
     )
