@@ -11,7 +11,7 @@
 // secret that is only available inside the Next.js app, so HTTP calls from this
 // function were rejected with 401 and no history was being recorded.
 
-import { captureDailySnapshots } from "../../lib/price-snapshots"
+import { captureDailySnapshots } from "../../lib/market-prices"
 
 export default async () => {
   try {

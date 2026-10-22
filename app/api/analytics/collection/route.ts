@@ -6,10 +6,8 @@ import {
   tenantScopeRequiredResponse,
 } from "@/lib/user-scope"
 import { resolveInventoryScope } from "@/lib/inventory-scope"
-import {
-  loadSnapshotsForCards,
-  recordPriceSnapshots,
-} from "@/lib/price-snapshots"
+import { loadSnapshotsForCards } from "@/lib/price-snapshots"
+import { snapshotInventoryItems } from "@/lib/market-prices"
 import { requireFeature } from "@/lib/subscription-server"
 
 // ---------------------------------------------------------------------------
@@ -452,19 +450,16 @@ export async function GET(
     )
 
   /*
-   * Capture today's reading for every owned card server-side, so history
-   * keeps accruing even if the scheduled snapshot or the browser-side
-   * capture was missed. Rows already captured today are skipped.
+   * Capture today's reading for every owned card server-side, using the live
+   * TCGplayer market price where the card can be matched (stored value
+   * otherwise). History keeps accruing even if the scheduled snapshot was
+   * missed, and "current" prices are never stale.
    */
   try {
-    await recordPriceSnapshots(
-      Array.from(owned.values()).map((card) => ({
-        card_id: card.cardId,
-        card_name: card.name,
-        set_name: card.set || null,
-        finish: card.finish,
-        market_price: card.fallbackPrice,
-      })),
+    await snapshotInventoryItems(
+      inventoryRows.map(
+        (row) => row.item,
+      ),
     )
   } catch (error) {
     console.error(
@@ -652,10 +647,25 @@ export async function GET(
         r.hasHistory,
     )
 
+  /*
+   * Per-user minimum price move (dollars): smaller moves are treated as
+   * unchanged in the movers and contribution lists.
+   */
+  const minMove =
+    Math.max(
+      0,
+      Number(
+        url.searchParams.get(
+          "minMove",
+        ),
+      ) || 0,
+    )
+
   const moved =
     measurable.filter(
       (r) =>
-        r.changeAbs !== 0,
+        Math.abs(r.changeAbs) >=
+        Math.max(minMove, 0.01),
     )
 
   const gainers =

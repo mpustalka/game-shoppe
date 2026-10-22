@@ -37,6 +37,10 @@ import {
 
 // import { Lock } from "lucide-react"
 import { useEntitlements } from "@/hooks/use-entitlements"
+import {
+  MIN_MOVE_OPTIONS,
+  useAnalyticsMinMove,
+} from "@/hooks/use-analytics-min-move"
 import { TrialBanner, FeatureLocked } from "@/components/billing/trial-banner"
 
 type Mover = {
@@ -106,12 +110,44 @@ type Insights = {
   trackedCards: number
   daysTracked: number
   weeksTracked: number
-  thresholdPercent: number
+  // null when the user's minimum price move is applied instead of 7%.
+  thresholdPercent: number | null
 thresholdAmount: number
 bigGainers: Mover[]
 bigDrops: Mover[]
 gainStreaks: StreakInsight[]
   unusual: UnusualInsight[]
+}
+
+type MarketCard = {
+  productId: string
+  name: string
+  set: string
+  finish: string
+  first: number
+  last: number
+  change: number
+  changePercent: number
+  image: string
+  url: string
+}
+
+type MarketTrends = {
+  ready: boolean
+  fromDay: string | null
+  toDay: string | null
+  sets: {
+    name: string
+    cards: number
+    up: number
+    down: number
+    change: number
+    changePercent: number
+  }[]
+  gainers: MarketCard[]
+  losers: MarketCard[]
+  topValue: MarketCard[]
+  topValueSets: { name: string; value: number; cards: number }[]
 }
 
 type CollectionAnalytics = {
@@ -193,6 +229,8 @@ export default function AnalyticsPage() {
   const analyticsAllowed = entitlements.canUseAnalytics
 
   const [days, setDays] = useState(30)
+  const { minMove, setMinMove, ready: minMoveReady } = useAnalyticsMinMove()
+  const [market, setMarket] = useState<MarketTrends | null>(null)
   const [summary, setSummary] = useState<Summary>(EMPTY_SUMMARY)
   const [insights, setInsights] = useState<Insights>(EMPTY_INSIGHTS)
   const [collectionAnalytics, setCollectionAnalytics] =
@@ -216,7 +254,9 @@ const collectionOverview = collectionAnalytics?.overview
   useEffect(() => {
     if (entitlementsLoading || !analyticsAllowed) return
 
-    fetch(`/api/analytics/summary?days=${days}`)
+    if (!minMoveReady) return
+
+    fetch(`/api/analytics/summary?days=${days}&minMove=${minMove}`)
   .then((response) => (response.ok ? response.json() : null))
   .then((data) => {
     if (data) {
@@ -231,18 +271,32 @@ const collectionOverview = collectionAnalytics?.overview
   .catch((error) => {
     console.error("ANALYTICS SUMMARY FETCH FAILED:", error)
   })
-  }, [days, entitlementsLoading, analyticsAllowed])
+  }, [days, minMove, minMoveReady, entitlementsLoading, analyticsAllowed])
 
   useEffect(() => {
     if (entitlementsLoading || !analyticsAllowed) return
 
-    fetch("/api/analytics/insights")
+    if (!minMoveReady) return
+
+    fetch(`/api/analytics/insights?minMove=${minMove}`)
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
         if (data) setInsights(data)
       })
       .catch(() => undefined)
-  }, [entitlementsLoading, analyticsAllowed])
+  }, [minMove, minMoveReady, entitlementsLoading, analyticsAllowed])
+
+  // Market-wide trends across the newest sets, owned or not.
+  useEffect(() => {
+    if (entitlementsLoading || !analyticsAllowed || !minMoveReady) return
+
+    fetch(`/api/analytics/market?minMove=${minMove}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (data) setMarket(data)
+      })
+      .catch(() => undefined)
+  }, [minMove, minMoveReady, entitlementsLoading, analyticsAllowed])
 
   // Capture today's price reading for every inventory line, once per visit.
   // Only Premium-equivalent accounts seed this client-side snapshot. The
@@ -477,6 +531,36 @@ const collectionOverview = collectionAnalytics?.overview
         />
       </div>
 
+      {/* Minimum price move — applies to every movers list below */}
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Price Movement</h2>
+          <p className="text-xs text-muted-foreground">
+            Live TCGplayer market prices, captured daily.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Show moves of</span>
+          <div className="inline-flex rounded-lg border border-border p-1">
+            {MIN_MOVE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setMinMove(option.value)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  minMove === option.value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <MarketTrendsSection market={market} />
+
       {/* Price movers — the price-increase tracker */}
       <>
         <div className="mb-6 grid gap-6 lg:grid-cols-2">
@@ -532,7 +616,7 @@ const collectionOverview = collectionAnalytics?.overview
             {insights.bigGainers.length === 0 ? (
               <InsightEmpty
                 ready={insights.daysTracked >= 2}
-                label={`No cards are up ${insights.thresholdPercent}% or $${insights.thresholdAmount.toFixed(2)} over the last week yet.`}
+                label={`No cards are up ${thresholdLabel(insights)} over the last week yet.`}
               />
             ) : (
               insights.bigGainers.map((mover) => (
@@ -556,7 +640,7 @@ const collectionOverview = collectionAnalytics?.overview
             {insights.bigDrops.length === 0 ? (
               <InsightEmpty
                 ready={insights.daysTracked >= 2}
-                label={`No cards are down ${insights.thresholdPercent}% or $${insights.thresholdAmount.toFixed(2)} over the last week yet.`}
+                label={`No cards are down ${thresholdLabel(insights)} over the last week yet.`}
               />
             ) : (
               insights.bigDrops.map((mover) => (
@@ -1019,6 +1103,186 @@ function MoverRow({ mover }: { mover: Mover }) {
         {mover.changePercent.toFixed(1)}%
       </div>
     </div>
+  )
+}
+
+function thresholdLabel(insights: Insights) {
+  const amount = `$${insights.thresholdAmount.toFixed(2)}`
+  return insights.thresholdPercent === null
+    ? `${amount} or more`
+    : `${insights.thresholdPercent}% or ${amount}`
+}
+
+function MarketTrendsSection({ market }: { market: MarketTrends | null }) {
+  const [view, setView] = useState<"gainers" | "losers">("gainers")
+
+  const ready = Boolean(market?.ready)
+  const cards = !market
+    ? []
+    : ready
+      ? view === "gainers"
+        ? market.gainers
+        : market.losers
+      : market.topValue
+
+  const since = market?.fromDay
+    ? new Date(`${market.fromDay}T12:00:00Z`).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })
+    : null
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span className="flex items-center gap-2">
+            <Flame className="h-5 w-5 text-primary" />
+            Market Trends This Week
+            <span className="text-xs font-normal text-muted-foreground">
+              {ready && since
+                ? `Newest sets · since ${since}`
+                : "Newest sets · all cards, owned or not"}
+            </span>
+          </span>
+          {ready && (
+            <div className="inline-flex rounded-lg border border-border p-1">
+              {(["gainers", "losers"] as const).map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setView(option)}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    view === option
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {option === "gainers" ? "Top Gainers" : "Top Drops"}
+                </button>
+              ))}
+            </div>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {!market ? (
+          <p className="text-sm text-muted-foreground">Loading market prices…</p>
+        ) : (
+          <>
+            {/* Top 3 sets */}
+            <div className="grid gap-3 sm:grid-cols-3">
+              {ready
+                ? market.sets.map((set, index) => (
+                    <div
+                      key={set.name}
+                      className="rounded-lg border border-border p-3"
+                    >
+                      <p className="text-xs text-muted-foreground">
+                        #{index + 1} set this week
+                      </p>
+                      <p className="truncate font-semibold">{set.name}</p>
+                      <p
+                        className={`text-lg font-bold tabular-nums ${
+                          set.changePercent >= 0
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        {set.changePercent >= 0 ? "+" : ""}
+                        {set.changePercent.toFixed(1)}%
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {set.up} up · {set.down} down · {set.cards} cards $1+
+                      </p>
+                    </div>
+                  ))
+                : market.topValueSets.map((set, index) => (
+                    <div
+                      key={set.name}
+                      className="rounded-lg border border-border p-3"
+                    >
+                      <p className="text-xs text-muted-foreground">
+                        #{index + 1} most valuable new set
+                      </p>
+                      <p className="truncate font-semibold">{set.name}</p>
+                      <p className="text-lg font-bold tabular-nums">
+                        {usd(set.value)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {set.cards.toLocaleString()} cards priced
+                      </p>
+                    </div>
+                  ))}
+            </div>
+
+            {!ready && (
+              <p className="text-sm text-muted-foreground">
+                Today&apos;s market prices are saved. Weekly gainers and drops
+                appear after the next daily reading — until then, here are the
+                most valuable cards in the newest sets.
+              </p>
+            )}
+
+            {/* Top 12 cards */}
+            {cards.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No cards in the newest sets moved by your minimum amount this
+                week.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                {cards.map((card) => {
+                  const up = card.change >= 0
+                  return (
+                    <a
+                      key={`${card.productId}-${card.finish}`}
+                      href={card.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group overflow-hidden rounded-lg border border-border transition-colors hover:border-primary/50"
+                    >
+                      <div className="aspect-[2.5/3.5] w-full overflow-hidden bg-muted">
+                        <img
+                          src={card.image}
+                          alt={card.name}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform group-hover:scale-[1.03]"
+                        />
+                      </div>
+                      <div className="p-2">
+                        <p className="truncate text-sm font-medium">{card.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {card.set} · {card.finish}
+                        </p>
+                        <div className="mt-1 flex items-baseline justify-between gap-1">
+                          <span className="font-semibold tabular-nums">
+                            {usd(card.last)}
+                          </span>
+                          {ready && (
+                            <span
+                              className={`text-xs font-semibold tabular-nums ${
+                                up
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : "text-red-600 dark:text-red-400"
+                              }`}
+                            >
+                              {up ? "+" : "-"}
+                              {usd(Math.abs(card.change))} (
+                              {up ? "+" : ""}
+                              {card.changePercent.toFixed(1)}%)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

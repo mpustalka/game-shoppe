@@ -396,6 +396,7 @@ async function buildSales(
 async function buildPriceMovers(
   windowIso: string,
   scope: DataScope,
+  minMove: number,
 ) {
   /*
    * IMPORTANT:
@@ -491,7 +492,7 @@ async function buildPriceMovers(
       .filter(
         (entry) =>
           entry.days.size >= 2 &&
-          entry.first >= 0.5,
+          entry.first >= 0.1,
       )
       .map((entry) => {
         const change =
@@ -529,7 +530,8 @@ async function buildPriceMovers(
       })
       .filter(
         (entry) =>
-          entry.change !== 0,
+          Math.abs(entry.change) >=
+          Math.max(minMove, 0.01),
       )
 
   return {
@@ -611,6 +613,17 @@ export async function GET(
   const windowIso =
     daysAgoIso(days)
 
+  // Per-user minimum price move (dollars) for the movers lists.
+  const minMove =
+    Math.max(
+      0,
+      Number(
+        url.searchParams.get(
+          "minMove",
+        ),
+      ) || 0,
+    )
+
   const fourteenIso =
     daysAgoIso(14)
 
@@ -633,6 +646,7 @@ export async function GET(
   buildPriceMovers(
     windowIso,
     scope,
+    minMove,
   ).catch(() => EMPTY_PRICE_MOVERS),
 ])
 

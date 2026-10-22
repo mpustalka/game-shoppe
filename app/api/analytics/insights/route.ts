@@ -218,7 +218,19 @@ function emptyResponse() {
   })
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  /*
+   * Per-user minimum price move (dollars). When set, a card counts as a big
+   * gainer/drop if it moved at least this much; otherwise the default rule
+   * (7% or $1) applies.
+   */
+  const minMoveParam = new URL(request.url).searchParams.get("minMove")
+  const minMove =
+    minMoveParam !== null && Number.isFinite(Number(minMoveParam))
+      ? Math.max(0, Number(minMoveParam))
+      : null
+  const moveThreshold = Math.max(minMove ?? 0, 0.01)
+
   const gate =
     await requireFeature(
       (e) =>
@@ -427,8 +439,7 @@ export async function GET() {
           ].price
 
         if (
-          first >= 0.5 &&
-          first > 0
+          first >= 0.1
         ) {
           const change =
             last - first
@@ -474,9 +485,10 @@ export async function GET() {
           }
 
           if (
-            changePercent >=
-              7 ||
-            change >= 1
+            minMove !== null
+              ? change >= moveThreshold
+              : changePercent >= 7 ||
+                change >= 1
           ) {
             bigGainers.push(
               mover,
@@ -484,9 +496,10 @@ export async function GET() {
           }
 
           if (
-            changePercent <=
-              -7 ||
-            change <= -1
+            minMove !== null
+              ? change <= -moveThreshold
+              : changePercent <= -7 ||
+                change <= -1
           ) {
             bigDrops.push(
               mover,
@@ -747,8 +760,10 @@ export async function GET() {
       weeksTracked:
         distinctWeeks.size,
 
-      thresholdPercent: 7,
-      thresholdAmount: 1,
+      thresholdPercent:
+        minMove !== null ? null : 7,
+      thresholdAmount:
+        minMove ?? 1,
 
       bigGainers:
         bigGainers.slice(

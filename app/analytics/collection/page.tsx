@@ -14,6 +14,10 @@ import {
   YAxis,
 } from "recharts"
 import { useInventory } from "@/lib/inventory-context"
+import {
+  MIN_MOVE_OPTIONS,
+  useAnalyticsMinMove,
+} from "@/hooks/use-analytics-min-move"
 import { itemMarketValue } from "@/lib/analytics"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -151,16 +155,19 @@ export default function CollectionInsightsPage() {
   const [loading, setLoading] = useState(true)
   const snapshotSent = useRef(false)
 
+  const { minMove, setMinMove, ready: minMoveReady } = useAnalyticsMinMove()
+
   useEffect(() => {
+    if (!minMoveReady) return
     setLoading(true)
-    fetch(`/api/analytics/collection?days=${days}`)
+    fetch(`/api/analytics/collection?days=${days}&minMove=${minMove}`)
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
         if (payload) setData(payload)
       })
       .catch(() => undefined)
       .finally(() => setLoading(false))
-  }, [days])
+  }, [days, minMove, minMoveReady])
 
   // Seed today's price reading for every inventory line, once per visit. The
   // server keeps one row per card+finish per day, so this safely grows the
@@ -205,9 +212,23 @@ export default function CollectionInsightsPage() {
             actually own.
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/analytics">All Analytics</Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">Show moves of</span>
+          <div className="inline-flex rounded-lg border border-border p-1">
+            {MIN_MOVE_OPTIONS.map((option) => (
+              <Toggle
+                key={option.value}
+                active={minMove === option.value}
+                onClick={() => setMinMove(option.value)}
+              >
+                {option.label}
+              </Toggle>
+            ))}
+          </div>
+          <Button asChild variant="outline">
+            <Link href="/analytics">All Analytics</Link>
+          </Button>
+        </div>
       </div>
 
       {/* 1. Collection overview ------------------------------------------- */}

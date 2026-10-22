@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { captureDailySnapshots } from "@/lib/price-snapshots"
+import { captureDailySnapshots } from "@/lib/market-prices"
 
 // Always run on request — never serve a cached response to the scheduler.
 export const dynamic = "force-dynamic"

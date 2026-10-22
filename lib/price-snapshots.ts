@@ -79,12 +79,17 @@ export async function loadSnapshotsForCards<T extends { captured_on: string }>(
 }
 
 /**
- * Record today's reading for each card + finish. Rows already captured today
- * are skipped by the database (unique card_id + finish + captured_on), so this
- * is safe to call repeatedly and concurrently. Returns the number inserted.
+ * Record today's reading for each card + finish. By default rows already
+ * captured today are skipped by the database (unique card_id + finish +
+ * captured_on), so this is safe to call repeatedly and concurrently.
+ *
+ * `overwrite` replaces today's reading instead — used for live TCGplayer
+ * prices, which must win over a stored-price reading taken earlier the same
+ * day. Returns the number of rows written.
  */
 export async function recordPriceSnapshots(
   snapshots: SnapshotInput[],
+  { overwrite = false }: { overwrite?: boolean } = {},
 ): Promise<number> {
   // Collapse to one row per card + finish, keeping the highest observed price.
   const deduped = new Map<string, SnapshotInput>()
@@ -111,70 +116,10 @@ export async function recordPriceSnapshots(
       method: "POST",
       body: rows.slice(i, i + INSERT_BATCH),
       onConflict: "card_id,finish,captured_on",
-      resolution: "ignore-duplicates",
+      resolution: overwrite ? "merge-duplicates" : "ignore-duplicates",
     })
     inserted += Array.isArray(result) ? result.length : 0
   }
   return inserted
 }
 
-type StoredItem = {
-  cardId?: unknown
-  finish?: unknown
-  marketValue?: unknown
-  price?: unknown
-  card?: {
-    name?: unknown
-    set?: {
-      name?: unknown
-    }
-  }
-}
-
-function marketValueOf(item: StoredItem): number {
-  const market = Number(item.marketValue)
-  if (Number.isFinite(market) && market > 0) return market
-  const price = Number(item.price)
-  return Number.isFinite(price) && price > 0 ? price : 0
-}
-
-/**
- * Daily market-history capture: one reading per card + finish across every
- * account's stored inventory. Used by the scheduled daily-snapshot function
- * and the /api/analytics/snapshot-daily route.
- */
-export async function captureDailySnapshots() {
-  const rows = (await supabaseTable("inventory_items", {
-    select: "item",
-    order: "created_at.asc",
-    limit: 100000,
-  })) as Array<{ item: StoredItem | null }>
-
-  const snapshots: SnapshotInput[] = []
-
-  for (const row of rows || []) {
-    const item = row?.item
-    if (!item) continue
-
-    const cardId = typeof item.cardId === "string" ? item.cardId : ""
-    const price = marketValueOf(item)
-    if (!cardId || price <= 0) continue
-
-    snapshots.push({
-      card_id: cardId,
-      card_name:
-        item.card && typeof item.card.name === "string" ? item.card.name : null,
-      set_name:
-        item.card && item.card.set && typeof item.card.set.name === "string"
-          ? item.card.set.name
-          : null,
-      finish:
-        typeof item.finish === "string" && item.finish ? item.finish : "Normal",
-      market_price: price,
-    })
-  }
-
-  const inserted = await recordPriceSnapshots(snapshots)
-
-  return { inserted, tracked: snapshots.length }
-}
